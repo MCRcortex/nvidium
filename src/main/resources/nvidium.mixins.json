@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.cortex.nvidium.sodiumCompat.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinChunkRenderBounds",
+    "MixinRenderRegionManager",
+    "MixinRenderSectionManager"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

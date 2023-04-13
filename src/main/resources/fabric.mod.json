@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "nvidium",
+  "version": "${version}",
+  "name": "Nvidium",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/nvidium/icon.png",
+  "environment": "*",
+  "entrypoints": {},
+  "mixins": [
+    "nvidium.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14"
+  }
+}
