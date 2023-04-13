@@ -9,7 +9,7 @@
 #import <cortex:occlusion/scene.glsl>
 layout(early_fragment_tests) in;
 
-#if 0
+#if 1
 void main() {
     sectionVisibility[gl_PrimitiveID] = frameId;
 }

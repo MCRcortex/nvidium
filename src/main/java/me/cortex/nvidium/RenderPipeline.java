@@ -196,7 +196,7 @@ public class RenderPipeline {
         }
 
         glEnable( GL_POLYGON_OFFSET_FILL );
-        glPolygonOffset( 0, -1f);
+        glPolygonOffset( 0, -30);//TODO: OPTIMZIE THIS
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -238,8 +238,6 @@ public class RenderPipeline {
                 }
             }
         }
-
-
 
         prevRegionCount = visibleRegions;
     }

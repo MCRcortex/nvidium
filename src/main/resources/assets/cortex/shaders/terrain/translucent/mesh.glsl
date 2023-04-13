@@ -32,6 +32,13 @@ vec3 decodeVertex(Vertex v) {
     return vec3(v.a,v.b,v.c)*(32.0f/65535)-8.0f;
 }
 
+
+layout(binding = 1) uniform sampler2D tex_light;
+
+vec4 sampleLight(vec2 uv) {
+    return texture(tex_light, clamp(uv / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
+}
+
 //TODO: extra per quad culling
 void main() {
     if ((gl_GlobalInvocationID.x>>1)>=quadCount) { //If its over the quad count, dont render
@@ -57,8 +64,13 @@ void main() {
     OUT[(gl_LocalInvocationID.x<<1)|0].uv = vec2(A.g,A.h)/65535;
     OUT[(gl_LocalInvocationID.x<<1)|1].uv = vec2(B.g,B.h)/65535;
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].tint = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;
-    OUT[(gl_LocalInvocationID.x<<1)|1].tint = vec4(B.e&int16_t(0xFF),(B.e>>8)&int16_t(0xFF),B.f&int16_t(0xFF),(B.f>>8)&int16_t(0xFF))/255;
+
+    vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;
+    vec4 tintB = vec4(B.e&int16_t(0xFF),(B.e>>8)&int16_t(0xFF),B.f&int16_t(0xFF),(B.f>>8)&int16_t(0xFF))/255;
+    tintA *= sampleLight(vec2(int16_t(A.i),int16_t(A.j)));
+    tintB *= sampleLight(vec2(int16_t(B.i),int16_t(B.j)));
+    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintA;
+    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintB;
 
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
 

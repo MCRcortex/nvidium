@@ -9,6 +9,8 @@
     "MixinRenderSectionManager"
   ],
   "client": [
+    "LightMapAccessor",
+    "MixinGameRenderer"
   ],
   "injectors": {
     "defaultRequire": 1
