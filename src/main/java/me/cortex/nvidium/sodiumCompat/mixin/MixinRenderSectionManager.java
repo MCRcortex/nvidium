@@ -52,6 +52,8 @@ public class MixinRenderSectionManager {
     public void renderLayer(ChunkRenderMatrices matrices, TerrainRenderPass pass, double x, double y, double z) {
         if (pass == DefaultTerrainRenderPasses.SOLID) {
             Nvidium.pipeline.renderFrame(frustum, matrices, new ChunkCameraContext(x, y, z));
+        } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
+            Nvidium.pipeline.renderTranslucent();
         }
     }
 }

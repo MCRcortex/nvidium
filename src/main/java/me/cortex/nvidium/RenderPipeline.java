@@ -1,5 +1,7 @@
 package me.cortex.nvidium;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -9,6 +11,7 @@ import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
 import me.cortex.nvidium.renderers.SectionRasterizer;
+import me.cortex.nvidium.renderers.TranslucentTerrainRasterizer;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
@@ -59,18 +62,12 @@ public class RenderPipeline {
 
     private static final RenderDevice device = new RenderDevice();
 
-    public static boolean debugTimings = false;
-    long cterrainTime;
-    long cregionTime;
-    long csectionTime;
-    long cotherFrame;
-
-
     public final SectionManager sectionManager;
 
     private final PrimaryTerrainRasterizer terrainRasterizer;
     private final RegionRasterizer regionRasterizer;
     private final SectionRasterizer sectionRasterizer;
+    private final TranslucentTerrainRasterizer translucencyTerrainRasterizer;
 
     private final IDeviceMappedBuffer sceneUniform;
     private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+8*6+3, 2);
@@ -85,6 +82,7 @@ public class RenderPipeline {
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
+        translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
         int maxRegions = sectionManager.getRegionManager().maxRegions();
         sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2);
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
@@ -187,30 +185,15 @@ public class RenderPipeline {
         glBufferAddressRangeNV(GL_UNIFORM_BUFFER_ADDRESS_NV, 0, sceneUniform.getDeviceAddress(), SCENE_SIZE);
 
 
-        if (debugTimings) {
-            glFinish();
-            cotherFrame += System.nanoTime() - otherFrameRecord;
-        }
-        long t = System.nanoTime();
-
-        //Memory barrier from the last frame
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_COMMAND_BARRIER_BIT);
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
             //glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
             //glEnable(GL_SAMPLE_SHADING);
             //glMinSampleShadingARB(0.0f);
             //glDisable(GL_CULL_FACE);
-            terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer);
+            terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             //glEnable(GL_CULL_FACE);
         }
-
-        if (debugTimings) {
-            glFinish();
-            cterrainTime += System.nanoTime() - t;
-            t = System.nanoTime();
-        }
-
 
         glEnable( GL_POLYGON_OFFSET_FILL );
         glPolygonOffset( 0, -1f);
@@ -222,12 +205,6 @@ public class RenderPipeline {
         glColorMask(false, false, false, false);
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
-
-        if (debugTimings) {
-            glFinish();
-            cregionTime += System.nanoTime() - t;
-            t = System.nanoTime();
-        }
 
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -262,24 +239,43 @@ public class RenderPipeline {
             }
         }
 
+
+
         prevRegionCount = visibleRegions;
+    }
 
-        if (debugTimings) {
-            glFinish();
-            csectionTime += System.nanoTime() - t;
-            otherFrameRecord = System.nanoTime();
 
-            if (frameId % 1000 == 0) {
-                System.out.println("Other frame: " + ((cotherFrame / frameId) / 1000) + " Terrain: " + ((cterrainTime / frameId) / 1000) + " Region: " + ((cregionTime / frameId) / 1000) + " Section: " + ((csectionTime / frameId) / 1000));
-            }
-            if (frameId % 10000 == 0) {
-                frameId = 0;
-                cterrainTime = 0;
-                cregionTime = 0;
-                csectionTime = 0;
-                cotherFrame = 0;
-            }
+    //Translucency is rendered in a very cursed and incorrect way
+    // it hijacks the unassigned indirect command dispatch and uses that to dispatch the translucent chunks as well
+    public void renderTranslucent() {
+        //if (true) return;
+
+        //Memory barrier for the command buffer
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_COMMAND_BARRIER_BIT);
+
+        glEnableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
+        glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
+        glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
+        glEnableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
+        //Need to rebind the uniform since it might have been wiped
+        glBufferAddressRangeNV(GL_UNIFORM_BUFFER_ADDRESS_NV, 0, sceneUniform.getDeviceAddress(), SCENE_SIZE);
+
+        //Translucency sorting
+        {
+            glEnable(GL_DEPTH_TEST);
+            RenderSystem.enableBlend();
+            RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+            //The + 8*6 is the offset to the unassigned dispatch
+            translucencyTerrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
+            RenderSystem.disableBlend();
+            RenderSystem.defaultBlendFunc();
+            glDisable(GL_DEPTH_TEST);
         }
+
+        glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
+        glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
+        glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
+        glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
     }
 
     public void delete() {

@@ -41,7 +41,19 @@ public class SodiumResultCompatibility {
             outOffsets[i] = offset;
         }
         //Do translucent
-        short translucent = outOffsets[6];
+        short translucent = offset;
+        var translucentData  = result.meshes.get(DefaultTerrainRenderPasses.TRANSLUCENT);
+        if (translucentData != null) {
+            for (int i = 0; i < 7; i++) {
+                var segment = translucentData.getParts().get(ModelQuadFacing.values()[i]);
+                if (segment != null) {
+                    MemoryUtil.memCopy(MemoryUtil.memAddress(translucentData.getVertexData().getDirectBuffer()) + (long) segment.vertexStart() * formatSize,
+                            uploadBuffer + translucent * 4L * formatSize,
+                            (long) segment.vertexCount() * formatSize);
+                    translucent += segment.vertexCount() / 4;
+                }
+            }
+        }
         outOffsets[7] = translucent;
     }
 
