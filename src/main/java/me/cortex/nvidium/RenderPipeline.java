@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.SectionManager;
@@ -12,37 +11,43 @@ import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
 import me.cortex.nvidium.renderers.SectionRasterizer;
 import me.cortex.nvidium.renderers.TranslucentTerrainRasterizer;
-import me.cortex.nvidium.util.UploadingBufferStream;
+import me.cortex.nvidium.util.TickableManager;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
-import net.minecraft.util.math.ChunkPos;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4i;
-import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
 
 import static me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer.alignUp;
 import static org.lwjgl.opengl.ARBDirectStateAccess.glClearNamedBufferSubData;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15C.GL_READ_WRITE;
 import static org.lwjgl.opengl.GL30C.GL_R8UI;
 import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 import static org.lwjgl.opengl.GL42.GL_COMMAND_BARRIER_BIT;
 import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
-import static org.lwjgl.opengl.GL45.nglClearNamedBufferSubData;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
-import static org.lwjgl.opengl.NVShaderBufferLoad.glMakeBufferNonResidentNV;
-import static org.lwjgl.opengl.NVShaderBufferLoad.glMakeNamedBufferResidentNV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
 
+
+/*
+var hm = new HashSet<Long>();
+for (int i = 0; i < rm.maxRegionIndex(); i++) {
+    if (rm.isRegionVisible(frustum, i)) {
+        if(rm.regions[i] != null) {
+            hm.add(ChunkPos.toLong(rm.regions[i].rx, rm.regions[i].rz))
+        }
+    }
+}
+hm.size()
+ */
 public class RenderPipeline {
     public static final int GL_DRAW_INDIRECT_UNIFIED_NV = 0x8F40;
     public static final int GL_DRAW_INDIRECT_ADDRESS_NV = 0x8F41;
@@ -169,7 +174,7 @@ public class RenderPipeline {
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
 
         //TODO: FIXME: THIS FEELS ILLEGAL
-        UploadingBufferStream.TickAllUploadingStreams();
+        TickableManager.TickAll();
 
         if (false) return;
         int err;

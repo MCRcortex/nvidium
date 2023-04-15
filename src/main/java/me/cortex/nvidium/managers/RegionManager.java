@@ -57,6 +57,10 @@ public class RegionManager {
         private int count;
         private final byte[] id2pos = new byte[256];
 
+        //Used in geometry culling under heavy memory pressure to determine what to cull or not to cull
+        private int lastSeenFrustum;
+        private int lastSeenVisible;
+
         private Region(long key, int id, int rx, int ry, int rz) {
             this.key = key;
             this.id = id;

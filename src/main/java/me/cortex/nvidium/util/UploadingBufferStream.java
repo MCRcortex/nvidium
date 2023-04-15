@@ -30,13 +30,13 @@ public class UploadingBufferStream {
     private final LongList[] allocations;
     public UploadingBufferStream(RenderDevice device, int frames, long size) {
         this.device = device;
-        WEAK_UPLOAD_LIST.add(new WeakReference<>(this));
         allocations = new LongList[frames];
         for (int i = 0; i < frames; i++) {
             allocations[i] = new LongArrayList();
         }
         segments.setLimit(size);
         buffer = device.createClientMappedBuffer(size);
+        TickableManager.register(this);
     }
 
     private long caddr = -1;
@@ -79,7 +79,7 @@ public class UploadingBufferStream {
 
 
 
-    private void tick() {
+    void tick() {
         //if (batchedCopies.size() != 0) {
         //    //throw new IllegalStateException("Upload buffer has uncommitted batches before tick");
         //    System.err.println("Upload buffer has uncommitted batches before tick");
@@ -92,18 +92,5 @@ public class UploadingBufferStream {
         }
         allocations[cidx].clear();
         caddr = -1;
-    }
-
-    private static final List<WeakReference<UploadingBufferStream>> WEAK_UPLOAD_LIST = new LinkedList<>();
-    public static void TickAllUploadingStreams() {//Should be called at the very end of the frame
-        var iter = WEAK_UPLOAD_LIST.iterator();
-        while (iter.hasNext()) {
-            var ref = iter.next().get() ;
-            if (ref != null) {
-                ref.tick();
-            } else {
-                iter.remove();
-            }
-        }
     }
 }
