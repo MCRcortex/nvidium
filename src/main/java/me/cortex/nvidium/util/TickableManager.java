@@ -31,7 +31,7 @@ public class TickableManager {
             if (ref != null) {
                 ref.tick();
             } else {
-                iter.remove();
+                iter2.remove();
             }
         }
     }
