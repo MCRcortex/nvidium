@@ -74,7 +74,6 @@ void main() {
         sectionFaceVisibility[visibilityIndex] = msk;
 
         //Set frameid to old old frame to stop maybe visibility every 256 frames
-        //TODO: need to still check if chunk wasnt visible last frame but is visible this frame
         sectionVisibility[visibilityIndex] = (uint8_t)(int8_t(frameId)-int8_t(10));
 
 

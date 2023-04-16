@@ -10,7 +10,7 @@
 
 #import <cortex:occlusion/scene.glsl>
 
-//TODO: maybe do multiple cubes per invocation? this would increase utilization of individual sm's
+//TODO: maybe do multiple cubes per workgroup? this would increase utilization of individual sm's
 layout(local_size_x = 8) in;
 layout(triangles, max_vertices=8, max_primitives=12) out;
 

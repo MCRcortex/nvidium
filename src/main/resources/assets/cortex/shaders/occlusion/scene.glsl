@@ -1,5 +1,3 @@
-//TODO: see if splitting up header and renderRanges into 2 differnt buffers is faster/better
-
 struct Vertex {
     uint16_t a;
     uint16_t b;
@@ -12,22 +10,13 @@ struct Vertex {
     int16_t i;
     int16_t j;
 };
-/*
-struct Vertex {
-    int a;
-    int b;
-    int c;
-    int d;
-    int e;
-};*/
-
-
 
 // this is cause in the section rasterizer you get less cache misses thus higher throughput
 struct Section {
     ivec4 header;
     ivec4 renderRanges;
 };
+
 //Header.x -> 0-3=offsetx 4-7=sizex 8-31=chunk x
 //Header.y -> 0-3=offsetz 4-7=sizez 8-31=chunk z
 //Header.z -> 0-3=offsety 4-7=sizey 8-15=chunk y
