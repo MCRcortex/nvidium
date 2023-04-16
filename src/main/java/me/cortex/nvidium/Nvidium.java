@@ -46,9 +46,6 @@ public class Nvidium {
 
 
     public static void setupGLDebugCallback() {
-        GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
-            System.out.println(source);
-        });
-        glDebugMessageCallback(proc, 0);
+
     }
 }
