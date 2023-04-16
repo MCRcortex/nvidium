@@ -11,6 +11,7 @@ import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
 import me.cortex.nvidium.renderers.SectionRasterizer;
 import me.cortex.nvidium.renderers.TranslucentTerrainRasterizer;
+import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
@@ -68,6 +69,8 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer sectionVisibility;
     private final IDeviceMappedBuffer terrainCommandBuffer;
 
+    private final DownloadTaskStream downloadStream;
+
     public RenderPipeline() {
         sectionManager = new SectionManager(device, 32, 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
@@ -79,6 +82,7 @@ public class RenderPipeline {
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L * 2);
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
+        downloadStream = new DownloadTaskStream(device, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, 16000000);
 
         //Preset the bias
         glPolygonOffset( -0.001f, -0.1f);
@@ -185,7 +189,7 @@ public class RenderPipeline {
         }
 
         glEnable( GL_POLYGON_OFFSET_FILL );
-        glPolygonOffset( 0, -30);//TODO: OPTIMZIE THIS
+        glPolygonOffset( 0, -1);//TODO: OPTIMZIE THIS
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -204,10 +208,15 @@ public class RenderPipeline {
             }
         }
 
-        if (false) {
-            glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
-            glColorMask(true, true, true, true);
-        }
+        /*
+        {//Download the region visibility from the gpu, used for determining culling
+            downloadStream.download(regionVisibility, 0, visibleRegions, addr->{
+                for (long i = 0; i < size; i++) {
+                    System.out.println(MemoryUtil.memGetByte(addr + i));
+                }
+            });
+        }*/
+
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDisable(GL_POLYGON_OFFSET_FILL);
