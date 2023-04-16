@@ -6,8 +6,9 @@
     "LightMapAccessor",
     "MixinRenderRegionManager",
     "MixinRenderSectionManager",
+    "MixinSodiumWorldRenderer",
     "MixinWindow",
-    "MixinSodiumWorldRenderer"
+    "MixinRenderSection"
   ],
   "injectors": {
     "defaultRequire": 1
