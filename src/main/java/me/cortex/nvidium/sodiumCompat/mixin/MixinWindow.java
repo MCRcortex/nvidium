@@ -15,5 +15,6 @@ public class MixinWindow {
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/GL;createCapabilities()Lorg/lwjgl/opengl/GLCapabilities;", shift = At.Shift.AFTER))
     private void init(WindowEventHandler eventHandler, MonitorTracker monitorTracker, WindowSettings settings, String videoMode, String title, CallbackInfo ci) {
         Nvidium.checkSystemIsCapable();
+        Nvidium.setupGLDebugCallback();
     }
 }

@@ -18,6 +18,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.format.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
+import net.minecraft.client.MinecraftClient;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -72,13 +73,13 @@ public class RenderPipeline {
     private final DownloadTaskStream downloadStream;
 
     public RenderPipeline() {
-        sectionManager = new SectionManager(device, 32, 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
+        sectionManager = new SectionManager(device, MinecraftClient.getInstance().options.getClampedViewDistance(), 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
         int maxRegions = sectionManager.getRegionManager().maxRegions();
-        sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2);
+        sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2L);
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L * 2);
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
@@ -95,6 +96,11 @@ public class RenderPipeline {
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i chunkPos = new Vector3i(((int)Math.floor(cam.posX))>>4, ((int)Math.floor(cam.posY))>>4, ((int)Math.floor(cam.posZ))>>4);
 
+
+        int err;
+        if ((err = glGetError()) != 0) {
+            throw new IllegalStateException("GLERROR: "+err);
+        }
 
         int visibleRegions = 0;
         int playerRegion = -1;
@@ -165,7 +171,6 @@ public class RenderPipeline {
         TickableManager.TickAll();
 
         if (false) return;
-        int err;
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
@@ -180,9 +185,6 @@ public class RenderPipeline {
 
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
-            //glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
-            //glEnable(GL_SAMPLE_SHADING);
-            //glMinSampleShadingARB(0.0f);
             //glDisable(GL_CULL_FACE);
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             //glEnable(GL_CULL_FACE);
@@ -193,7 +195,6 @@ public class RenderPipeline {
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
-        //glDepthFunc(GL_LEQUAL);
         glDepthMask(false);
         glColorMask(false, false, false, false);
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);

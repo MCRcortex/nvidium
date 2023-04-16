@@ -81,6 +81,7 @@ public class RegionManager {
             int maxY = Integer.MIN_VALUE;
             int minZ = Integer.MAX_VALUE;
             int maxZ = Integer.MIN_VALUE;
+            int lastIdx = 0;
             for (int i = 0; i < 256; i++) {
                 if (freeIndices.get(i)) continue;//Skip over non set indicies
                 int x = id2pos[i]&7;
@@ -92,9 +93,10 @@ public class RegionManager {
                 maxX = Math.max(maxX, x);
                 maxY = Math.max(maxY, y);
                 maxZ = Math.max(maxZ, z);
+                lastIdx = i;
             }
 
-            return packRegion(count,
+            return packRegion(lastIdx+1,
                     maxX-minX,
                     maxY-minY,
                     maxZ-minZ,

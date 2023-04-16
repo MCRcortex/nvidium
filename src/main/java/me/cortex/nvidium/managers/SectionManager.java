@@ -35,13 +35,17 @@ public class SectionManager {
     private final int formatSize;
     public SectionManager(RenderDevice device, int rd, int height, int frames, int quadVertexSize) {
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
-        int widthSquared = (rd*2+1)*(rd*2+1);
+        //int widthSquared = (rd*2+1)*(rd*2+1);
+
+        //int maxRegions = (int) Math.ceil((((double) widthSquared*height)/256))*2;
+        //TODO: optimize this to be more tight
+        int maxRegions = (int)(Math.ceil(Math.pow(Math.ceil((double)rd/8+1),2)*Math.PI) * Math.ceil(((double)height)/4+2));
 
         this.formatSize = quadVertexSize;
-        this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) widthSquared * height * SECTION_SIZE);
+        this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * (8*4*8) * SECTION_SIZE);
         this.terrainAreana = new BufferArena(device, quadVertexSize);
         this.sectionOffset.defaultReturnValue(-1);
-        this.regionManager = new RegionManager(device, (int) Math.ceil(((double) widthSquared/(8*8))*((double) height/4)+1));
+        this.regionManager = new RegionManager(device, maxRegions);
         this.device = device;
     }
 
@@ -49,7 +53,7 @@ public class SectionManager {
         return ChunkSectionPos.asLong(x,y,z);
     }
 
-    //FIXME: causes extreame stuttering
+    //TODO: need too check that the section count does not go above the max sections (same with regions)
     public void uploadSetSection(ChunkBuildResult result) {
         int geometrySize = SodiumResultCompatibility.getTotalGeometryQuadCount(result);
         if (result.meshes.isEmpty() || result.data == null || result.data == ChunkRenderData.ABSENT || result.data == ChunkRenderData.EMPTY || geometrySize == 0) {

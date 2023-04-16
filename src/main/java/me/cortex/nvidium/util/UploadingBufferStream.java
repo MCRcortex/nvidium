@@ -11,6 +11,7 @@ import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.lwjgl.opengl.GL11.glGetError;
 import static org.lwjgl.opengl.GL42C.GL_BUFFER_UPDATE_BARRIER_BIT;
 import static org.lwjgl.opengl.GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
 

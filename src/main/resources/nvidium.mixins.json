@@ -4,11 +4,12 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "LightMapAccessor",
+    "MixinGameRenderer",
     "MixinRenderRegionManager",
+    "MixinRenderSection",
     "MixinRenderSectionManager",
     "MixinSodiumWorldRenderer",
-    "MixinWindow",
-    "MixinRenderSection"
+    "MixinWindow"
   ],
   "injectors": {
     "defaultRequire": 1

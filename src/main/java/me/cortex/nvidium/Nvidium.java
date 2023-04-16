@@ -1,13 +1,20 @@
 package me.cortex.nvidium;
 
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.system.NativeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.lwjgl.opengl.GL43C.glDebugMessageCallback;
+
 public class Nvidium {
+    public static boolean IS_DEBUG = true;
+
     public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
     public static boolean IS_ENABLED = false;
-    public static boolean IS_DEBUG = false;
     public static RenderPipeline pipeline;
 
 
@@ -33,5 +40,15 @@ public class Nvidium {
         } else {
             LOGGER.info("Not all requirements met, disabling nvidium");
         }
+
+        //SodiumClientMod.options().advanced.enableMemoryTracing = true;
+    }
+
+
+    public static void setupGLDebugCallback() {
+        GLDebugMessageCallback proc = GLDebugMessageCallback.create((source, type, id, severity, length, message, userParam) -> {
+            System.out.println(source);
+        });
+        glDebugMessageCallback(proc, 0);
     }
 }
