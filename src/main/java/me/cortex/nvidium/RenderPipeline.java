@@ -72,6 +72,8 @@ public class RenderPipeline {
 
     private final DownloadTaskStream downloadStream;
 
+    private final int bufferSizesMB;
+
     public RenderPipeline() {
         sectionManager = new SectionManager(device, MinecraftClient.getInstance().options.getClampedViewDistance(), 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
@@ -79,14 +81,18 @@ public class RenderPipeline {
         sectionRasterizer = new SectionRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
         int maxRegions = sectionManager.getRegionManager().maxRegions();
+        int cbs = sectionManager.getTotalBufferSizes();
         sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2L);
+        cbs += SCENE_SIZE+ maxRegions*2L;
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
+        cbs += maxRegions;
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L * 2);
+        cbs += maxRegions * 256L * 2;
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
+        cbs += maxRegions*8L*7;
         downloadStream = new DownloadTaskStream(device, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, 16000000);
 
-        //Preset the bias
-        glPolygonOffset( -0.001f, -0.1f);
+        bufferSizesMB = cbs/(1024*1024);
     }
 
     private int prevRegionCount;
@@ -290,5 +296,9 @@ public class RenderPipeline {
         regionRasterizer.delete();
         sectionRasterizer.delete();
         translucencyTerrainRasterizer.delete();
+    }
+
+    public int getOtherBufferSizesMB() {
+        return bufferSizesMB;
     }
 }

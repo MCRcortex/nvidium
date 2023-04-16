@@ -17,6 +17,7 @@ public class MixinSodiumWorldRenderer {
         if (Nvidium.IS_ENABLED) {
             var debugStrings = new ArrayList<String>();
             debugStrings.add("Using nvidium renderer");
+            debugStrings.add("Other Memory MB: " + Nvidium.pipeline.getOtherBufferSizesMB());
             debugStrings.add("Terrain Memory MB: " + Nvidium.pipeline.sectionManager.terrainAreana.getAllocatedMB());
             debugStrings.add(String.format("Fragmentation: %.2f", Nvidium.pipeline.sectionManager.terrainAreana.getFragmentation()*100));
             cir.setReturnValue(debugStrings);

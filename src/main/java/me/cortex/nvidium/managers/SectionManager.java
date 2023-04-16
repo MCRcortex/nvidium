@@ -33,8 +33,14 @@ public class SectionManager {
     private final RenderDevice device;
 
     private final int formatSize;
+
+    private final int bufferSize;
     public SectionManager(RenderDevice device, int rd, int height, int frames, int quadVertexSize) {
+        this.device = device;
+
+        int bs = 0;
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
+        bs += 160000000;
         //int widthSquared = (rd*2+1)*(rd*2+1);
 
         //int maxRegions = (int) Math.ceil((((double) widthSquared*height)/256))*2;
@@ -43,10 +49,12 @@ public class SectionManager {
 
         this.formatSize = quadVertexSize;
         this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * (8*4*8) * SECTION_SIZE);
+        bs += (long) maxRegions * (8*4*8) * SECTION_SIZE;
         this.terrainAreana = new BufferArena(device, quadVertexSize);
         this.sectionOffset.defaultReturnValue(-1);
         this.regionManager = new RegionManager(device, maxRegions);
-        this.device = device;
+        bs += maxRegions * RegionManager.META_SIZE;
+        bufferSize = bs;
     }
 
     private long getSectionKey(int x, int y, int z) {
@@ -138,6 +146,10 @@ public class SectionManager {
 
     public int getSectionRegionIndex(int x, int y, int z) {
         return sectionOffset.getOrDefault(getSectionKey(x,y,z), -1);
+    }
+
+    public int getTotalBufferSizes() {
+        return bufferSize;
     }
 }
 
