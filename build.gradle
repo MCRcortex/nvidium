@@ -5,6 +5,17 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
+
+apply plugin: "fabric-loom"
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
 repositories {
     exclusiveContent {
         forRepository {

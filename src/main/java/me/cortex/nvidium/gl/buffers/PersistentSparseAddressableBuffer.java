@@ -21,7 +21,8 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
 
     public final long addr;
     public final long size;
-    private final long PAGE_SIZE = 1<<16;
+    public static final long PAGE_SIZE = 1<<16;
+
     public PersistentSparseAddressableBuffer(long size) {
         super(glCreateBuffers());
         this.size = alignUp(size, PAGE_SIZE);
@@ -42,13 +43,13 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
 
     private final Int2IntOpenHashMap allocationCount = new Int2IntOpenHashMap();
 
-    //TODO: FIXME: need to batch these together as much as possible
     private void allocatePages(int page, int pageCount) {
         doCommit(id, PAGE_SIZE * page, PAGE_SIZE * pageCount, true);
         for (int i = 0; i < pageCount; i++) {
             allocationCount.addTo(i+page,1);
         }
     }
+
     private void deallocatePages(int page, int pageCount) {
         for (int i = 0; i < pageCount; i++) {
             int newCount = allocationCount.get(i+page) - 1;
@@ -61,6 +62,9 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
         }
     }
 
+    public int getPagesCommitted() {
+        return allocationCount.size();
+    }
 
     public void ensureAllocated(long addr, long size) {
         int pstart = (int) (addr/PAGE_SIZE);
