@@ -15,7 +15,7 @@ import me.cortex.nvidium.util.TickableManager;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
-import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
+import me.jellysquid.mods.sodium.client.render.chunk.format.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -51,19 +51,6 @@ hm.size()
 public class RenderPipeline {
     public static final int GL_DRAW_INDIRECT_UNIFIED_NV = 0x8F40;
     public static final int GL_DRAW_INDIRECT_ADDRESS_NV = 0x8F41;
-    //The rough pipeline outline is
-
-    //Raster terrain via command lists
-    //Generate a 4x4 downsampled depth buffer
-    //Raster regions using representitve test
-    //Raster chunk visibility meshs via command list
-    //Generate command lists and delta lists
-    //Raster delta list then translucency
-
-
-    //Memory management is done through a large streaming buffer and gl memory copies
-    //The main terrain buffer is a large gpu resident sparse buffer and holds the entire worlds data
-
 
     private static final RenderDevice device = new RenderDevice();
 
@@ -82,8 +69,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer terrainCommandBuffer;
 
     public RenderPipeline() {
-        //32
-        sectionManager = new SectionManager(device, 128, 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
+        sectionManager = new SectionManager(device, 32, 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
@@ -101,8 +87,6 @@ public class RenderPipeline {
     private int prevRegionCount;
     private int frameId;
 
-
-    long otherFrameRecord = System.nanoTime();
     public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, ChunkCameraContext cam) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i chunkPos = new Vector3i(((int)Math.floor(cam.posX))>>4, ((int)Math.floor(cam.posY))>>4, ((int)Math.floor(cam.posZ))>>4);
@@ -220,6 +204,10 @@ public class RenderPipeline {
             }
         }
 
+        if (false) {
+            glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
+            glColorMask(true, true, true, true);
+        }
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDisable(GL_POLYGON_OFFSET_FILL);

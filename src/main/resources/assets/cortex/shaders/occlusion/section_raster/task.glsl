@@ -65,20 +65,28 @@ void main() {
 
     //Check each axis and emit a render call or cull out that call (ternary op so it might be free)
     //TODO: SEE HOW EXPENSIVE THIS IS, that is if its free or does branching
-//THIS IS BROKEN
-    terrainCommandBuffer[base+0] = startX<=chunkPosition.x?uvec2((uint32_t)count, _visOutBase|(EAST<<29)):uvec2(0);
-    terrainCommandBuffer[base+1] = endX>=chunkPosition.x?uvec2((uint32_t)count, _visOutBase|(WEST<<29)):uvec2(0);
-    terrainCommandBuffer[base+2] = startY<=chunkPosition.y?uvec2((uint32_t)count, _visOutBase|(UP<<29)):uvec2(0);
-    terrainCommandBuffer[base+3] = endY>=chunkPosition.y?uvec2((uint32_t)count, _visOutBase|(DOWN<<29)):uvec2(0);
+    terrainCommandBuffer[base+0] = startY<=chunkPosition.y?uvec2((uint32_t)count, _visOutBase|(UP<<29)):uvec2(0);
+    terrainCommandBuffer[base+1] = endY>=chunkPosition.y?uvec2((uint32_t)count, _visOutBase|(DOWN<<29)):uvec2(0);
+    terrainCommandBuffer[base+2] = startX<=chunkPosition.x?uvec2((uint32_t)count, _visOutBase|(EAST<<29)):uvec2(0);
+    terrainCommandBuffer[base+3] = endX>=chunkPosition.x?uvec2((uint32_t)count, _visOutBase|(WEST<<29)):uvec2(0);
     terrainCommandBuffer[base+4] = startZ<=chunkPosition.z?uvec2((uint32_t)count, _visOutBase|(SOUTH<<29)):uvec2(0);
     terrainCommandBuffer[base+5] = endZ>=chunkPosition.z?uvec2((uint32_t)count, _visOutBase|(NORTH<<29)):uvec2(0);
     terrainCommandBuffer[base+6] = uvec2((uint32_t)count, _visOutBase|(UNASSIGNED<<29));
 
 
-    //terrainCommandBuffer[base+0] = uvec2((uint32_t)count, _visOutBase|(EAST<<29));
-    //terrainCommandBuffer[base+1] = uvec2((uint32_t)count, _visOutBase|(WEST<<29));
-    //terrainCommandBuffer[base+2] = uvec2((uint32_t)count, _visOutBase|(UP<<29));
-    //terrainCommandBuffer[base+3] = uvec2((uint32_t)count, _visOutBase|(DOWN<<29));
+    //terrainCommandBuffer[base+0] = chunkPosition.y>=startY  ?uvec2((uint32_t)count, _visOutBase|(UP<<29)):uvec2(0);
+    //terrainCommandBuffer[base+1] = chunkPosition.y<=endY    ?uvec2((uint32_t)count, _visOutBase|(DOWN<<29)):uvec2(0);
+    //terrainCommandBuffer[base+2] = chunkPosition.x>=startX  ?uvec2((uint32_t)count, _visOutBase|(EAST<<29)):uvec2(0);
+    //terrainCommandBuffer[base+3] = chunkPosition.x<=endX    ?uvec2((uint32_t)count, _visOutBase|(WEST<<29)):uvec2(0);
+    //terrainCommandBuffer[base+4] = chunkPosition.z>=startZ  ?uvec2((uint32_t)count, _visOutBase|(SOUTH<<29)):uvec2(0);
+    //terrainCommandBuffer[base+5] = chunkPosition.z<=endZ    ?uvec2((uint32_t)count, _visOutBase|(NORTH<<29)):uvec2(0);
+    //terrainCommandBuffer[base+6] = uvec2((uint32_t)count, _visOutBase|(UNASSIGNED<<29));
+
+
+    //terrainCommandBuffer[base+0] = uvec2((uint32_t)count, _visOutBase|(UP<<29));
+    //terrainCommandBuffer[base+1] = uvec2((uint32_t)count, _visOutBase|(DOWN<<29));
+    //terrainCommandBuffer[base+2] = uvec2((uint32_t)count, _visOutBase|(EAST<<29));
+    //terrainCommandBuffer[base+3] = uvec2((uint32_t)count, _visOutBase|(WEST<<29));
     //terrainCommandBuffer[base+4] = uvec2((uint32_t)count, _visOutBase|(SOUTH<<29));
     //terrainCommandBuffer[base+5] = uvec2((uint32_t)count, _visOutBase|(NORTH<<29));
     //terrainCommandBuffer[base+6] = uvec2((uint32_t)count, _visOutBase|(UNASSIGNED<<29));

@@ -65,13 +65,13 @@ void main() {
         uint8_t msk = (uint8_t)(1<<UNASSIGNED);
         //TODO: Instead of emitting a mask, could generate the render bounds directly in here since it
         // should already be in cache and fast to do TODO: explore this
-        msk |= (uint8_t)((relativeChunkPos.x<=0)?(1<<EAST):0);
-        msk |= (uint8_t)((relativeChunkPos.x>=0)?(1<<WEST):0);
         msk |= (uint8_t)((relativeChunkPos.y<=0)?(1<<UP):0);
         msk |= (uint8_t)((relativeChunkPos.y>=0)?(1<<DOWN):0);
+        msk |= (uint8_t)((relativeChunkPos.x<=0)?(1<<EAST):0);
+        msk |= (uint8_t)((relativeChunkPos.x>=0)?(1<<WEST):0);
         msk |= (uint8_t)((relativeChunkPos.z<=0)?(1<<SOUTH):0);
         msk |= (uint8_t)((relativeChunkPos.z>=0)?(1<<NORTH):0);
-        sectionFaceVisibility[visibilityIndex] = msk;//(uint8_t)0xFF
+        sectionFaceVisibility[visibilityIndex] = msk;
 
         //Set frameid to old old frame to stop maybe visibility every 256 frames
         //TODO: need to still check if chunk wasnt visible last frame but is visible this frame

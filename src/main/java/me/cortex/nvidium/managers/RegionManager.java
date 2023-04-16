@@ -95,9 +95,9 @@ public class RegionManager {
             }
 
             return packRegion(count,
-                    maxX-minX,//FIXME: thse might need +1
-                    maxY-minY,//FIXME: thse might need +1`
-                    maxZ-minZ,//FIXME: thse might need +1`
+                    maxX-minX,
+                    maxY-minY,
+                    maxZ-minZ,
                     (rx<<3)+minX,
                     (ry<<2)+minY,
                     (rz<<3)+minZ);

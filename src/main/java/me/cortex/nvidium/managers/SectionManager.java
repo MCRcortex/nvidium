@@ -94,7 +94,11 @@ public class SectionManager {
             int geo = Short.toUnsignedInt(offsets[i*2])|(Short.toUnsignedInt(offsets[i*2+1])<<16);
             MemoryUtil.memPutInt(segment, geo);
             segment += 4;
-        }
+        }/*
+        for (int i = 0; i < 8; i++) {
+            MemoryUtil.memPutShort(segment, offsets[i]);
+            segment += 2;
+        }*/
     }
 
     public void deleteSection(RenderSection section) {

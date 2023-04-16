@@ -1,10 +1,16 @@
 package me.cortex.nvidium.sodiumCompat;
 
+import me.cortex.nvidium.Nvidium;
+import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
 import net.minecraft.util.Identifier;
 
 public class ShaderLoader {
     public static String parse(Identifier path) {
-        return String.join("\n", ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">"));
+        var builder = ShaderConstants.builder();
+        if (Nvidium.IS_DEBUG) {
+            builder.add("DEBUG");
+        }
+        return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());
     }
 }

@@ -4,16 +4,22 @@
   "version": "${version}",
   "name": "Nvidium",
   "description": "",
-  "authors": [],
+  "authors": [
+    "Cortex"
+  ],
   "contact": {},
-  "license": "MIT",
-  "icon": "assets/nvidium/icon.png",
-  "environment": "*",
+  "license": "ARR",
+  "icon": "assets/cortex/nvidium.png",
+  "environment": "client",
   "entrypoints": {},
   "mixins": [
     "nvidium.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.14"
+    "fabricloader": ">=0.14",
+    "sodium": "=0.4.10"
+  },
+  "breaks": {
+    "iris": "*"
   }
 }
