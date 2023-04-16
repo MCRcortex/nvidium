@@ -21,4 +21,7 @@ public class SectionRasterizer extends Phase {
         glDrawMeshTasksNV(0,regionCount);
     }
 
+    public void delete() {
+        shader.delete();
+    }
 }

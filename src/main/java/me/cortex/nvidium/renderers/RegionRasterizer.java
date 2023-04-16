@@ -19,4 +19,8 @@ public class RegionRasterizer extends Phase {
         shader.bind();
         glDrawMeshTasksNV(0,regionCount);
     }
+
+    public void delete() {
+        shader.delete();
+    }
 }

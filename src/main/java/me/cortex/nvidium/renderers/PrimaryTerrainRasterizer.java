@@ -5,6 +5,7 @@ import me.cortex.nvidium.sodiumCompat.ShaderLoader;
 import me.cortex.nvidium.sodiumCompat.mixin.LightMapAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
+import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GL45C;
 
 import static me.cortex.nvidium.RenderPipeline.GL_DRAW_INDIRECT_ADDRESS_NV;
@@ -45,5 +46,11 @@ public class PrimaryTerrainRasterizer extends Phase {
         glMultiDrawMeshTasksIndirectNV( 0, regionCount*7, 0);
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
+    }
+
+    public void delete() {
+        GL45.glDeleteSamplers(blockSampler);
+        GL45.glDeleteSamplers(lightSampler);
+        shader.delete();
     }
 }

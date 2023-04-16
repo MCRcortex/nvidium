@@ -275,6 +275,10 @@ public class RenderPipeline {
         regionVisibility.delete();
         sectionVisibility.delete();
         terrainCommandBuffer.delete();
-        //TODO: Delete rest of the render passes
+
+        terrainRasterizer.delete();
+        regionRasterizer.delete();
+        sectionRasterizer.delete();
+        translucencyTerrainRasterizer.delete();
     }
 }
