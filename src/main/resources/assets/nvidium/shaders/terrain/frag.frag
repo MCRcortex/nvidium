@@ -10,7 +10,7 @@
 
 //#extension GL_NV_fragment_shader_barycentric : require
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 layout(location = 0) out vec4 colour;
 layout(location = 1) in Interpolants {

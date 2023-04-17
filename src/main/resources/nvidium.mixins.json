@@ -9,12 +9,10 @@
     "MixinRenderSection",
     "MixinRenderSectionManager",
     "MixinSodiumWorldRenderer",
-    "MixinWindow"
+    "MixinWindow",
+    "MixinSodiumOptionsGUI"
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-    "MixinSodiumGameOptionPage"
-  ]
+  }
 }

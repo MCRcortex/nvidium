@@ -11,7 +11,7 @@
 #extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_vote : require
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 #define MESH_WORKLOAD_PER_INVOCATION 16
 

@@ -11,7 +11,7 @@
 #extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_vote : require
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;

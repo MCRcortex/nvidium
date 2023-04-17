@@ -11,7 +11,7 @@
 #extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_vote : require
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
 layout(local_size_x=1) in;

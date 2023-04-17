@@ -1,15 +1,10 @@
 package me.cortex.nvidium;
 
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import me.cortex.nvidium.sodiumCompat.NvidiumConfig;
 import net.minecraft.util.Util;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLDebugMessageCallback;
-import org.lwjgl.system.NativeType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.lwjgl.opengl.GL43C.glDebugMessageCallback;
 
 public class Nvidium {
     public static boolean IS_DEBUG = false;

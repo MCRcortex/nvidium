@@ -19,9 +19,9 @@ public class PrimaryTerrainRasterizer extends Phase {
     private final int blockSampler = glGenSamplers();
     private final int lightSampler = glGenSamplers();
     private final Shader shader = Shader.make()
-            .addSource(TASK, ShaderLoader.parse(new Identifier("cortex", "terrain/task.glsl")))
-            .addSource(MESH, ShaderLoader.parse(new Identifier("cortex", "terrain/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("cortex", "terrain/frag.frag"))).compile();
+            .addSource(TASK, ShaderLoader.parse(new Identifier("nvidium", "terrain/task.glsl")))
+            .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "terrain/mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/frag.frag"))).compile();
 
     public PrimaryTerrainRasterizer() {
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);

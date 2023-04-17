@@ -8,7 +8,7 @@
 #extension GL_NV_shader_buffer_load : require
 
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 //TODO: maybe do multiple cubes per workgroup? this would increase utilization of individual sm's
 layout(local_size_x = 8) in;

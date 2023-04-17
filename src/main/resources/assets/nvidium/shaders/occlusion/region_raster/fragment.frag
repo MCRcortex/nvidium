@@ -6,7 +6,7 @@
 #extension GL_NV_bindless_texture : require
 #extension GL_NV_shader_buffer_load : require
 
-#import <cortex:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 layout(early_fragment_tests) in;
 
 #ifdef DEBUG

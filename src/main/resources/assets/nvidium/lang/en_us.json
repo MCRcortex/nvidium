@@ -1,0 +1,5 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.disable_chunk_unload.name" : "Disable chunk unload",
+  "nvidium.options.disable_chunk_unload.tooltip" : "Disables chunk unloading, any chunk that is loaded will stay loaded and rendered, regardless of render distance"
+}

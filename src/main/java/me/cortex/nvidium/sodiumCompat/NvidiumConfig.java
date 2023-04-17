@@ -1,9 +1,9 @@
-package me.cortex.nvidium;
+package me.cortex.nvidium.sodiumCompat;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import me.jellysquid.mods.sodium.client.gui.SodiumGameOptions;
+import me.cortex.nvidium.Nvidium;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.FileReader;

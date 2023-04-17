@@ -1,5 +1,6 @@
-package me.cortex.nvidium;
+package me.cortex.nvidium.sodiumCompat;
 
+import me.cortex.nvidium.Nvidium;
 import me.jellysquid.mods.sodium.client.gui.options.storage.OptionStorage;
 
 public class NvidiumConfigStore implements OptionStorage<NvidiumConfig> {

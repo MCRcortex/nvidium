@@ -9,7 +9,7 @@
   ],
   "contact": {},
   "license": "ARR",
-  "icon": "assets/cortex/nvidium.png",
+  "icon": "assets/nvidium/nvidium.png",
   "environment": "client",
   "entrypoints": {},
   "mixins": [
