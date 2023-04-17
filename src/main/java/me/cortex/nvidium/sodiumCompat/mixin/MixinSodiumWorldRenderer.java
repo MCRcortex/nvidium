@@ -16,10 +16,7 @@ public class MixinSodiumWorldRenderer {
     private void redirectDebug(CallbackInfoReturnable<Collection<String>> cir) {
         if (Nvidium.IS_ENABLED) {
             var debugStrings = new ArrayList<String>();
-            debugStrings.add("Using nvidium renderer");
-            debugStrings.add("Other Memory MB: " + Nvidium.pipeline.getOtherBufferSizesMB());
-            debugStrings.add("Terrain Memory MB: " + Nvidium.pipeline.sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
-            debugStrings.add(String.format("Fragmentation: %.2f", Nvidium.pipeline.sectionManager.terrainAreana.getFragmentation()*100));
+            Nvidium.pipeline.addDebugInfo(debugStrings);
             cir.setReturnValue(debugStrings);
             cir.cancel();
         }

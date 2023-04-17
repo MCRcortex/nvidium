@@ -27,6 +27,8 @@ import org.joml.Vector3i;
 import org.joml.Vector4i;
 import org.lwjgl.system.MemoryUtil;
 
+import java.util.List;
+
 import static me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer.alignUp;
 import static org.lwjgl.opengl.ARBDirectStateAccess.glClearNamedBufferSubData;
 import static org.lwjgl.opengl.GL11.*;
@@ -82,7 +84,7 @@ public class RenderPipeline {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
-        sectionManager = new SectionManager(device, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance(), 24, CompactChunkVertex.STRIDE);
+        sectionManager = new SectionManager(device, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
         visibilityTracker = new VisibilityTracker(downloadStream, frames, sectionManager.getRegionManager());
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
@@ -208,7 +210,7 @@ public class RenderPipeline {
         }
 
         glEnable( GL_POLYGON_OFFSET_FILL );
-        glPolygonOffset( 0, -1);//TODO: OPTIMZIE THIS
+        glPolygonOffset( 0, -40);//TODO: OPTIMZIE THIS
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -319,5 +321,14 @@ public class RenderPipeline {
 
     public int getOtherBufferSizesMB() {
         return bufferSizesMB;
+    }
+
+    public void addDebugInfo(List<String> info) {
+        info.add("Using nvidium renderer");
+        info.add("Other Memory MB: " + getOtherBufferSizesMB());
+        info.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
+        info.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
+        info.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
+
     }
 }

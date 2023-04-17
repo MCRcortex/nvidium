@@ -15,6 +15,9 @@ import java.nio.file.Path;
 public class NvidiumConfig {
     //The options
     public boolean disable_chunk_unloading = false;
+    public int extra_rd = 0;
+
+
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .setPrettyPrinting()

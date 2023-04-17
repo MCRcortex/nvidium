@@ -5,6 +5,8 @@ import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.sodiumCompat.NvidiumConfigStore;
 import me.jellysquid.mods.sodium.client.gui.SodiumOptionsGUI;
 import me.jellysquid.mods.sodium.client.gui.options.*;
+import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;
+import me.jellysquid.mods.sodium.client.gui.options.control.SliderControl;
 import me.jellysquid.mods.sodium.client.gui.options.control.TickBoxControl;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -36,6 +38,15 @@ public class MixinSodiumOptionsGUI {
                         .setImpact(OptionImpact.HIGH)
                         .setEnabled(Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.disable_chunk_unloading = value, opts -> opts.disable_chunk_unloading)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build()
+                ).add(OptionImpl.createBuilder(int.class, store)
+                        .setName(Text.translatable("nvidium.options.extra_render_distance.name"))
+                        .setTooltip(Text.translatable("nvidium.options.extra_render_distance.tooltip"))
+                        .setControl(option -> new SliderControl(option, 0, 100, 1, ControlValueFormatter.translateVariable("options.chunks")))
+                        .setImpact(OptionImpact.VARIES)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setBinding((opts, value) -> opts.extra_rd = value, opts -> opts.extra_rd)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
