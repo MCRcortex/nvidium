@@ -12,7 +12,8 @@ import org.slf4j.LoggerFactory;
 import static org.lwjgl.opengl.GL43C.glDebugMessageCallback;
 
 public class Nvidium {
-    public static boolean IS_DEBUG = true;
+    public static boolean IS_DEBUG = false;
+    public static boolean SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = true;
 
     public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
     public static boolean IS_ENABLED = false;
@@ -42,14 +43,13 @@ public class Nvidium {
             LOGGER.warn("Not all requirements met, disabling nvidium");
         }
         if (IS_ENABLED && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
-            LOGGER.warn("Linux currently unsupported due to driver inconsistencies, disabling nvidium");
-            IS_ENABLED = false;
+            LOGGER.warn("Linux currently uses fallback terrain buffer due to driver inconsistencies, expect increase vram usage");
+            SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = false;
         }
 
         if (IS_ENABLED) {
             LOGGER.info("Enabling Nvidium");
         }
-        //SodiumClientMod.options().advanced.enableMemoryTracing = true;
     }
 
 

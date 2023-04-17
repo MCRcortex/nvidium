@@ -1,31 +1,42 @@
 package me.cortex.nvidium.util;
 
+import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.gl.RenderDevice;
+import me.cortex.nvidium.gl.buffers.Buffer;
+import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer;
 
 public class BufferArena {
     SegmentedManager segments = new SegmentedManager();
     private final RenderDevice device;
-    public final PersistentSparseAddressableBuffer buffer;
+    public final IDeviceMappedBuffer buffer;
     private long totalQuads;
 
 
     public BufferArena(RenderDevice device, int vertexFormatSize) {
         this.device = device;
-        buffer = device.createSparseBuffer(80000000000L);//Create a 80gb buffer
+        if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER) {
+            buffer = device.createSparseBuffer(80000000000L);//Create a 80gb buffer
+        } else {
+            buffer = device.createDeviceOnlyMappedBuffer(4000000000L);//create 4gb allocate
+        }
     }
 
     public int allocQuads(int quadCount) {
         totalQuads += quadCount;
         int addr = (int) segments.alloc(quadCount);
-        buffer.ensureAllocated(Integer.toUnsignedLong(addr)*4L*20, quadCount*4L*20);
+        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
+            psab.ensureAllocated(Integer.toUnsignedLong(addr) * 4L * 20, quadCount * 4L * 20);
+        }
         return addr;
     }
 
     public void free(int addr) {
         int count = segments.free(addr);
         totalQuads -= count;
-        buffer.deallocate(Integer.toUnsignedLong(addr)*4L*20, count*4L*20);
+        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
+            psab.deallocate(Integer.toUnsignedLong(addr) * 4L * 20, count * 4L * 20);
+        }
     }
 
     public long upload(UploadingBufferStream stream, int addr) {
@@ -37,12 +48,20 @@ public class BufferArena {
     }
 
     public int getAllocatedMB() {
-        return (int) ((buffer.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE)/(1024*1024));
+        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
+            return (int) ((psab.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE) / (1024 * 1024));
+        } else {
+            return (int) (4000000000L/(1024*1024));
+        }
     }
 
     public float getFragmentation() {
         long expected = totalQuads * 20 * 4;
-        long have = (buffer.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE);
-        return (float) ((double)expected/have);
+        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
+            long have = (psab.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE);
+            return (float) ((double) expected / have);
+        } else {
+            return (float)((double)expected/(4000000000L));
+        }
     }
 }

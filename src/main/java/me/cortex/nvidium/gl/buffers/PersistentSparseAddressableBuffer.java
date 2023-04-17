@@ -1,6 +1,7 @@
 package me.cortex.nvidium.gl.buffers;
 
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.gl.GlObject;
 import org.lwjgl.opengl.ARBSparseBuffer;
 import org.lwjgl.opengl.GL15;
@@ -25,6 +26,9 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
 
     public PersistentSparseAddressableBuffer(long size) {
         super(glCreateBuffers());
+        if (!Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER) {
+            throw new IllegalStateException();
+        }
         this.size = alignUp(size, PAGE_SIZE);
         glNamedBufferStorage(id, size, GL_SPARSE_STORAGE_BIT_ARB);
         long[] holder = new long[1];
