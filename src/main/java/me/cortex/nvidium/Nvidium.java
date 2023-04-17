@@ -1,6 +1,7 @@
 package me.cortex.nvidium;
 
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import net.minecraft.util.Util;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLDebugMessageCallback;
@@ -36,11 +37,18 @@ public class Nvidium {
                 cap.GL_NV_bindless_multi_draw_indirect;
         IS_ENABLED = supported;
         if (IS_ENABLED) {
-            LOGGER.info("All capabilities met, enabling nvidium");
+            LOGGER.info("All capabilities met");
         } else {
-            LOGGER.info("Not all requirements met, disabling nvidium");
+            LOGGER.warn("Not all requirements met, disabling nvidium");
+        }
+        if (IS_ENABLED && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
+            LOGGER.warn("Linux currently unsupported due to driver inconsistencies, disabling nvidium");
+            IS_ENABLED = false;
         }
 
+        if (IS_ENABLED) {
+            LOGGER.info("Enabling Nvidium");
+        }
         //SodiumClientMod.options().advanced.enableMemoryTracing = true;
     }
 
