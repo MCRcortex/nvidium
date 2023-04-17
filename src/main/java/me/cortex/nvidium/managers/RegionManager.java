@@ -8,7 +8,6 @@ import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import net.minecraft.util.math.ChunkSectionPos;
-import org.joml.Vector3i;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.BitSet;
@@ -43,6 +42,27 @@ public class RegionManager {
         var region = regions[regionId];
         if (region == null) return false;
         return region.rx == x && region.ry == y && region.rz == z;
+    }
+
+    public void markVisible(short regionId, int frame) {
+        var region = regions[regionId];
+        //Rare case since this is called N frames behind, the region might not exist
+        // or worse be a completely different region
+        if (region == null) {
+            return;
+        }
+        region.lastSeenVisible = frame;
+        region.lastSeenFrustum = frame;
+    }
+
+    public void markFrustum(short regionId, int frame) {
+        var region = regions[regionId];
+        //Rare case since this is called N frames behind, the region might not exist
+        // or worse be a completely different region
+        if (region == null) {
+            return;
+        }
+        region.lastSeenFrustum = frame;
     }
 
     //IDEA: make it so that sections are packed into regions, that is the local index of a chunk is hard coded to its position, and just 256 sections are processed when a region is visible, this has some overhead but means that the exact amount being processed each time is known and the same
@@ -104,6 +124,10 @@ public class RegionManager {
                     (ry<<2)+minY,
                     (rz<<3)+minZ);
         }
+
+        public int getVisibilityDelta() {
+            return lastSeenFrustum - lastSeenVisible;
+        }
     }
 
     public static long getRegionKey(int sectionX, int sectionY, int sectionZ) {
@@ -164,6 +188,7 @@ public class RegionManager {
         }
     }
 
+    //TODO: need to batch changes, cause in alot of cases the region is updated multiple times a frame
     private void updateRegion(UploadingBufferStream uploadingStream, Region region) {
         long segment = uploadingStream.getUpload(regionBuffer, (long) region.id * META_SIZE, META_SIZE);
         MemoryUtil.memPutLong(segment, region.getPackedData());
@@ -204,5 +229,19 @@ public class RegionManager {
         return  Math.abs((region.rx<<3)+4-camChunkX)+
                 Math.abs((region.ry<<2)+2-camChunkY)+
                 Math.abs((region.rz<<3)+4-camChunkZ);
+    }
+
+    public int findMaxSeenDelta() {
+        int delta = Integer.MIN_VALUE;
+        int id = -1;
+        for (int i = 0; i < maxRegionIndex(); i++) {
+            var region = regions[i];
+            if (region == null) continue;
+            if (delta < region.getVisibilityDelta()) {
+                id = region.id;
+                delta = region.getVisibilityDelta();
+            }
+        }
+        return id;
     }
 }

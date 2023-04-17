@@ -24,7 +24,7 @@ taskNV in Task {
 
 layout(location=1) out Interpolants {
     vec4 tint;
-    vec2 uv;
+    vec3 uv_bias;
 } OUT[];
 
 
@@ -60,8 +60,9 @@ void main() {
     gl_PrimitiveIndicesNV[primId+1] = (isA?1:3)+idxBase;
     gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv = vec2(A.g,A.h)/65535;
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv = vec2(B.g,B.h)/65535;
+    uint material = uint(A.d>>8)&0xff;
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias = vec3(vec2(A.g,A.h)/65535, 0.0f);//(material&1u)!=0u?0.0f:-900.0f);//Temporary untill sodium 0.5
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias = vec3(vec2(B.g,B.h)/65535, 0.0f);//(material&1u)!=0u?0.0f:-900.0f);//Temporary untill sodium 0.5
 
 
     vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;

@@ -7,12 +7,14 @@ import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.SectionManager;
+import me.cortex.nvidium.managers.VisibilityTracker;
 import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
 import me.cortex.nvidium.renderers.SectionRasterizer;
 import me.cortex.nvidium.renderers.TranslucentTerrainRasterizer;
 import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
+import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
@@ -57,6 +59,7 @@ public class RenderPipeline {
     private static final RenderDevice device = new RenderDevice();
 
     public final SectionManager sectionManager;
+    public final VisibilityTracker visibilityTracker;
 
     private final PrimaryTerrainRasterizer terrainRasterizer;
     private final RegionRasterizer regionRasterizer;
@@ -70,12 +73,17 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer sectionVisibility;
     private final IDeviceMappedBuffer terrainCommandBuffer;
 
+    private final UploadingBufferStream uploadStream;
     private final DownloadTaskStream downloadStream;
 
     private final int bufferSizesMB;
 
     public RenderPipeline() {
-        sectionManager = new SectionManager(device, MinecraftClient.getInstance().options.getClampedViewDistance(), 24, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, CompactChunkVertex.STRIDE);
+        int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
+        this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
+        this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
+        sectionManager = new SectionManager(device, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance(), 24, CompactChunkVertex.STRIDE);
+        visibilityTracker = new VisibilityTracker(downloadStream, frames, sectionManager.getRegionManager());
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
@@ -90,7 +98,6 @@ public class RenderPipeline {
         cbs += maxRegions * 256L * 2;
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
         cbs += maxRegions*8L*7;
-        downloadStream = new DownloadTaskStream(device, SodiumClientMod.options().advanced.cpuRenderAheadLimit+1, 16000000);
 
         bufferSizesMB = cbs/(1024*1024);
     }
@@ -111,6 +118,8 @@ public class RenderPipeline {
         int visibleRegions = 0;
         int playerRegion = -1;
         int playerRegionId = -1;
+
+        short[] vregions;
         //Enqueue all the visible regions
         {
             var rm = sectionManager.getRegionManager();
@@ -130,11 +139,13 @@ public class RenderPipeline {
             if (visibleRegions == 0) return;
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
             int j = 0;
+            vregions = new short[regions.size()];
             for (int i : regions) {
                 if (((short)i) == playerRegionId) {
                     playerRegion = j;
                 }
                 MemoryUtil.memPutShort(addr+((long) j <<1), (short) i);
+                vregions[j] = ((short)i);
                 j++;
             }
         }
@@ -215,6 +226,9 @@ public class RenderPipeline {
             }
         }
 
+        {//Tick the visibility tracker
+            visibilityTracker.onFrame(vregions, regionVisibility);
+        }
         /*
         {//Download the region visibility from the gpu, used for determining culling
             downloadStream.download(regionVisibility, 0, visibleRegions, addr->{
@@ -287,6 +301,8 @@ public class RenderPipeline {
 
     public void delete() {
         sectionManager.delete();
+        visibilityTracker.delete();
+
         sceneUniform.delete();
         regionVisibility.delete();
         sectionVisibility.delete();
@@ -296,6 +312,9 @@ public class RenderPipeline {
         regionRasterizer.delete();
         sectionRasterizer.delete();
         translucencyTerrainRasterizer.delete();
+
+        downloadStream.delete();
+        uploadStream.delete();
     }
 
     public int getOtherBufferSizesMB() {

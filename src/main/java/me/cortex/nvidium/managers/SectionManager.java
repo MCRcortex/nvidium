@@ -35,12 +35,10 @@ public class SectionManager {
     private final int formatSize;
 
     private final int bufferSize;
-    public SectionManager(RenderDevice device, int rd, int height, int frames, int quadVertexSize) {
+    public SectionManager(RenderDevice device, UploadingBufferStream uploadStream, int rd, int height, int quadVertexSize) {
         this.device = device;
-
-        int bs = 0;
-        this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
-        bs += 160000000;
+        this.uploadStream = uploadStream;
+        int bs = 16000000;
         //int widthSquared = (rd*2+1)*(rd*2+1);
 
         //int maxRegions = (int) Math.ceil((((double) widthSquared*height)/256))*2;
@@ -130,7 +128,6 @@ public class SectionManager {
     }
 
     public void delete() {
-        uploadStream.delete();
         sectionBuffer.delete();
         terrainAreana.delete();
         regionManager.delete();
