@@ -46,7 +46,9 @@ public class MixinRenderSectionManager {
     @Inject(method = "unloadSection", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;delete()V", shift = At.Shift.BEFORE), locals = LocalCapture.CAPTURE_FAILHARD)
     private void deleteSection(int x, int y, int z, CallbackInfoReturnable<Boolean> cir, RenderSection chunk) {
         if (Nvidium.IS_ENABLED) {
-            Nvidium.pipeline.sectionManager.deleteSection(chunk);
+            if (!Nvidium.config.disable_chunk_unloading) {
+                Nvidium.pipeline.sectionManager.deleteSection(chunk);
+            }
         }
     }
 

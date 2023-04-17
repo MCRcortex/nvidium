@@ -19,6 +19,7 @@ public class Nvidium {
     public static boolean IS_ENABLED = false;
     public static RenderPipeline pipeline;
 
+    public static NvidiumConfig config = NvidiumConfig.loadOrCreate();
 
     //TODO: basicly have the terrain be a virtual geometry buffer
     // once it gets too full, start culling via a callback task system
