@@ -7,7 +7,6 @@ import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.SectionManager;
-import me.cortex.nvidium.managers.VisibilityTracker;
 import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
 import me.cortex.nvidium.renderers.SectionRasterizer;
@@ -25,6 +24,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.joml.Vector4i;
+import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.List;
@@ -61,7 +61,6 @@ public class RenderPipeline {
     private static final RenderDevice device = new RenderDevice();
 
     public final SectionManager sectionManager;
-    public final VisibilityTracker visibilityTracker;
 
     private final PrimaryTerrainRasterizer terrainRasterizer;
     private final RegionRasterizer regionRasterizer;
@@ -85,7 +84,6 @@ public class RenderPipeline {
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
         sectionManager = new SectionManager(device, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
-        visibilityTracker = new VisibilityTracker(downloadStream, frames, sectionManager.getRegionManager());
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
@@ -214,6 +212,7 @@ public class RenderPipeline {
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
         glDepthMask(false);
         glColorMask(false, false, false, false);
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
@@ -228,9 +227,6 @@ public class RenderPipeline {
             }
         }
 
-        {//Tick the visibility tracker
-            visibilityTracker.onFrame(vregions, regionVisibility);
-        }
         /*
         {//Download the region visibility from the gpu, used for determining culling
             downloadStream.download(regionVisibility, 0, visibleRegions, addr->{
@@ -250,6 +246,7 @@ public class RenderPipeline {
         glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
+        glDepthFunc(GL11C.GL_LEQUAL);
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
@@ -303,7 +300,6 @@ public class RenderPipeline {
 
     public void delete() {
         sectionManager.delete();
-        visibilityTracker.delete();
 
         sceneUniform.delete();
         regionVisibility.delete();

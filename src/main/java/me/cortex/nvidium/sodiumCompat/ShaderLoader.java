@@ -11,6 +11,7 @@ public class ShaderLoader {
         if (Nvidium.IS_DEBUG) {
             builder.add("DEBUG");
         }
+        builder.add("MATERIAL_OVERRIDE", String.valueOf(Nvidium.config.mips_enabled?0:1));
         return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());
     }
 }

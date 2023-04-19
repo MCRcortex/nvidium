@@ -7,11 +7,12 @@ import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer;
 
 public class BufferArena {
-    private static final long FALLBACK_SIZE = 2300000000L;
+    private static long FALLBACK_SIZE;
     SegmentedManager segments = new SegmentedManager();
     private final RenderDevice device;
     public final IDeviceMappedBuffer buffer;
     private long totalQuads;
+
 
 
     public BufferArena(RenderDevice device, int vertexFormatSize) {
@@ -19,6 +20,7 @@ public class BufferArena {
         if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER) {
             buffer = device.createSparseBuffer(80000000000L);//Create a 80gb buffer
         } else {
+            FALLBACK_SIZE = Nvidium.config.fallback_allocation_size * 1024L * 1024L;
             buffer = device.createDeviceOnlyMappedBuffer(FALLBACK_SIZE);//create 2gb allocate
         }
     }

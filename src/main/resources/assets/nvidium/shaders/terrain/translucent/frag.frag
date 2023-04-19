@@ -26,7 +26,7 @@ void main() {
     //uint uid = gl_PrimitiveID*132471+123571;
     //colour = vec4(float((uid>>0)&7)/7, float((uid>>3)&7)/7, float((uid>>6)&7)/7, 1.0);
     //colour = vec4(1.0,1.0,0,1);
-    colour = texture(tex_diffuse, uv);
+    colour = texture(tex_diffuse, uv, -4.0f);
     //if (colour.a < 0.05f) discard;
     colour.xyz *= tint.xyz;
     colour.xyz *= tint.w;

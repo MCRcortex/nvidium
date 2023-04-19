@@ -44,27 +44,6 @@ public class RegionManager {
         return region.rx == x && region.ry == y && region.rz == z;
     }
 
-    public void markVisible(short regionId, int frame) {
-        var region = regions[regionId];
-        //Rare case since this is called N frames behind, the region might not exist
-        // or worse be a completely different region
-        if (region == null) {
-            return;
-        }
-        region.lastSeenVisible = frame;
-        region.lastSeenFrustum = frame;
-    }
-
-    public void markFrustum(short regionId, int frame) {
-        var region = regions[regionId];
-        //Rare case since this is called N frames behind, the region might not exist
-        // or worse be a completely different region
-        if (region == null) {
-            return;
-        }
-        region.lastSeenFrustum = frame;
-    }
-
     //IDEA: make it so that sections are packed into regions, that is the local index of a chunk is hard coded to its position, and just 256 sections are processed when a region is visible, this has some overhead but means that the exact amount being processed each time is known and the same
     private static final class Region {
         private final int rx;
@@ -76,10 +55,6 @@ public class RegionManager {
         private final BitSet freeIndices = new BitSet(256);
         private int count;
         private final byte[] id2pos = new byte[256];
-
-        //Used in geometry culling under heavy memory pressure to determine what to cull or not to cull
-        private int lastSeenFrustum;
-        private int lastSeenVisible;
 
         private Region(long key, int id, int rx, int ry, int rz) {
             this.key = key;
@@ -123,10 +98,6 @@ public class RegionManager {
                     (rx<<3)+minX,
                     (ry<<2)+minY,
                     (rz<<3)+minZ);
-        }
-
-        public int getVisibilityDelta() {
-            return lastSeenFrustum - lastSeenVisible;
         }
     }
 
@@ -229,19 +200,5 @@ public class RegionManager {
         return  Math.abs((region.rx<<3)+4-camChunkX)+
                 Math.abs((region.ry<<2)+2-camChunkY)+
                 Math.abs((region.rz<<3)+4-camChunkZ);
-    }
-
-    public int findMaxSeenDelta() {
-        int delta = Integer.MIN_VALUE;
-        int id = -1;
-        for (int i = 0; i < maxRegionIndex(); i++) {
-            var region = regions[i];
-            if (region == null) continue;
-            if (delta < region.getVisibilityDelta()) {
-                id = region.id;
-                delta = region.getVisibilityDelta();
-            }
-        }
-        return id;
     }
 }
