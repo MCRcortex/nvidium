@@ -7,14 +7,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Nvidium {
+    public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
+    public static boolean IS_ENABLED = false;
     public static boolean IS_DEBUG = false;
     public static boolean SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = true;
 
-    public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
-    public static boolean IS_ENABLED = false;
     public static RenderPipeline pipeline;
 
     public static NvidiumConfig config = NvidiumConfig.loadOrCreate();
+
 
     //TODO: basicly have the terrain be a virtual geometry buffer
     // once it gets too full, start culling via a callback task system

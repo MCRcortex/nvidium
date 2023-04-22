@@ -109,11 +109,9 @@ public class RenderPipeline {
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i chunkPos = new Vector3i(((int)Math.floor(cam.posX))>>4, ((int)Math.floor(cam.posY))>>4, ((int)Math.floor(cam.posZ))>>4);
 
-
+        //Clear the first gl error, not our fault
+        glGetError();
         int err;
-        if ((err = glGetError()) != 0) {
-            throw new IllegalStateException("GLERROR: "+err);
-        }
 
         int visibleRegions = 0;
         int playerRegion = -1;
