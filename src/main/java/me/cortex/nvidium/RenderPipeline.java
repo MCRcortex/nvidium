@@ -7,10 +7,7 @@ import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.SectionManager;
-import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
-import me.cortex.nvidium.renderers.RegionRasterizer;
-import me.cortex.nvidium.renderers.SectionRasterizer;
-import me.cortex.nvidium.renderers.TranslucentTerrainRasterizer;
+import me.cortex.nvidium.renderers.*;
 import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
@@ -65,6 +62,7 @@ public class RenderPipeline {
     private final PrimaryTerrainRasterizer terrainRasterizer;
     private final RegionRasterizer regionRasterizer;
     private final SectionRasterizer sectionRasterizer;
+    private final TemporalTerrainRasterizer temporalRasterizer;
     private final TranslucentTerrainRasterizer translucencyTerrainRasterizer;
 
     private final IDeviceMappedBuffer sceneUniform;
@@ -87,7 +85,9 @@ public class RenderPipeline {
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
+        temporalRasterizer = new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
+
         int maxRegions = sectionManager.getRegionManager().maxRegions();
         int cbs = sectionManager.getTotalBufferSizes();
         sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2L);
@@ -109,11 +109,9 @@ public class RenderPipeline {
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i chunkPos = new Vector3i(((int)Math.floor(cam.posX))>>4, ((int)Math.floor(cam.posY))>>4, ((int)Math.floor(cam.posZ))>>4);
 
-
+        //Clear the first gl error, not our fault
+        glGetError();
         int err;
-        if ((err = glGetError()) != 0) {
-            throw new IllegalStateException("GLERROR: "+err);
-        }
 
         int visibleRegions = 0;
         int playerRegion = -1;
@@ -247,9 +245,6 @@ public class RenderPipeline {
         glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
         glDepthFunc(GL11C.GL_LEQUAL);
-        if ((err = glGetError()) != 0) {
-            throw new IllegalStateException("GLERROR: "+err);
-        }
 
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
             if (playerRegionId != -1) {
@@ -259,6 +254,9 @@ public class RenderPipeline {
                     glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (frameId - 1)});
                 }
             }
+        }
+        if ((err = glGetError()) != 0) {
+            throw new IllegalStateException("GLERROR: "+err);
         }
 
         prevRegionCount = visibleRegions;
@@ -309,6 +307,7 @@ public class RenderPipeline {
         terrainRasterizer.delete();
         regionRasterizer.delete();
         sectionRasterizer.delete();
+        temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
 
         downloadStream.delete();

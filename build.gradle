@@ -48,5 +48,6 @@ dependencies {
     //modImplementation files(file("sodium-fabric-mc1.19.3-0.4.10+rev.916f46d-dirty.jar"))
 
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
+    //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
 }
 
