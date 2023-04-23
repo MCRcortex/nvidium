@@ -61,8 +61,8 @@ void main() {
     gl_PrimitiveIndicesNV[primId+1] = (isA?1:3)+idxBase;
     gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv = vec2(A.g,A.h)/65535;
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv = vec2(B.g,B.h)/65535;
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv = vec2(A.g,A.h)*(1f/65536);
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv = vec2(B.g,B.h)*(1f/65536);
 
 
     vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;
