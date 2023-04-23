@@ -57,7 +57,7 @@ public class MixinRenderSectionManager {
         if (Nvidium.IS_ENABLED) {
             ci.cancel();
             if (pass == BlockRenderPass.SOLID) {
-                Nvidium.pipeline.renderFrame(frustum, matrices, new ChunkCameraContext(x, y, z));
+                Nvidium.pipeline.renderFrame(frustum, matrices, x, y, z);
             } else if (pass == BlockRenderPass.TRANSLUCENT) {
                 Nvidium.pipeline.renderTranslucent();
             }

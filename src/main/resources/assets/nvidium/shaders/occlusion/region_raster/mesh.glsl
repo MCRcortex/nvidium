@@ -10,6 +10,8 @@
 
 #import <nvidium:occlusion/scene.glsl>
 
+#define ADD_SIZE (0.1f/16)
+
 //TODO: maybe do multiple cubes per workgroup? this would increase utilization of individual sm's
 layout(local_size_x = 8) in;
 layout(triangles, max_vertices=8, max_primitives=12) out;
@@ -39,21 +41,16 @@ void main() {
     // this remove an entire level of indirection and also puts region data in the very fast path
     uint64_t data = regionData[regionIndicies[gl_WorkGroupID.x]];//fetch the region data
 
-    //TODO: maybe use shuffle operations to compute the shape
+    vec3 start = ivec3((((int32_t)(data<<12))>>12), (int32_t)((int8_t)(data>>40)), (((int32_t)(data>>8))>>12)) - chunkPosition.xyz - ADD_SIZE;
+    vec3 end = start + 1 + (ivec3(i64vec3(data)>>ivec3(59,62,56))&ivec3(7,3,7)) + (ADD_SIZE*2);
 
-    uint32_t count = (uint32_t)((data>>48)&0xFF);
-    int32_t startY = (int32_t)((int8_t)(data>>40));             //In chunk coordinates
-    int32_t startZ = (((int32_t)(data>>8))>>12);    //In chunk coordinates
-    int32_t startX = (((int32_t)(data<<12))>>12);   //In chunk coordinates
-    int32_t endY = startY + 1 + (int32_t)((data>>62)&0x3);//(technically dont need the 0x3)
-    int32_t endX = startX + 1 + (int32_t)((data>>59)&0x7);
-    int32_t endZ = startZ + 1 + (int32_t)((data>>56)&0x7);
     //TODO: Look into only doing 4 locals, for 2 reasons, its more effective for reducing duplicate computation and bandwidth
     // it also means that each thread can emit 3 primatives, 9 indicies each
 
     //can also do 8 threads then each thread emits a primative and 4 indicies each then the lower 4 emit 1 indice extra each
 
-    vec3 corner = vec3((ivec3(((gl_LocalInvocationID.x&1)==0)?startX:endX, ((gl_LocalInvocationID.x&4)==0)?startY:endY, ((gl_LocalInvocationID.x&2)==0)?startZ:endZ) - chunkPosition.xyz)<<4);
+    vec3 corner = vec3(((gl_LocalInvocationID.x&1)==0)?start.x:end.x, ((gl_LocalInvocationID.x&4)==0)?start.y:end.y, ((gl_LocalInvocationID.x&2)==0)?start.z:end.z);
+    corner *= 16.0f;
     gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = MVP*vec4(corner, 1.0);
 
     int visibilityIndex = (int)gl_WorkGroupID.x;

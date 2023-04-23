@@ -13,6 +13,7 @@
 
 #import <nvidium:occlusion/scene.glsl>
 
+#define ADD_SIZE (0.1f)
 layout(local_size_x = 8) in;
 layout(triangles, max_vertices=8, max_primitives=12) out;
 
@@ -43,16 +44,15 @@ void emitParital(int visIndex) {
 
 void main() {
     uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
-    uvec3 mins = header.xyz&0xF;
-    uvec3 maxs = mins+((header.xyz>>4)&0xF)+1;
+    vec3 mins = (header.xyz&0xF)-ADD_SIZE;
+    vec3 maxs = mins+((header.xyz>>4)&0xF)+1+(ADD_SIZE*2);
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
     ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
     vec3 corner = vec3(relativeChunkPos<<4);
 
-
     //TODO: try mix instead or something other than just ternaries, i think they get compiled to a cmov type instruction but not sure
-    corner += ivec3(((gl_LocalInvocationID.x&1)==0)?mins.x:maxs.x, ((gl_LocalInvocationID.x&4)==0)?mins.y:maxs.y, ((gl_LocalInvocationID.x&2)==0)?mins.z:maxs.z);
+    corner += vec3(((gl_LocalInvocationID.x&1)==0)?mins.x:maxs.x, ((gl_LocalInvocationID.x&4)==0)?mins.y:maxs.y, ((gl_LocalInvocationID.x&2)==0)?mins.z:maxs.z);
     gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = (MVP*vec4(corner, 1.0));
     int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
 

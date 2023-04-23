@@ -105,9 +105,9 @@ public class RenderPipeline {
     private int prevRegionCount;
     private int frameId;
 
-    public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, ChunkCameraContext cam) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
+    public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, double px, double py, double pz) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
-        Vector3i chunkPos = new Vector3i(((int)Math.floor(cam.posX))>>4, ((int)Math.floor(cam.posY))>>4, ((int)Math.floor(cam.posZ))>>4);
+        Vector3i chunkPos = new Vector3i(((int)Math.floor(px))>>4, ((int)Math.floor(py))>>4, ((int)Math.floor(pz))>>4);
 
         //Clear the first gl error, not our fault
         glGetError();
@@ -150,7 +150,7 @@ public class RenderPipeline {
 
         {
             //TODO: maybe segment the uniform buffer into 2 parts, always updating and static where static holds pointers
-            Vector3f delta = new Vector3f((cam.blockX-(chunkPos.x<<4))+cam.deltaX, (cam.blockY-(chunkPos.y<<4))+cam.deltaY, (cam.blockZ-(chunkPos.z<<4))+cam.deltaZ);
+            Vector3f delta = new Vector3f((float) (px-(chunkPos.x<<4)), (float) (py-(chunkPos.y<<4)), (float) (pz-(chunkPos.z<<4)));
 
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
             new Matrix4f(crm.projection())
@@ -205,8 +205,8 @@ public class RenderPipeline {
             //glEnable(GL_CULL_FACE);
         }
 
-        glEnable( GL_POLYGON_OFFSET_FILL );
-        glPolygonOffset( 0, -40);//TODO: OPTIMZIE THIS
+        //glEnable( GL_POLYGON_OFFSET_FILL );
+        //glPolygonOffset( 0, -40);//TODO: OPTIMZIE THIS
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -236,7 +236,7 @@ public class RenderPipeline {
 
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
-        glDisable(GL_POLYGON_OFFSET_FILL);
+        //glDisable(GL_POLYGON_OFFSET_FILL);
         glDepthMask(true);
         glColorMask(true, true, true, true);
 

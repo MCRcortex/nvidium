@@ -33,6 +33,7 @@ uint32_t extractOffset(uint idx) {
 }
 
 
+
 void main() {
     uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
     uint side = (gl_WorkGroupID.x>>29)&7;//Dont need the &
@@ -51,13 +52,12 @@ void main() {
     //gl_WorkGroupID.x is also the section node
     //ivec4 header = sectionData[gl_WorkGroupID.x];
     ivec4 header = sectionData[sectionId].header;
-
+    uint baseDataOffset = (uint)header.w;
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
     originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
 
     offsetData = (uvec4)sectionData[sectionId].renderRanges;
-    uint baseDataOffset = (uint)header.w;
     uint a = extractOffset(side);
     uint b = extractOffset(side+1);
     quadCount = (b-a);

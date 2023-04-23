@@ -29,5 +29,4 @@ void main() {
     colour = texture(tex_diffuse, uv_bias.xy, uv_bias.z);
     if (colour.a < 0.05f) discard;
     colour.xyz *= tint.xyz;
-    colour.xyz *= tint.w;
 }
