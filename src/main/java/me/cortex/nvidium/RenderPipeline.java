@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
+import me.cortex.nvidium.managers.RegionManager;
 import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.renderers.PrimaryTerrainRasterizer;
 import me.cortex.nvidium.renderers.RegionRasterizer;
@@ -107,43 +108,34 @@ public class RenderPipeline {
 
     public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, double px, double py, double pz) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
-        Vector3i chunkPos = new Vector3i(((int)Math.floor(px))>>4, ((int)Math.floor(py))>>4, ((int)Math.floor(pz))>>4);
+        Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
+        Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
 
         //Clear the first gl error, not our fault
         glGetError();
         int err;
 
         int visibleRegions = 0;
-        int playerRegion = -1;
-        int playerRegionId = -1;
 
-        short[] vregions;
+        long queryAddr = 0;
+        var rm = sectionManager.getRegionManager();
         //Enqueue all the visible regions
         {
-            var rm = sectionManager.getRegionManager();
             //The region data indicies is located at the end of the sceneUniform
             //TODO: Sort the regions from closest to furthest from the camera
             IntSortedSet regions = new IntAVLTreeSet();
             for (int i = 0; i < rm.maxRegionIndex(); i++) {
                 if (rm.isRegionVisible(frustum, i)) {
                     regions.add((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z)<<16)|i);
-
                     visibleRegions++;
-                }
-                if (rm.regionIsAtPos(i, chunkPos.x>>3, chunkPos.y>>2, chunkPos.z>>3)) {
-                    playerRegionId = i;
                 }
             }
             if (visibleRegions == 0) return;
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
+            queryAddr = addr;//This is ungodly hacky
             int j = 0;
-            vregions = new short[regions.size()];
             for (int i : regions) {
-                if (((short)i) == playerRegionId) {
-                    playerRegion = j;
-                }
                 MemoryUtil.memPutShort(addr+((long) j <<1), (short) i);
-                vregions[j] = ((short)i);
                 j++;
             }
         }
@@ -200,13 +192,8 @@ public class RenderPipeline {
 
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
-            //glDisable(GL_CULL_FACE);
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
-            //glEnable(GL_CULL_FACE);
         }
-
-        //glEnable( GL_POLYGON_OFFSET_FILL );
-        //glPolygonOffset( 0, -40);//TODO: OPTIMZIE THIS
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -220,8 +207,19 @@ public class RenderPipeline {
 
 
         {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
-            if (playerRegion != -1) {
-                glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, playerRegion, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(frameId-1)});
+            outerLoop:
+            for (int i = 0; i < visibleRegions; i++) {
+                int rid = MemoryUtil.memGetShort(queryAddr+(i<<1));
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        for (int z = -1; z <= 1; z++) {
+                            if (rm.regionIsAtPos(rid, (blockPos.x+x) >> 7, (blockPos.y+y) >> 6, (blockPos.z+z) >> 7)) {
+                                setRegionVisible(i);
+                                continue outerLoop;
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -236,7 +234,6 @@ public class RenderPipeline {
 
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
-        //glDisable(GL_POLYGON_OFFSET_FILL);
         glDepthMask(true);
         glColorMask(true, true, true, true);
 
@@ -250,16 +247,36 @@ public class RenderPipeline {
         }
 
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
-            if (playerRegionId != -1) {
-                int id = sectionManager.getSectionRegionIndex(chunkPos.x, chunkPos.y, chunkPos.z);
-                if (id != -1) {
-                    id |= playerRegionId<<8;
-                    glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (frameId - 1)});
+            int msk = 0;//This is such a dumb way to do this but it works
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    for (int z = -1; z <= 1; z++) {
+                        int mid = 1<<(((chunkPos.x - ((blockPos.x + x) >> 4))+1)+((chunkPos.y - ((blockPos.y + y) >> 4))+1)*3+((chunkPos.z - ((blockPos.z + z) >> 4))+1)*9);
+                        if ((msk&mid)==0) {
+                            setSectionVisible((blockPos.x + x) >> 4, (blockPos.y + y) >> 4, (blockPos.z + z) >> 4);
+                            msk |= mid;
+                        }
+                    }
                 }
             }
         }
 
         prevRegionCount = visibleRegions;
+    }
+
+    private void setRegionVisible(long rid) {
+        glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, rid, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(frameId-1)});
+    }
+
+    private void setSectionVisible(int cx, int cy, int cz) {
+        int rid = sectionManager.getRegionManager().regionKeyToId(RegionManager.getRegionKey(cx, cy, cz));
+        if (rid != -1) {
+            int id = sectionManager.getSectionRegionIndex(cx, cy, cz);
+            if (id != -1) {
+                id |= rid << 8;
+                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (frameId - 1)});
+            }
+        }
     }
 
 

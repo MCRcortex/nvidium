@@ -38,6 +38,10 @@ public class RegionManager {
         return size|count|offset;
     }
 
+    public int regionKeyToId(long key) {
+        return regionMap.get(key);
+    }
+
     public boolean regionIsAtPos(int regionId, int x, int y, int z) {
         var region = regions[regionId];
         if (region == null) return false;
