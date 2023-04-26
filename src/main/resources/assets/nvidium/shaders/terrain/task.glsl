@@ -41,7 +41,7 @@ bool shouldRenderSide(uint side, ivec3 relativeChunkPos) {
     if (side == UNASSIGNED) return true;
     uint base = side>>1;
     int dp = relativeChunkPos.yxz[base];
-    dp *= ((side&1)==0?1:-1);
+    dp = ((side&1)==0?dp:-dp);
     return dp <= 0;
 }
 

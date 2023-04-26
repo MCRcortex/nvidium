@@ -32,8 +32,7 @@ import static org.lwjgl.opengl.ARBDirectStateAccess.glClearNamedBufferSubData;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30C.GL_R8UI;
 import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
-import static org.lwjgl.opengl.GL42.GL_COMMAND_BARRIER_BIT;
-import static org.lwjgl.opengl.GL42.glMemoryBarrier;
+import static org.lwjgl.opengl.GL42.*;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
@@ -86,7 +85,7 @@ public class RenderPipeline {
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
-        temporalRasterizer = null;//new TemporalTerrainRasterizer();
+        temporalRasterizer = new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
@@ -191,6 +190,7 @@ public class RenderPipeline {
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
+            glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
         }
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
@@ -235,12 +235,6 @@ public class RenderPipeline {
         glDepthMask(true);
         glColorMask(true, true, true, true);
 
-        glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
-        glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
-        glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
-        glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
-        glDepthFunc(GL11C.GL_LEQUAL);
-
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
             int msk = 0;//This is such a dumb way to do this but it works
             for (int x = -1; x <= 1; x++) {
@@ -257,10 +251,31 @@ public class RenderPipeline {
         }
 
         prevRegionCount = visibleRegions;
+
+        //Do temporal rasterization
+        if (true) {
+            //glFinish();
+            glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
+            temporalRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
+        }
+
+
+
+        glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
+        glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
+        glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
+        glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
+        glDepthFunc(GL11C.GL_LEQUAL);
+        glDisable(GL_DEPTH_TEST);
+
+
+        if ((err = glGetError()) != 0) {
+            throw new IllegalStateException("GLERROR: "+err);
+        }
     }
 
     private void setRegionVisible(long rid) {
-        glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, rid, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(frameId-1)});
+        glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, rid, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(1)});
     }
 
     private void setSectionVisible(int cx, int cy, int cz) {
@@ -269,7 +284,7 @@ public class RenderPipeline {
             int id = sectionManager.getSectionRegionIndex(cx, cy, cz);
             if (id != -1) {
                 id |= rid << 8;
-                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (frameId - 1)});
+                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (-1)});
             }
         }
     }
