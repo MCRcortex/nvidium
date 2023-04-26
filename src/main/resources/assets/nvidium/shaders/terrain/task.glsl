@@ -33,23 +33,25 @@ uint32_t extractOffset(uint idx) {
 }
 
 
+bool shouldRender(uint sectionId, uint side) {
+    //Check visibility first
+    if ((sectionVisibility[sectionId]&uint8_t(1)) == uint8_t(0)) {
+        return false;
+    }
+
+    //Check side, TODO: REMOVE THIS FROM GLOBAL MEMORY AS IT IS SLOW AS SHIT
+    return (sectionFaceVisibility[sectionId]&uint8_t(1<<side))!=uint8_t(0);
+}
 void main() {
     uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
-    uint side = (gl_WorkGroupID.x>>29)&7;//Dont need the &
-    //THIS IS WRONG SHOULD BE previous frame id
-    if ((((uint(sectionVisibility[sectionId])+1)&0xFF)!=uint(frameId)) || ((((uint)sectionFaceVisibility[sectionId])&(1<<side))==0)) {
+    uint side = ((gl_WorkGroupID.x>>29)&7);//Dont need the &
+
+    if (!shouldRender(sectionId, side)) {
         //Early exit if the section isnt visible
         //gl_TaskCountNV = 0;
-
-
         return;
     }
-    //if (side != 0) {
-    //    return;
-    //}
 
-    //gl_WorkGroupID.x is also the section node
-    //ivec4 header = sectionData[gl_WorkGroupID.x];
     ivec4 header = sectionData[sectionId].header;
 
     ivec3 chunk = ivec3(header.xyz)>>8;

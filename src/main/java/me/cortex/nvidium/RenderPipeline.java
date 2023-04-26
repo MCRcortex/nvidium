@@ -85,7 +85,7 @@ public class RenderPipeline {
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
-        temporalRasterizer = new TemporalTerrainRasterizer();
+        temporalRasterizer = null;//new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();

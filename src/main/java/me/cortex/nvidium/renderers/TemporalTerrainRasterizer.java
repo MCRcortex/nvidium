@@ -49,8 +49,6 @@ public class TemporalTerrainRasterizer extends Phase {
         glMultiDrawMeshTasksIndirectNV( 0, regionCount*7, 0);
 
 
-
-
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
     }

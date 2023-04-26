@@ -32,7 +32,7 @@ void main() {
     //Emit 7 workloads per chunk
     uint base = gl_WorkGroupID.x*7;
     //Early exit if the region wasnt visible
-    if (regionVisibility[gl_WorkGroupID.x] != frameId) {
+    if (regionVisibility[gl_WorkGroupID.x] == uint8_t(0)) {
         terrainCommandBuffer[base+0] = uvec2(0);
         terrainCommandBuffer[base+1] = uvec2(0);
         terrainCommandBuffer[base+2] = uvec2(0);

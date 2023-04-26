@@ -42,6 +42,11 @@ void emitParital(int visIndex) {
 }
 
 void main() {
+    int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
+
+    uint8_t lastData = sectionVisibility[visibilityIndex];
+    barrier();
+
     uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
     uvec3 mins = header.xyz&0xF;
     uvec3 maxs = mins+((header.xyz>>4)&0xF)+1;
@@ -50,16 +55,15 @@ void main() {
     ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
     vec3 corner = vec3(relativeChunkPos<<4);
 
-
     //TODO: try mix instead or something other than just ternaries, i think they get compiled to a cmov type instruction but not sure
     corner += ivec3(((gl_LocalInvocationID.x&1)==0)?mins.x:maxs.x, ((gl_LocalInvocationID.x&4)==0)?mins.y:maxs.y, ((gl_LocalInvocationID.x&2)==0)?mins.z:maxs.z);
     gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = (MVP*vec4(corner, 1.0));
-    int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
 
+    int prim_payload = (visibilityIndex<<8)|int(((uint(lastData))<<1)&0xff)|1;
 
-    emitIndicies(visibilityIndex);
+    emitIndicies(prim_payload);
     if (gl_LocalInvocationID.x < 4) {
-        emitParital(visibilityIndex);
+        emitParital(prim_payload);
     }
     if (gl_LocalInvocationID.x == 0) {//Check for backface block culling
         uint8_t msk = (uint8_t)(1<<UNASSIGNED);
@@ -74,7 +78,7 @@ void main() {
         sectionFaceVisibility[visibilityIndex] = msk;
 
         //Set frameid to old old frame to stop maybe visibility every 256 frames
-        sectionVisibility[visibilityIndex] = (uint8_t)(int8_t(frameId)-int8_t(10));
+        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1);
 
 
         gl_PrimitiveCountNV = 16;

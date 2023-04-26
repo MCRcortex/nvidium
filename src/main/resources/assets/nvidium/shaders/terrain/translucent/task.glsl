@@ -24,18 +24,20 @@ taskNV out Task {
     uint quadCount;
 };
 
-
+bool shouldRender(uint sectionId) {
+    //Check visibility
+    return (sectionVisibility[sectionId]&uint8_t(1)) != uint8_t(0);
+}
 
 void main() {
     uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
-    if (((uint(sectionVisibility[sectionId]))&0xFF)!=uint(frameId)) {
+
+    if (!shouldRender(sectionId)) {
         //Early exit if the section isnt visible
         //gl_TaskCountNV = 0;
         return;
     }
 
-    //gl_WorkGroupID.x is also the section node
-    //ivec4 header = sectionData[gl_WorkGroupID.x];
     ivec4 header = sectionData[sectionId].header;
 
     ivec3 chunk = ivec3(header.xyz)>>8;
