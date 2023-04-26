@@ -65,21 +65,9 @@ void main() {
     if (gl_LocalInvocationID.x < 4) {
         emitParital(prim_payload);
     }
-    if (gl_LocalInvocationID.x == 0) {//Check for backface block culling
-        uint8_t msk = (uint8_t)(1<<UNASSIGNED);
-        //TODO: Instead of emitting a mask, could generate the render bounds directly in here since it
-        // should already be in cache and fast to do TODO: explore this
-        msk |= (uint8_t)((relativeChunkPos.y<=0)?(1<<UP):0);
-        msk |= (uint8_t)((relativeChunkPos.y>=0)?(1<<DOWN):0);
-        msk |= (uint8_t)((relativeChunkPos.x<=0)?(1<<EAST):0);
-        msk |= (uint8_t)((relativeChunkPos.x>=0)?(1<<WEST):0);
-        msk |= (uint8_t)((relativeChunkPos.z<=0)?(1<<SOUTH):0);
-        msk |= (uint8_t)((relativeChunkPos.z>=0)?(1<<NORTH):0);
-        sectionFaceVisibility[visibilityIndex] = msk;
-
-        //Set frameid to old old frame to stop maybe visibility every 256 frames
+    if (gl_LocalInvocationID.x == 0) {
+        //Shift and set, this gives us a bonus of having the last 8 frames as visibility history
         sectionVisibility[visibilityIndex] = uint8_t(lastData<<1);
-
 
         gl_PrimitiveCountNV = 16;
     }

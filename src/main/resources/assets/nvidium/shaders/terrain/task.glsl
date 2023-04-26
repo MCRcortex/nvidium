@@ -33,30 +33,40 @@ uint32_t extractOffset(uint idx) {
 }
 
 
-bool shouldRender(uint sectionId, uint side) {
-    //Check visibility first
-    if ((sectionVisibility[sectionId]&uint8_t(1)) == uint8_t(0)) {
-        return false;
-    }
-
-    //Check side, TODO: REMOVE THIS FROM GLOBAL MEMORY AS IT IS SLOW AS SHIT
-    return (sectionFaceVisibility[sectionId]&uint8_t(1<<side))!=uint8_t(0);
+bool shouldRenderVisible(uint sectionId) {
+    return (sectionVisibility[sectionId]&uint8_t(1)) != uint8_t(0);
 }
+
+bool shouldRenderSide(uint side, ivec3 relativeChunkPos) {
+    if (side == UNASSIGNED) return true;
+    uint base = side>>1;
+    int dp = relativeChunkPos.yxz[base];
+    dp *= ((side&1)==0?1:-1);
+    return dp <= 0;
+}
+
 void main() {
     uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
-    uint side = ((gl_WorkGroupID.x>>29)&7);//Dont need the &
 
-    if (!shouldRender(sectionId, side)) {
+    if (!shouldRenderVisible(sectionId)) {
         //Early exit if the section isnt visible
-        //gl_TaskCountNV = 0;
+        gl_TaskCountNV = 0;
         return;
     }
+
+    uint side = ((gl_WorkGroupID.x>>29)&7);//Dont need the &
 
     ivec4 header = sectionData[sectionId].header;
 
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
-    originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
+    chunk -= chunkPosition.xyz;
+    if (!shouldRenderSide(side, chunk)) {
+        gl_TaskCountNV = 0;
+        return ;
+    }
+
+    originAndBaseData.xyz = vec3(chunk<<4);
 
     offsetData = (uvec4)sectionData[sectionId].renderRanges;
     uint baseDataOffset = (uint)header.w;

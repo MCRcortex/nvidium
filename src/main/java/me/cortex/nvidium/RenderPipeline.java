@@ -94,8 +94,8 @@ public class RenderPipeline {
         cbs += SCENE_SIZE+ maxRegions*2L;
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         cbs += maxRegions;
-        sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L * 2);
-        cbs += maxRegions * 256L * 2;
+        sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
+        cbs += maxRegions * 256L;
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
         cbs += maxRegions*8L*7;
 
@@ -170,8 +170,6 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionVisibility.getDeviceAddress());
             addr += 8;
-            MemoryUtil.memPutLong(addr, sectionVisibility.getDeviceAddress()+sectionManager.getRegionManager().maxRegions()*256L);
-            addr += 8;
             MemoryUtil.memPutLong(addr, terrainCommandBuffer.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
@@ -221,7 +219,7 @@ public class RenderPipeline {
 
         {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
             if (playerRegion != -1) {
-                glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, playerRegion, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(frameId-1)});
+                glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, playerRegion, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(1)});
             }
         }
 
@@ -251,7 +249,7 @@ public class RenderPipeline {
                 int id = sectionManager.getSectionRegionIndex(chunkPos.x, chunkPos.y, chunkPos.z);
                 if (id != -1) {
                     id |= playerRegionId<<8;
-                    glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (frameId - 1)});
+                    glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (-1)});
                 }
             }
         }
