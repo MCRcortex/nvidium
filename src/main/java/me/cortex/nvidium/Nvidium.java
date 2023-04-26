@@ -16,6 +16,7 @@ public class Nvidium {
 
     public static NvidiumConfig config = NvidiumConfig.loadOrCreate();
 
+
     //TODO: basicly have the terrain be a virtual geometry buffer
     // once it gets too full, start culling via a callback task system
     // which executes a task on the gpu and calls back once its done

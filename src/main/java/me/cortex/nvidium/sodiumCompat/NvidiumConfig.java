@@ -19,6 +19,8 @@ public class NvidiumConfig {
     public int extra_rd = 0;
     public int fallback_allocation_size = 2048;
 
+    public transient boolean disable_graph_update = false;
+
 
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)

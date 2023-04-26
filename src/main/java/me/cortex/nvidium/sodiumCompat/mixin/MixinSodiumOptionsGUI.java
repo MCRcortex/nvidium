@@ -69,7 +69,16 @@ public class MixinSodiumOptionsGUI {
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )
-                .build());
+                .add(OptionImpl.createBuilder(boolean.class, store)
+                        .setName(Text.translatable("nvidium.options.disable_graph_update.name"))
+                        .setTooltip(Text.translatable("nvidium.options.disable_graph_update.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setImpact(OptionImpact.HIGH)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setBinding((opts, value) -> opts.disable_graph_update = value, opts -> opts.disable_graph_update)
+                        .setFlags()
+                        .build()
+                ).build());
         this.pages.add(new OptionPage(Text.translatable("nvidium.options.pages.nvidium"), ImmutableList.copyOf(groups)));
     }
 }

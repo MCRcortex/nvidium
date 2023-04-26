@@ -5,8 +5,8 @@ struct Vertex {
     int16_t d;
     int16_t e;
     int16_t f;
-    int16_t g;
-    int16_t h;
+    uint16_t g;
+    uint16_t h;
     int16_t i;
     int16_t j;
 };
