@@ -7,6 +7,7 @@ import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.RegionManager;
+import me.cortex.nvidium.managers.RegionVisibilityTracker;
 import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.renderers.*;
 import me.cortex.nvidium.util.DownloadTaskStream;
@@ -59,6 +60,8 @@ public class RenderPipeline {
 
     public final SectionManager sectionManager;
 
+    public final RegionVisibilityTracker regionVisibilityTracking;
+
     private final PrimaryTerrainRasterizer terrainRasterizer;
     private final RegionRasterizer regionRasterizer;
     private final SectionRasterizer sectionRasterizer;
@@ -103,6 +106,8 @@ public class RenderPipeline {
 
         regionVisibilityTracker = new BitSet(maxRegions);
 
+        regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
+
         bufferSizesMB = cbs/(1024*1024);
     }
 
@@ -124,6 +129,7 @@ public class RenderPipeline {
 
         long queryAddr = 0;
         var rm = sectionManager.getRegionManager();
+        short[] regionMap;
         //Enqueue all the visible regions
         {
             //The region data indicies is located at the end of the sceneUniform
@@ -145,11 +151,13 @@ public class RenderPipeline {
                 }
 
             }
+            regionMap = new short[regions.size()];
             if (visibleRegions == 0) return;
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
             queryAddr = addr;//This is ungodly hacky
             int j = 0;
             for (int i : regions) {
+                regionMap[j] = (short) i;
                 MemoryUtil.memPutShort(addr+((long) j <<1), (short) i);
                 j++;
             }
@@ -273,9 +281,20 @@ public class RenderPipeline {
         if (Nvidium.config.enable_temporal_coherence) {
             //glFinish();
             glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
-            temporalRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
+            temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
         }
 
+        {//Do proper visibility tracking
+            glDepthMask(false);
+            glColorMask(false, false, false, false);
+            glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
+
+            regionVisibilityTracking.computeVisibility(visibleRegions, regionVisibility, regionMap);
+
+            glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
+            glDepthMask(true);
+            glColorMask(true, true, true, true);
+        }
 
 
         glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
@@ -289,6 +308,14 @@ public class RenderPipeline {
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
+
+
+        if (sectionManager.terrainAreana.getAllocatedMB()>10000) {
+            int i = regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex());
+            sectionManager.removeRegionById(i);
+            regionVisibilityTracking.resetRegion(i);
+        }
+
     }
 
     private void setRegionVisible(long rid) {
@@ -342,6 +369,7 @@ public class RenderPipeline {
 
     public void delete() {
         sectionManager.delete();
+        regionVisibilityTracking.delete();
 
         sceneUniform.delete();
         regionVisibility.delete();

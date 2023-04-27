@@ -42,6 +42,14 @@ public class RegionManager {
         return regionMap.get(key);
     }
 
+    public long regionIdToKey(int id) {
+        if (regions[id] == null) {
+            System.out.println("uidshfrkljdhnfgh");
+            return 0;
+        }
+        return regions[id].key;
+    }
+
     public boolean regionIsAtPos(int regionId, int x, int y, int z) {
         var region = regions[regionId];
         if (region == null) return false;

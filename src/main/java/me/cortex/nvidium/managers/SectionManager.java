@@ -112,10 +112,13 @@ public class SectionManager {
     }
 
     public void deleteSection(RenderSection section) {
-        long key = getSectionKey(section.getChunkX(), section.getChunkY(), section.getChunkZ());
-        int sectionIdx = sectionOffset.remove(key);
+        deleteSection(getSectionKey(section.getChunkX(), section.getChunkY(), section.getChunkZ()));
+    }
+
+    void deleteSection(long sectionKey) {
+        int sectionIdx = sectionOffset.remove(sectionKey);
         if (sectionIdx != -1) {
-            terrainAreana.free(terrainDataLocation.remove(key));
+            terrainAreana.free(terrainDataLocation.remove(sectionKey));
             regionManager.removeSectionIndex(uploadStream, sectionIdx);
             //Clear the segment
             long segment = uploadStream.getUpload(sectionBuffer, (long) sectionIdx * SECTION_SIZE, SECTION_SIZE);
@@ -147,6 +150,20 @@ public class SectionManager {
 
     public int getTotalBufferSizes() {
         return bufferSize;
+    }
+
+    public void removeRegionById(int regionId) {
+        long rk = regionManager.regionIdToKey(regionId);
+        int X = ChunkSectionPos.unpackX(rk)<<3;
+        int Y = ChunkSectionPos.unpackY(rk)<<2;
+        int Z = ChunkSectionPos.unpackZ(rk)<<3;
+        for (int x = X; x < X+8; x++) {
+            for (int y = Y; y < Y+4; y++) {
+                for (int z = Z; z < Z+8; z++) {
+                    deleteSection(getSectionKey(x, y, z));
+                }
+            }
+        }
     }
 }
 
