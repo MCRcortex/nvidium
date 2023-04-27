@@ -3,6 +3,7 @@ package me.cortex.nvidium.sodiumCompat;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.Expose;
 import me.cortex.nvidium.Nvidium;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -19,6 +20,9 @@ public class NvidiumConfig {
     public int extra_rd = 0;
     public int fallback_allocation_size = 2048;
 
+    public boolean enable_temporal_coherence = true;
+
+    @Expose(serialize = false, deserialize = false)
     public transient boolean disable_graph_update = false;
 
 

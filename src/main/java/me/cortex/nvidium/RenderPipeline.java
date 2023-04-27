@@ -13,7 +13,6 @@ import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.format.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
@@ -25,6 +24,7 @@ import org.joml.Vector4i;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
 
+import java.util.BitSet;
 import java.util.List;
 
 import static me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer.alignUp;
@@ -77,6 +77,8 @@ public class RenderPipeline {
 
     private final int bufferSizesMB;
 
+    private final BitSet regionVisibilityTracker;
+
     public RenderPipeline() {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
@@ -99,12 +101,16 @@ public class RenderPipeline {
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
         cbs += maxRegions*8L*7;
 
+        regionVisibilityTracker = new BitSet(maxRegions);
+
         bufferSizesMB = cbs/(1024*1024);
     }
 
     private int prevRegionCount;
     private int frameId;
 
+    //ISSUE TODO: regions that where in frustum but are now out of frustum must have the visibility data cleared
+    // this is due to funny issue of pain where the section was "visible" last frame cause it didnt get ticked
     public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, double px, double py, double pz) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
@@ -127,7 +133,17 @@ public class RenderPipeline {
                 if (rm.isRegionVisible(frustum, i)) {
                     regions.add((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z)<<16)|i);
                     visibleRegions++;
+                    regionVisibilityTracker.set(i);
+                } else {
+                    if (regionVisibilityTracker.get(i)) {//Going from visible to non visible
+                        //Clear the visibility bits
+                        if (Nvidium.config.enable_temporal_coherence) {
+                            glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, (long) i << 8, 255, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{0});
+                        }
+                    }
+                    regionVisibilityTracker.clear(i);
                 }
+
             }
             if (visibleRegions == 0) return;
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
@@ -137,6 +153,7 @@ public class RenderPipeline {
                 MemoryUtil.memPutShort(addr+((long) j <<1), (short) i);
                 j++;
             }
+
         }
 
         {
@@ -253,7 +270,7 @@ public class RenderPipeline {
         prevRegionCount = visibleRegions;
 
         //Do temporal rasterization
-        if (true) {
+        if (Nvidium.config.enable_temporal_coherence) {
             //glFinish();
             glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
             temporalRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
