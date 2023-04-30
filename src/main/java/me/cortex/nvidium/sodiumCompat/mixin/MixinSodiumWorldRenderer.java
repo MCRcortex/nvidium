@@ -26,7 +26,7 @@ public class MixinSodiumWorldRenderer {
         }
     }
 
-    @Redirect(method = "updateChunks", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSectionManager;update(Lnet/minecraft/client/render/Camera;Lme/jellysquid/mods/sodium/client/util/frustum/Frustum;IZ)V"))
+    @Redirect(remap = true, method = "updateChunks", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSectionManager;update(Lnet/minecraft/client/render/Camera;Lme/jellysquid/mods/sodium/client/util/frustum/Frustum;IZ)V"))
     private void disableChunkUpdates(RenderSectionManager instance, Camera camera, Frustum frustum, int frame, boolean spectator) {
         if (Nvidium.IS_ENABLED&&Nvidium.config.disable_graph_update) {
             return;
