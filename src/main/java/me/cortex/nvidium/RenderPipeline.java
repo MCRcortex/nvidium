@@ -310,7 +310,7 @@ public class RenderPipeline {
         }
 
 
-        if (sectionManager.terrainAreana.getAllocatedMB()>10000) {
+        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getAllocatedMB()>(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?Nvidium.config.geometry_removing_memory_size:(Nvidium.config.fallback_allocation_size-50))) {
             int i = regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex());
             sectionManager.removeRegionById(i);
             regionVisibilityTracking.resetRegion(i);

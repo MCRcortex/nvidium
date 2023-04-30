@@ -6,6 +6,10 @@
   "nvidium.options.disable_chunk_unload.tooltip" : "Disables chunk unloading, any chunk that is loaded will stay loaded and rendered, regardless of render distance",
   "nvidium.options.extra_render_distance.name" : "Extra render distance",
   "nvidium.options.extra_render_distance.tooltip" : "Extra render distance added to existing distance, only useful if disable chunk unload is enabled",
+  "nvidium.options.max_gpu_memory.name" : "Max gpu memory",
+  "nvidium.options.max_gpu_memory.tooltip" : "Max gpu memory allowed, will start to cull chunks if this limit is hit",
+  "nvidium.options.enable_temporal_coherence.name" : "Enables temporal coherence",
+  "nvidium.options.enable_temporal_coherence.tooltip" : "Removes artifacting when turning around",
   "nvidium.options.fallback_allocation_size.name" : "Fallback buffer size",
   "nvidium.options.fallback_allocation_size.tooltip" : "Sets the fallback buffer size if sparse buffer is unavailable (this currently only happens on linux)",
   "nvidium.options.mb" : "%s Mbs"

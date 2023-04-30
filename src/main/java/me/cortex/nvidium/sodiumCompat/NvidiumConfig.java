@@ -22,6 +22,8 @@ public class NvidiumConfig {
 
     public boolean enable_temporal_coherence = true;
 
+    public int geometry_removing_memory_size = 2048;
+
     @Expose(serialize = false, deserialize = false)
     public transient boolean disable_graph_update = false;
 

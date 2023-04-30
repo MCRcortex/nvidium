@@ -77,7 +77,16 @@ public class MixinSodiumOptionsGUI {
                         .setBinding((opts, value) -> opts.fallback_allocation_size = value, opts -> opts.fallback_allocation_size)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
-                )
+                ).add(OptionImpl.createBuilder(int.class, store)
+                        .setName(Text.translatable("nvidium.options.max_gpu_memory.name"))
+                        .setTooltip(Text.translatable("nvidium.options.max_gpu_memory.tooltip"))
+                        .setControl(option -> new SliderControl(option, 2048, 32768, 512, ControlValueFormatter.translateVariable("nvidium.options.mb")))
+                        .setImpact(OptionImpact.VARIES)
+                        .setEnabled(Nvidium.IS_ENABLED && Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER)
+                        .setBinding((opts, value) -> opts.geometry_removing_memory_size = value, opts -> opts.geometry_removing_memory_size)
+                        .setFlags()
+                        .build()
+                )/*
                 .add(OptionImpl.createBuilder(boolean.class, store)
                         .setName(Text.translatable("nvidium.options.disable_graph_update.name"))
                         .setTooltip(Text.translatable("nvidium.options.disable_graph_update.tooltip"))
@@ -87,7 +96,8 @@ public class MixinSodiumOptionsGUI {
                         .setBinding((opts, value) -> opts.disable_graph_update = value, opts -> opts.disable_graph_update)
                         .setFlags()
                         .build()
-                ).build());
+                )*/
+                .build());
         this.pages.add(new OptionPage(Text.translatable("nvidium.options.pages.nvidium"), ImmutableList.copyOf(groups)));
     }
 }
