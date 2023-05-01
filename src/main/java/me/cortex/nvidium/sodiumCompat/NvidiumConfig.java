@@ -15,13 +15,10 @@ import java.nio.file.Path;
 
 public class NvidiumConfig {
     //The options
-    public boolean mips_enabled = false;
     public boolean disable_chunk_unloading = false;
     public int extra_rd = 0;
     public int fallback_allocation_size = 2048;
-
     public boolean enable_temporal_coherence = true;
-
     public int geometry_removing_memory_size = 2048;
 
     @Expose(serialize = false, deserialize = false)

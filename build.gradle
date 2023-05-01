@@ -44,7 +44,7 @@ dependencies {
     modImplementation(fabricApi.module("fabric-rendering-data-attachment-v1", project.fabric_version))
     modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
 
-    modImplementation "maven.modrinth:sodium:mc1.19.4-0.4.10"
+    modImplementation "maven.modrinth:sodium:mc1.19.4-0.4.11"
     //modImplementation files(file("sodium-fabric-mc1.19.3-0.4.10+rev.916f46d-dirty.jar"))
 
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"

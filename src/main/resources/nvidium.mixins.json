@@ -6,13 +6,15 @@
     "LightMapAccessor",
     "MixinGameRenderer",
     "MixinRenderRegionManager",
-    "MixinRenderSection",
     "MixinRenderSectionManager",
+    "MixinSodiumOptionsGUI",
     "MixinSodiumWorldRenderer",
     "MixinWindow",
-    "MixinSodiumOptionsGUI"
+    "MixinChunkRenderBounds"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+  ]
 }
