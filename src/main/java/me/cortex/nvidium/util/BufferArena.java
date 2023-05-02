@@ -58,6 +58,10 @@ public class BufferArena {
         }
     }
 
+    public int getUsedMB() {
+        return (int) ((totalQuads * 20 * 4)/(1024*1024));
+    }
+
     public float getFragmentation() {
         long expected = totalQuads * 20 * 4;
         if (buffer instanceof PersistentSparseAddressableBuffer psab) {

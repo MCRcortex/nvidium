@@ -120,7 +120,7 @@ public class RenderPipeline {
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
         Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
-
+        //  /tp @p 0.0 -1.62 0.0 0 0
         //Clear the first gl error, not our fault
         glGetError();
         int err;
@@ -169,9 +169,9 @@ public class RenderPipeline {
             Vector3f delta = new Vector3f((float) (px-(chunkPos.x<<4)), (float) (py-(chunkPos.y<<4)), (float) (pz-(chunkPos.z<<4)));
 
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
-            new Matrix4f(crm.projection())
+            var mvp =new Matrix4f(crm.projection())
                     .mul(crm.modelView())
-                    .translate(delta.negate())//Translate the subchunk position//TODO: THIS
+                    .translate(delta.negate())//Translate the subchunk position
                     .getToAddress(addr);
             addr += 4*4*4;
             new Vector4i(chunkPos.x, chunkPos.y, chunkPos.z, 0).getToAddress(addr);//Chunk the camera is in//TODO: THIS
@@ -310,7 +310,7 @@ public class RenderPipeline {
         }
 
 
-        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getAllocatedMB()>(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?Nvidium.config.geometry_removing_memory_size:(Nvidium.config.fallback_allocation_size-50))) {
+        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?Nvidium.config.geometry_removing_memory_size:(Nvidium.config.fallback_allocation_size-50))) {
             int i = regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex());
             sectionManager.removeRegionById(i);
             regionVisibilityTracking.resetRegion(i);
