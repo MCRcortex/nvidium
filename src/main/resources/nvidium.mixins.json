@@ -10,7 +10,7 @@
     "MixinSodiumOptionsGUI",
     "MixinSodiumWorldRenderer",
     "MixinWindow",
-    "MixinChunkRenderBounds"
+    "MixinRenderSection"
   ],
   "injectors": {
     "defaultRequire": 1
