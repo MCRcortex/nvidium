@@ -18,13 +18,11 @@ import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.format.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import net.minecraft.client.MinecraftClient;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
-import org.joml.Vector4i;
+import org.joml.*;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
 
+import java.lang.Math;
 import java.util.BitSet;
 import java.util.List;
 
@@ -69,7 +67,7 @@ public class RenderPipeline {
     private final TranslucentTerrainRasterizer translucencyTerrainRasterizer;
 
     private final IDeviceMappedBuffer sceneUniform;
-    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+8*6+3, 2);
+    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*6+3*4+3, 2);
 
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
@@ -117,6 +115,7 @@ public class RenderPipeline {
     //ISSUE TODO: regions that where in frustum but are now out of frustum must have the visibility data cleared
     // this is due to funny issue of pain where the section was "visible" last frame cause it didnt get ticked
     public void renderFrame(Frustum frustum, ChunkRenderMatrices crm, double px, double py, double pz) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
+
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
         Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
@@ -167,14 +166,18 @@ public class RenderPipeline {
         {
             //TODO: maybe segment the uniform buffer into 2 parts, always updating and static where static holds pointers
             Vector3f delta = new Vector3f((float) (px-(chunkPos.x<<4)), (float) (py-(chunkPos.y<<4)), (float) (pz-(chunkPos.z<<4)));
-
+            delta.negate();
             long addr = sectionManager.uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
             var mvp =new Matrix4f(crm.projection())
                     .mul(crm.modelView())
-                    .translate(delta.negate())//Translate the subchunk position
+                    .translate(delta)//Translate the subchunk position
                     .getToAddress(addr);
             addr += 4*4*4;
             new Vector4i(chunkPos.x, chunkPos.y, chunkPos.z, 0).getToAddress(addr);//Chunk the camera is in//TODO: THIS
+            addr += 16;
+            new Vector4f(delta,0).getToAddress(addr);//Subchunk offset (note, delta is already negated)
+            addr += 16;
+            new Vector4f(RenderSystem.getShaderFogColor()).getToAddress(addr);
             addr += 16;
             MemoryUtil.memPutLong(addr, sceneUniform.getDeviceAddress() + SCENE_SIZE);//Put in the location of the region indexs
             addr += 8;
@@ -190,6 +193,12 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
+            MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogStart());//FogStart
+            addr += 4;
+            MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogEnd());//FogEnd
+            addr += 4;
+            MemoryUtil.memPutInt(addr, RenderSystem.getShaderFogShape().getId());//IsSphericalFog
+            addr += 4;
             MemoryUtil.memPutShort(addr, (short) visibleRegions);
             addr += 2;
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
@@ -198,7 +207,6 @@ public class RenderPipeline {
 
         //TODO: FIXME: THIS FEELS ILLEGAL
         TickableManager.TickAll();
-
         if (false) return;
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
@@ -315,7 +323,7 @@ public class RenderPipeline {
             sectionManager.removeRegionById(i);
             regionVisibilityTracking.resetRegion(i);
         }
-
+        //glFinish();
     }
 
     private void setRegionVisible(long rid) {

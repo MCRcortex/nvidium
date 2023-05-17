@@ -38,6 +38,9 @@ layout(std140, binding=0) uniform SceneData {
     //align(16)
     mat4 MVP;
     ivec4 chunkPosition;
+    vec4 subchunkOffset;
+    vec4 fogColour;
+
     //vec4  subChunkPosition;//The subChunkTranslation is already done inside the MVP
     //align(8)
     readonly restrict uint16_t *regionIndicies;//Pointer to block of memory at the end of the SceneData struct, also mapped to be a uniform
@@ -52,6 +55,10 @@ layout(std140, binding=0) uniform SceneData {
     readonly restrict Vertex *terrainData;
     //readonly restrict u64vec4 *terrainData;
     //uvec4 *terrainData;
+
+    float fogStart;
+    float fogEnd;
+    bool isSphericalFog;
 
     //align(2)
     uint16_t regionCount;//Number of regions in regionIndicies

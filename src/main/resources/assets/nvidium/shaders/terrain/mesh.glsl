@@ -12,6 +12,7 @@
 #extension GL_KHR_shader_subgroup_vote : require
 
 #import <nvidium:occlusion/scene.glsl>
+#import <nvidium:terrain/fog.glsl>
 
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
@@ -24,6 +25,7 @@ taskNV in Task {
 
 layout(location=1) out Interpolants {
     vec4 tint;
+    vec4 addin;
     vec3 uv_bias;
 } OUT[];
 
@@ -52,8 +54,10 @@ void main() {
     //TODO: OPTIMIZE
     uint primId = gl_LocalInvocationID.x*3;
     uint idxBase = (gl_LocalInvocationID.x>>1)<<2;
-    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)].gl_Position   = MVP*vec4(decodeVertex(A)+originAndBaseData.xyz,1.0);
-    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)|1].gl_Position = MVP*vec4(decodeVertex(B)+originAndBaseData.xyz,1.0);
+    vec3 posA = decodeVertex(A)+originAndBaseData.xyz;
+    vec3 posB = decodeVertex(B)+originAndBaseData.xyz;
+    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)].gl_Position   = MVP*vec4(posA,1.0);
+    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)|1].gl_Position = MVP*vec4(posB,1.0);
     //TODO: see if ternary or array is faster
     bool isA = (gl_LocalInvocationID.x&1)==0;
     gl_PrimitiveIndicesNV[primId]   = (isA?0:2)+idxBase;
@@ -70,8 +74,16 @@ void main() {
     tintA *= tintA.w;
     tintB *= sampleLight(vec2(int16_t(B.i),int16_t(B.j)));
     tintB *= tintB.w;
-    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintA;
-    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintB;
+    vec4 tintAO;
+    vec4 addiAO;
+    vec4 tintBO;
+    vec4 addiBO;
+    computeFog(isSphericalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
+    computeFog(isSphericalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
+    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintAO;
+    OUT[(gl_LocalInvocationID.x<<1)|0].addin = addiAO;
+    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintBO;
+    OUT[(gl_LocalInvocationID.x<<1)|1].addin = addiBO;
 
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
 

@@ -15,6 +15,7 @@
 layout(location = 0) out vec4 colour;
 layout(location = 1) in Interpolants {
     vec4 tint;
+    vec4 addin;
     vec2 uv;
 };
 
@@ -28,5 +29,6 @@ void main() {
     //colour = vec4(1.0,1.0,0,1);
     colour = texture(tex_diffuse, uv, -4.0f);
     //if (colour.a < 0.05f) discard;
-    colour.xyz *= tint.xyz;
+    colour *= tint;
+    colour += addin;
 }
