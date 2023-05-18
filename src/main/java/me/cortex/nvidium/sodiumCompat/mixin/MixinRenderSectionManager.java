@@ -46,7 +46,7 @@ public class MixinRenderSectionManager {
     @Inject(method = "unloadSection", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;delete()V", shift = At.Shift.BEFORE), locals = LocalCapture.CAPTURE_FAILHARD)
     private void deleteSection(int x, int y, int z, CallbackInfoReturnable<Boolean> cir, RenderSection chunk) {
         if (Nvidium.IS_ENABLED) {
-            if (Nvidium.config.region_keep_distance == 0) {
+            if (Nvidium.config.region_keep_distance == 32) {
                 Nvidium.pipeline.sectionManager.deleteSection(chunk);
             }
         }

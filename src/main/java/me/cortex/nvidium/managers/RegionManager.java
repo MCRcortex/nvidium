@@ -44,8 +44,7 @@ public class RegionManager {
 
     public long regionIdToKey(int id) {
         if (regions[id] == null) {
-            System.out.println("uidshfrkljdhnfgh");
-            return 0;
+            throw new IllegalStateException();
         }
         return regions[id].key;
     }
@@ -206,11 +205,19 @@ public class RegionManager {
             return frustum.isBoxVisible(region.rx<<7,region.ry<<6, region.rz<<7, (region.rx+1)<<7, (region.ry+1)<<6, (region.rz+1)<<7);
         }
     }
-
+    public boolean regionExists(int regionId) {
+        return regions[regionId] != null;
+    }
     public int distance(int regionId, int camChunkX, int camChunkY, int camChunkZ) {
         var region = regions[regionId];
         return  Math.abs((region.rx<<3)+4-camChunkX)+
                 Math.abs((region.ry<<2)+2-camChunkY)+
                 Math.abs((region.rz<<3)+4-camChunkZ);
+    }
+    public boolean withinSquare(int dist, int regionId, int camChunkX, int camChunkY, int camChunkZ) {
+        var region = regions[regionId];
+        return  Math.abs((region.rx<<3)+4-camChunkX)<=dist &&
+                Math.abs((region.ry<<2)+2-camChunkY)<=dist &&
+                Math.abs((region.rz<<3)+4-camChunkZ)<=dist;
     }
 }

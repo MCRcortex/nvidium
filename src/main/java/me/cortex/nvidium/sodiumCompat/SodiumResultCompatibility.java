@@ -14,7 +14,7 @@ public class SodiumResultCompatibility {
     //Everything is /6*4 cause its in indices and we want verticies
     public static void uploadChunkGeometry(long uploadBuffer, short[] outOffsets, ChunkBuildResult result) {
         int formatSize = 20;
-        short offset = 0;
+        int offset = 0;
         var solid  = result.meshes.get(BlockRenderPass.SOLID);
         var cutout = result.meshes.get(BlockRenderPass.CUTOUT);
         var mipped = result.meshes.get(BlockRenderPass.CUTOUT_MIPPED);
@@ -129,10 +129,10 @@ public class SodiumResultCompatibility {
                     offset += (segment.elementCount()/6);
                 }
             }
-            outOffsets[i] = offset;
+            outOffsets[i] = (short) offset;
         }
         //Do translucent
-        short translucent = offset;
+        int translucent = offset;
         var translucentData  = result.meshes.get(BlockRenderPass.TRANSLUCENT);
         if (translucentData != null) {
             for (int i = 0; i < 7; i++) {
@@ -172,7 +172,7 @@ public class SodiumResultCompatibility {
                 }
             }
         }
-        outOffsets[7] = translucent;
+        outOffsets[7] = (short) translucent;
     }
 
     //TODO: FIXME: dont use these bounds as they are not accurate (e.g. grass can take up multiple blocks cause vertices extend outside of block)

@@ -12,6 +12,6 @@ public class MixinWorldRenderer {
     @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/BackgroundRenderer;applyFog(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/BackgroundRenderer$FogType;FZF)V"), index = 2)
     private float argModify(float viewDistance) {
         var dist = Nvidium.config.fog_distance*16;
-        return dist==0?viewDistance:(dist==3200?9999999:dist);
+        return dist==0?viewDistance:(dist==256*16?9999999:dist);
     }
 }

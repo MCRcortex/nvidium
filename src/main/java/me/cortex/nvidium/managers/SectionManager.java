@@ -153,6 +153,7 @@ public class SectionManager {
     }
 
     public void removeRegionById(int regionId) {
+        if (!regionManager.regionExists(regionId)) return;
         long rk = regionManager.regionIdToKey(regionId);
         int X = ChunkSectionPos.unpackX(rk)<<3;
         int Y = ChunkSectionPos.unpackY(rk)<<2;

@@ -3,6 +3,7 @@ package me.cortex.nvidium;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
@@ -23,6 +24,7 @@ import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.lang.Math;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -135,6 +137,12 @@ public class RenderPipeline {
             //TODO: Sort the regions from closest to furthest from the camera
             IntSortedSet regions = new IntAVLTreeSet();
             for (int i = 0; i < rm.maxRegionIndex(); i++) {
+                if (!rm.regionExists(i)) continue;
+                if ((Nvidium.config.region_keep_distance != 256 && Nvidium.config.region_keep_distance != 32) && !rm.withinSquare(Nvidium.config.region_keep_distance+4, i, chunkPos.x, chunkPos.y, chunkPos.z)) {
+                    removeRegion(i);
+                    continue;
+                }
+
                 if (rm.isRegionVisible(frustum, i)) {
                     regions.add((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z)<<16)|i);
                     visibleRegions++;
@@ -319,11 +327,14 @@ public class RenderPipeline {
 
 
         if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?Nvidium.config.geometry_removing_memory_size:(Nvidium.config.fallback_allocation_size-50))) {
-            int i = regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex());
-            sectionManager.removeRegionById(i);
-            regionVisibilityTracking.resetRegion(i);
+            removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
         }
         //glFinish();
+    }
+
+    private void removeRegion(int id) {
+        sectionManager.removeRegionById(id);
+        regionVisibilityTracking.resetRegion(id);
     }
 
     private void setRegionVisible(long rid) {
