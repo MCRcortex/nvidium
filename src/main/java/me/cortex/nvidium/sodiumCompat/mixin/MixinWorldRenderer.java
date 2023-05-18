@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 public class MixinWorldRenderer {
     @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/BackgroundRenderer;applyFog(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/BackgroundRenderer$FogType;FZF)V"), index = 2)
     private float argModify(float viewDistance) {
-        var dist = Nvidium.config.fog_distance*16;
-        return dist==0?viewDistance:(dist==256*16?9999999:dist);
+        var dist = Nvidium.config.region_keep_distance*16;
+        return dist==32*16?viewDistance:(dist==256*16?9999999:dist);
     }
 }

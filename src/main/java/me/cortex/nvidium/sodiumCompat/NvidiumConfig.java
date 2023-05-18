@@ -21,7 +21,7 @@ public class NvidiumConfig {
     public boolean enable_temporal_coherence = true;
     public int geometry_removing_memory_size = 2048;
 
-    public int fog_distance = 0;
+    //public int fog_distance = 0;
     public int region_keep_distance = 32;
 
     @Expose(serialize = false, deserialize = false)
