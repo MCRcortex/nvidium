@@ -34,6 +34,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30C.GL_R8UI;
 import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 import static org.lwjgl.opengl.GL42.*;
+import static org.lwjgl.opengl.GL43C.GL_CLEAR_BUFFER;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
@@ -233,6 +234,8 @@ public class RenderPipeline {
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
         }
+        //glClearColor(1,1,1,1);
+        //glClear(GL11C.GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -271,6 +274,7 @@ public class RenderPipeline {
             });
         }*/
 
+        //glColorMask(true, true, true, true);
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);
