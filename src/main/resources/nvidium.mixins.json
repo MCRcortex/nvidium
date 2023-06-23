@@ -4,6 +4,8 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "LightMapAccessor",
+    "MixinBackgroundRenderer",
+    "MixinChunkRenderBoundsBuilder",
     "MixinGameRenderer",
     "MixinRenderRegionManager",
     "MixinRenderSection",
@@ -11,8 +13,7 @@
     "MixinSodiumOptionsGUI",
     "MixinSodiumWorldRenderer",
     "MixinWindow",
-    "MixinWorldRenderer",
-    "MixinChunkRenderBoundsBuilder"
+    "MixinWorldRenderer"
   ],
   "injectors": {
     "defaultRequire": 1
