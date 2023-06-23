@@ -27,8 +27,8 @@ layout(location=1) out Interpolants {
     vec4 tint;
     vec4 addin;
     vec3 uv_bias;
+    flat bool hasAlpha;
 } OUT[];
-
 
 vec3 decodeVertex(Vertex v) {
     return vec3(v.a,v.b,v.c)*(32.0f/65535)-8.0f;
@@ -65,6 +65,10 @@ void main() {
     gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
 
     bool hasMipping = (A.d&int16_t(1))!=int16_t(0);
+    bool hasAlpha   = (A.d&int16_t(2))!=int16_t(0);
+
+    OUT[(gl_LocalInvocationID.x<<1)|0].hasAlpha = hasAlpha;
+    OUT[(gl_LocalInvocationID.x<<1)|1].hasAlpha = hasAlpha;
 
     OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias = vec3(vec2(A.g,A.h)*(1f/65536), hasMipping?0.0f:-8.0f);
     OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias = vec3(vec2(B.g,B.h)*(1f/65536), hasMipping?0.0f:-8.0f);
