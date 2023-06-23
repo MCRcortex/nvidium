@@ -11,11 +11,10 @@
     "MixinSodiumOptionsGUI",
     "MixinSodiumWorldRenderer",
     "MixinWindow",
-    "MixinWorldRenderer"
+    "MixinWorldRenderer",
+    "MixinChunkRenderBoundsBuilder"
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-  ]
+  }
 }

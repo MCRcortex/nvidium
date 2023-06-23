@@ -15,13 +15,11 @@ import java.nio.file.Path;
 
 public class NvidiumConfig {
     //The options
-    public boolean mips_enabled = false;
     public int extra_rd = 100;
     public int fallback_allocation_size = 2048;
     public boolean enable_temporal_coherence = true;
     public int geometry_removing_memory_size = 2048;
 
-    //public int fog_distance = 0;
     public int region_keep_distance = 32;
 
     @Expose(serialize = false, deserialize = false)

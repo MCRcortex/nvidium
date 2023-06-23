@@ -92,6 +92,7 @@ public class SectionManager {
         Vector3i min  = SodiumResultCompatibility.getMinBounds(result);
         Vector3i size = SodiumResultCompatibility.getSizeBounds(result);
 
+
         int px = section.getChunkX()<<8  | size.x<<4 | min.x;
         int py = section.getChunkY()<<24 | size.y<<4 | min.y;
         int pz = section.getChunkZ()<<8  | size.z<<4 | min.z;

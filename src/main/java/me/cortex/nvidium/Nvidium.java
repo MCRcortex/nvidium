@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 public class Nvidium {
     public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
     public static boolean IS_ENABLED = false;
-    public static boolean IS_DEBUG = true;
+    public static boolean IS_DEBUG = System.getProperty("nvidium.isDebug", "false").equals("TRUE");
     public static boolean SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = true;
 
     public static NvidiumConfig config = NvidiumConfig.loadOrCreate();

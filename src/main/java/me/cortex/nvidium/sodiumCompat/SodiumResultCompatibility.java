@@ -54,6 +54,13 @@ public class SodiumResultCompatibility {
                             dst += formatSize;
                         }
                     }
+                    //Update the meta bits of the model format
+                    dst = uploadBuffer + offset * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
+                        short flags = (short) 1;//Yes mipping
+                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
+                    }
+
                     offset += (segment.elementCount()/6);
                 }
             }
@@ -90,6 +97,13 @@ public class SodiumResultCompatibility {
                             dst += formatSize;
                         }
                     }
+                    //Update the meta bits of the model format
+                    dst = uploadBuffer + offset * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
+                        short flags = (short) 0;//No mipping
+                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
+                    }
+
                     offset += (segment.elementCount()/6);
                 }
             }
@@ -126,6 +140,13 @@ public class SodiumResultCompatibility {
                             dst += formatSize;
                         }
                     }
+                    //Update the meta bits of the model format
+                    dst = uploadBuffer + offset * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
+                        short flags = (short) 0;//Yes mipping
+                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
+                    }
+
                     offset += (segment.elementCount()/6);
                 }
             }
@@ -168,6 +189,14 @@ public class SodiumResultCompatibility {
                             dst += formatSize;
                         }
                     }
+
+                    //Update the meta bits of the model format
+                    dst = uploadBuffer + translucent * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
+                        short flags = (short) 0;//No mipping
+                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
+                    }
+
                     translucent += (segment.elementCount()/6);
                 }
             }
@@ -186,10 +215,15 @@ public class SodiumResultCompatibility {
         return new Vector3i(mx,my,mz);
     }
 
+    //Note: this is adjusted since you cant ever have a size == 0 (the chunk would be air)
+    // so its size -1
     public static Vector3i getSizeBounds(ChunkBuildResult result) {
         int sx = (int)Math.ceil(result.data.getBounds().x2-result.data.getBounds().x1-1);
         int sy = (int)Math.ceil(result.data.getBounds().y2-result.data.getBounds().y1-1);
         int sz = (int)Math.ceil(result.data.getBounds().z2-result.data.getBounds().z1-1);
+        sx--;
+        sy--;
+        sz--;
         sx = Math.max(0, sx);
         sy = Math.max(0, sy);
         sz = Math.max(0, sz);

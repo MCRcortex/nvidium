@@ -31,6 +31,7 @@ public class MixinSodiumOptionsGUI {
     private void addNvidiumOptions(Screen prevScreen, CallbackInfo ci) {
         List<OptionGroup> groups = new ArrayList<>();
         groups.add(OptionGroup.createBuilder()
+                /*
                 .add(OptionImpl.createBuilder(boolean.class, store)
                         .setName(Text.translatable("nvidium.options.enable_mipping.name"))
                         .setTooltip(Text.translatable("nvidium.options.enable_mipping.tooltip"))
@@ -40,7 +41,7 @@ public class MixinSodiumOptionsGUI {
                         .setBinding((opts, value) -> opts.mips_enabled = value, opts -> opts.mips_enabled)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
-                )/*.add(OptionImpl.createBuilder(int.class, store)
+                )*//*.add(OptionImpl.createBuilder(int.class, store)
                         .setName(Text.translatable("nvidium.options.fog_distance.name"))
                         .setTooltip(Text.translatable("nvidium.options.fog_distance.tooltip"))
                         .setControl(option -> new SliderControl(option, 0, 256, 1, x->x==0?"Default":(x==256?"Disabled":x+" chunks")))
