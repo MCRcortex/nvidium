@@ -12,7 +12,7 @@ public class MixinBackgroundRenderer {
     @ModifyConstant(method = "applyFog", constant = @Constant(floatValue = 192.0F))
     private static float changeFog(float fog) {
         if (Nvidium.IS_ENABLED) {
-            return 999999f;
+            return 9999999f;
         } else {
             return fog;
         }
