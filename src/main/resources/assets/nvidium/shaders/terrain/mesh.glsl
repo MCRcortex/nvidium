@@ -66,8 +66,8 @@ void main() {
 
     bool hasMipping = (A.d&int16_t(1))!=int16_t(0);
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias = vec3(vec2(A.g,A.h)*(1f/65536), hasMipping?0.0f:-4.0f);
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias = vec3(vec2(B.g,B.h)*(1f/65536), hasMipping?0.0f:-4.0f);
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias = vec3(vec2(A.g,A.h)*(1f/65536), hasMipping?0.0f:-8.0f);
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias = vec3(vec2(B.g,B.h)*(1f/65536), hasMipping?0.0f:-8.0f);
 
 
     vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;

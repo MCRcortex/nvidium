@@ -31,4 +31,5 @@ void main() {
     if (colour.a < 0.05f) discard;
     colour *= tint;
     colour += addin;
+    //colour = vec4(1.0,(uv_bias.z/-8.1f)+0.001f,0,1);
 }

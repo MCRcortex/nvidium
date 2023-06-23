@@ -143,7 +143,7 @@ public class SodiumResultCompatibility {
                     //Update the meta bits of the model format
                     dst = uploadBuffer + offset * 4L * formatSize;
                     for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
-                        short flags = (short) 0;//Yes mipping
+                        short flags = (short) 1;//Yes mipping
                         MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
                     }
 
