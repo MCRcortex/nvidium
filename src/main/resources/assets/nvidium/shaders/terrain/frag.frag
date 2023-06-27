@@ -16,8 +16,7 @@ layout(location = 0) out vec4 colour;
 layout(location = 1) in Interpolants {
     vec4 tint;
     vec4 addin;
-    vec3 uv_bias;
-    flat bool hasAlpha;
+    vec4 uv_bias_cutoff;
 };
 
 
@@ -29,8 +28,8 @@ void main() {
     //uint uid = gl_PrimitiveID*132471+123571;
     //colour = vec4(float((uid>>0)&7)/7, float((uid>>3)&7)/7, float((uid>>6)&7)/7, 1.0);
     //colour = vec4(1.0,1.0,0,1);
-    colour = texture(tex_diffuse, uv_bias.xy, uv_bias.z);
-    if (colour.a < 0.05f && hasAlpha) discard;
+    colour = texture(tex_diffuse, uv_bias_cutoff.xy, uv_bias_cutoff.z);
+    if (colour.a < uv_bias_cutoff.w) discard;
     colour *= tint;
     colour += addin;
     //colour = vec4(1.0,(uv_bias.z/-8.1f)+0.001f,0,1);
