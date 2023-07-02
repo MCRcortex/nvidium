@@ -17,17 +17,21 @@
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
-//originAndBaseData.w is in quad count space, so is endIdx
-taskNV in Task {
-    vec4 originAndBaseData;
-    uint quadCount;
-};
-
 layout(location=1) out Interpolants {
     vec4 tint;
     vec4 addin;
     vec4 uv_bias_cutoff;
 } OUT[];
+
+taskNV in Task {
+    vec3 origin;
+    uint baseOffset;
+    //Binary search indexs and data
+    uvec4 binIa;
+    uvec4 binIb;
+    uvec4 binVa;
+    uvec4 binVb;
+};
 
 vec3 decodeVertex(Vertex v) {
     return vec3(v.a,v.b,v.c)*(32.0f/65535)-8.0f;
@@ -39,7 +43,15 @@ vec4 sampleLight(vec2 uv) {
     return texture(tex_light, clamp(uv / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
 }
 
-//TODO: extra per quad culling
+//Do a binary search via global invocation index to determine the base offset
+// Note, all threads in the work group are probably going to take the same path
+uint getOffset() {
+    uint gii = gl_GlobalInvocationID.x>>1;
+    uint val = (gii < binIb.x ? (gii < bin[2] ? (gii < bin[1] ? 0 : 1) : (gii < bin[3] ? 2 : 3)) : (gii < bin[6] ? (gii < bin[5] ? 4 : 5) : 6));
+    return val + baseOffset;
+}
+
+
 void main() {
     if ((gl_GlobalInvocationID.x>>1)>=quadCount) { //If its over the quad count, dont render
         return;

@@ -21,8 +21,12 @@ layout(local_size_x=1) in;
 //In here add an array that is then "logged" on in the mesh shader to find the draw data
 taskNV out Task {
     vec4 originAndBaseData;
-    uint quadCount;
+
+    //Binary search indexs and data
+    uint bin[7];
+    uint binVal[7];
 };
+
 uvec4 offsetData;
 uint32_t extractOffset(uint idx) {
     if (idx == 0) {
@@ -67,12 +71,12 @@ void main() {
     }
 
     originAndBaseData.xyz = vec3(chunk<<4);
+    originAndBaseData.w = uintBitsToFloat(a+baseDataOffset);
 
     offsetData = (uvec4)sectionData[sectionId].renderRanges;
     uint a = extractOffset(side);
     uint b = extractOffset(side+1);
     quadCount = (b-a);
-    originAndBaseData.w = uintBitsToFloat(a+baseDataOffset);
 
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
