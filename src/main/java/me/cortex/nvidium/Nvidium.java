@@ -1,6 +1,7 @@
 package me.cortex.nvidium;
 
 import me.cortex.nvidium.sodiumCompat.NvidiumConfig;
+import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.util.Util;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 public class Nvidium {
     public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");
+    public static boolean IS_COMPATIBLE = false;
     public static boolean IS_ENABLED = false;
     public static boolean IS_DEBUG = System.getProperty("nvidium.isDebug", "false").equals("TRUE");
     public static boolean SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = true;
@@ -31,20 +33,21 @@ public class Nvidium {
                 cap.GL_NV_representative_fragment_test &&
                 cap.GL_ARB_sparse_buffer &&
                 cap.GL_NV_bindless_multi_draw_indirect;
-        IS_ENABLED = supported;
-        if (IS_ENABLED) {
+        IS_COMPATIBLE = supported;
+        if (IS_COMPATIBLE) {
             LOGGER.info("All capabilities met");
         } else {
             LOGGER.warn("Not all requirements met, disabling nvidium");
         }
-        if (IS_ENABLED && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
+        if (IS_COMPATIBLE && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
             LOGGER.warn("Linux currently uses fallback terrain buffer due to driver inconsistencies, expect increase vram usage");
             SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = false;
         }
 
-        if (IS_ENABLED) {
+        if (IS_COMPATIBLE) {
             LOGGER.info("Enabling Nvidium");
         }
+        IS_ENABLED = IS_COMPATIBLE;
     }
 
 

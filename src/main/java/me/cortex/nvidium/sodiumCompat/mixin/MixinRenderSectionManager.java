@@ -4,6 +4,7 @@ import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.RenderPipeline;
 import me.cortex.nvidium.sodiumCompat.IRenderPipelineGetter;
 import me.cortex.nvidium.sodiumCompat.IRenderPipelineSetter;
+import me.cortex.nvidium.sodiumCompat.IrisCheck;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
@@ -14,6 +15,8 @@ import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
+import net.fabricmc.loader.api.FabricLoader;
+import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -34,8 +37,10 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
     @Shadow @Final private RenderRegionManager regions;
     @Unique private RenderPipeline pipeline;
 
+
     @Inject(method = "<init>", at = @At("TAIL"))
     private void init(SodiumWorldRenderer worldRenderer, BlockRenderPassManager renderPassManager, ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
+        Nvidium.IS_ENABLED = Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
         if (Nvidium.IS_ENABLED) {
             if (pipeline != null)
                 throw new IllegalStateException("Cannot have multiple pipelines");
