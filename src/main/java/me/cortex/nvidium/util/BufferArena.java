@@ -2,7 +2,6 @@ package me.cortex.nvidium.util;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.gl.RenderDevice;
-import me.cortex.nvidium.gl.buffers.Buffer;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer;
 
@@ -20,8 +19,8 @@ public class BufferArena {
         if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER) {
             buffer = device.createSparseBuffer(80000000000L);//Create a 80gb buffer
         } else {
-            FALLBACK_SIZE = Nvidium.config.fallback_allocation_size * 1024L * 1024L;
-            buffer = device.createDeviceOnlyMappedBuffer(FALLBACK_SIZE);//create 2gb allocate
+            FALLBACK_SIZE = Nvidium.config.max_geometry_memory * 1024L * 1024L;
+            buffer = device.createDeviceOnlyMappedBuffer(FALLBACK_SIZE);
         }
     }
 

@@ -51,5 +51,6 @@ dependencies {
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
+    modCompileOnly "maven.modrinth:iris:1.6.4+1.20"
 }
 
