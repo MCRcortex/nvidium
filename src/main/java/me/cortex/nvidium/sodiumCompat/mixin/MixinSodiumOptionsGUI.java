@@ -17,7 +17,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,21 +68,12 @@ public class MixinSodiumOptionsGUI {
                         .setFlags()
                         .build()
                 ).add(OptionImpl.createBuilder(int.class, store)
-                        .setName(Text.translatable("nvidium.options.fallback_allocation_size.name"))
-                        .setTooltip(Text.translatable("nvidium.options.fallback_allocation_size.tooltip"))
-                        .setControl(option -> new SliderControl(option, 2048, 12000, 1, ControlValueFormatter.translateVariable("nvidium.options.mb")))
-                        .setImpact(OptionImpact.LOW)
-                        .setEnabled(Nvidium.IS_ENABLED && !Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER)
-                        .setBinding((opts, value) -> opts.fallback_allocation_size = value, opts -> opts.fallback_allocation_size)
-                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
-                        .build()
-                ).add(OptionImpl.createBuilder(int.class, store)
                         .setName(Text.translatable("nvidium.options.max_gpu_memory.name"))
                         .setTooltip(Text.translatable("nvidium.options.max_gpu_memory.tooltip"))
                         .setControl(option -> new SliderControl(option, 2048, 32768, 512, ControlValueFormatter.translateVariable("nvidium.options.mb")))
                         .setImpact(OptionImpact.VARIES)
-                        .setEnabled(Nvidium.IS_ENABLED && Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER)
-                        .setBinding((opts, value) -> opts.geometry_removing_memory_size = value, opts -> opts.geometry_removing_memory_size)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setBinding((opts, value) -> opts.max_geometry_memory = value, opts -> opts.max_geometry_memory)
                         .setFlags()
                         .build()
                 )/*
