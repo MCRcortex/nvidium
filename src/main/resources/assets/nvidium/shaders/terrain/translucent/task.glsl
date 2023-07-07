@@ -30,11 +30,11 @@ bool shouldRender(uint sectionId) {
 }
 
 void main() {
-    uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
+    uint sectionId = gl_WorkGroupID.x;
 
     if (!shouldRender(sectionId)) {
         //Early exit if the section isnt visible
-        //gl_TaskCountNV = 0;
+        gl_TaskCountNV = 0;
         return;
     }
 

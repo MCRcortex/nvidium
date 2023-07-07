@@ -36,21 +36,14 @@ uint32_t extractOffset(uint idx) {
     return (uint16_t)((offsetData[idx>>1]>>((idx&1)*16))&0xFFFF);
 }
 
-
 bool shouldRenderVisible(uint sectionId) {
     return (sectionVisibility[sectionId]&uint8_t(1)) != uint8_t(0);
 }
 
-bool shouldRenderSide(uint side, ivec3 relativeChunkPos) {
-    if (side == UNASSIGNED) return true;
-    uint base = side>>1;
-    int dp = relativeChunkPos.yxz[base];
-    dp = ((side&1)==0?dp:-dp);
-    return dp <= 0;
-}
+void generateWork
 
 void main() {
-    uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
+    uint sectionId = gl_WorkGroupID.x;
 
     if (!shouldRenderVisible(sectionId)) {
         //Early exit if the section isnt visible
@@ -58,17 +51,20 @@ void main() {
         return;
     }
 
-    uint side = ((gl_WorkGroupID.x>>29)&7);//Dont need the &
-
     ivec4 header = sectionData[sectionId].header;
     uint baseDataOffset = (uint)header.w;
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
     chunk -= chunkPosition.xyz;
+
+
+
+
+    /*
     if (!shouldRenderSide(side, chunk)) {
         gl_TaskCountNV = 0;
         return ;
-    }
+    }*/
 
     originAndBaseData.xyz = vec3(chunk<<4);
     originAndBaseData.w = uintBitsToFloat(a+baseDataOffset);

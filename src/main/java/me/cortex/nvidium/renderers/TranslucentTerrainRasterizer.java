@@ -48,8 +48,8 @@ public class TranslucentTerrainRasterizer extends Phase {
         GL45C.glBindSampler(1, lightSampler);
 
         //the +8*6 is to offset to the unassigned dispatch
-        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr+8*6, regionCount*8L*7);//Bind the command buffer
-        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 8*7);//Since we are using the existing command buffer, has stride of 8*7
+        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
+        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
     }

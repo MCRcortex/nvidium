@@ -47,7 +47,7 @@ bool shouldRenderSide(uint side, ivec3 relativeChunkPos) {
 }
 
 void main() {
-    uint sectionId = ((gl_WorkGroupID.x)&~(0x7<<29));
+    uint sectionId = gl_WorkGroupID.x;
 
     if (!shouldRenderVisible(sectionId)) {
         //Early exit if the section isnt visible

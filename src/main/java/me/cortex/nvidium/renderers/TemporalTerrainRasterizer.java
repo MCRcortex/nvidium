@@ -45,8 +45,8 @@ public class TemporalTerrainRasterizer extends Phase {
 
 
 
-        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L*7);//Bind the command buffer
-        glMultiDrawMeshTasksIndirectNV( 0, regionCount*7, 0);
+        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
+        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);
 
 
         GL45C.glBindSampler(0, 0);

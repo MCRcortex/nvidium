@@ -24,7 +24,7 @@ public class PrimaryTerrainRasterizer extends Phase {
             .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/frag.frag"))).compile();
 
     public PrimaryTerrainRasterizer() {
-        GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        GL45C.glSamplerParameteri(blockSampler,     GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_LOD, 0);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MAX_LOD, 4);
@@ -42,8 +42,8 @@ public class PrimaryTerrainRasterizer extends Phase {
         GL45C.glBindTextureUnit(1, lightId);
         GL45C.glBindSampler(1, lightSampler);
 
-        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L*7);//Bind the command buffer
-        glMultiDrawMeshTasksIndirectNV( 0, regionCount*7, 0);
+        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
+        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
     }
