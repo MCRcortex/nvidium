@@ -34,6 +34,7 @@ import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 import static org.lwjgl.opengl.GL42.*;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
+import static org.lwjgl.opengl.NVShaderBufferStore.GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
@@ -209,11 +210,12 @@ public class RenderPipeline {
             addr += 2;
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
         }
+
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
 
         //TODO: FIXME: THIS FEELS ILLEGAL
         TickableManager.TickAll();
-        if (false) return;
+
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
@@ -225,14 +227,11 @@ public class RenderPipeline {
         //Bind the uniform, it doesnt get wiped between shader changes
         glBufferAddressRangeNV(GL_UNIFORM_BUFFER_ADDRESS_NV, 0, sceneUniform.getDeviceAddress(), SCENE_SIZE);
 
-
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
         }
-        //glClearColor(1,1,1,1);
-        //glClear(GL11C.GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -242,8 +241,7 @@ public class RenderPipeline {
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
+        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
         {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
             outerLoop:
@@ -262,20 +260,13 @@ public class RenderPipeline {
             }
         }
 
-        /*
-        {//Download the region visibility from the gpu, used for determining culling
-            downloadStream.download(regionVisibility, 0, visibleRegions, addr->{
-                for (long i = 0; i < size; i++) {
-                    System.out.println(MemoryUtil.memGetByte(addr + i));
-                }
-            });
-        }*/
 
-        //glColorMask(true, true, true, true);
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);
         glColorMask(true, true, true, true);
+
+        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
             int msk = 0;//This is such a dumb way to do this but it works
@@ -296,7 +287,6 @@ public class RenderPipeline {
 
         //Do temporal rasterization
         if (Nvidium.config.enable_temporal_coherence) {
-            //glFinish();
             glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
             temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
         }
@@ -330,7 +320,6 @@ public class RenderPipeline {
         if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(Nvidium.config.max_geometry_memory-50)) {
             removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
         }
-        //glFinish();
     }
 
     private void removeRegion(int id) {
@@ -348,7 +337,7 @@ public class RenderPipeline {
             int id = sectionManager.getSectionRegionIndex(cx, cy, cz);
             if (id != -1) {
                 id |= rid << 8;
-                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (-1)});
+                //glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{-1});
             }
         }
     }
