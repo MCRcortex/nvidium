@@ -72,7 +72,7 @@ public class MixinSodiumOptionsGUI {
                         .setTooltip(Text.translatable("nvidium.options.max_gpu_memory.tooltip"))
                         .setControl(option -> new SliderControl(option, 2048, 32768, 512, ControlValueFormatter.translateVariable("nvidium.options.mb")))
                         .setImpact(OptionImpact.VARIES)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(Nvidium.IS_ENABLED && !Nvidium.config.automatic_memory)
                         .setBinding((opts, value) -> opts.max_geometry_memory = value, opts -> opts.max_geometry_memory)
                         .setFlags()
                         .build()

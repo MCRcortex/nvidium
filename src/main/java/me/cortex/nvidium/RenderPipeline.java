@@ -81,6 +81,9 @@ public class RenderPipeline {
 
     private final BitSet regionVisibilityTracker;
 
+    //Max memory that the gpu can use to store geometry in mb
+    private long max_geometry_memory;
+
     public RenderPipeline() {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
@@ -317,7 +320,7 @@ public class RenderPipeline {
         }
 
 
-        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(Nvidium.config.max_geometry_memory-50)) {
+        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
             removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
         }
     }
