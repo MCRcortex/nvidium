@@ -34,6 +34,7 @@ import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 import static org.lwjgl.opengl.GL42.*;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
+import static org.lwjgl.opengl.NVShaderBufferStore.GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
@@ -88,7 +89,7 @@ public class RenderPipeline {
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
-        temporalRasterizer = new TemporalTerrainRasterizer();
+        temporalRasterizer = null;// new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
@@ -99,8 +100,8 @@ public class RenderPipeline {
         cbs += maxRegions;
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
         cbs += maxRegions * 256L;
-        terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L*7);
-        cbs += maxRegions*8L*7;
+        terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
+        cbs += maxRegions*8L;
 
         regionVisibilityTracker = new BitSet(maxRegions);
 
@@ -242,8 +243,7 @@ public class RenderPipeline {
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
 
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
+        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
         {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
             outerLoop:
@@ -295,7 +295,7 @@ public class RenderPipeline {
         prevRegionCount = visibleRegions;
 
         //Do temporal rasterization
-        if (Nvidium.config.enable_temporal_coherence) {
+        if (Nvidium.config.enable_temporal_coherence && false) {
             //glFinish();
             glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
             temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
@@ -357,10 +357,6 @@ public class RenderPipeline {
     //Translucency is rendered in a very cursed and incorrect way
     // it hijacks the unassigned indirect command dispatch and uses that to dispatch the translucent chunks as well
     public void renderTranslucent() {
-        //if (true) return;
-
-        //Memory barrier for the command buffer
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_COMMAND_BARRIER_BIT);
 
         glEnableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
         glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
@@ -374,7 +370,6 @@ public class RenderPipeline {
             glEnable(GL_DEPTH_TEST);
             RenderSystem.enableBlend();
             RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
-            //The + 8*6 is the offset to the unassigned dispatch
             translucencyTerrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();
@@ -399,7 +394,7 @@ public class RenderPipeline {
         terrainRasterizer.delete();
         regionRasterizer.delete();
         sectionRasterizer.delete();
-        temporalRasterizer.delete();
+        //temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
 
         downloadStream.delete();

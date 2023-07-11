@@ -46,7 +46,8 @@ void main() {
     int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
 
     uint8_t lastData = sectionVisibility[visibilityIndex];
-    barrier();
+    // this is almost 100% guarenteed not needed afaik
+    //barrier();
 
     uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
     vec3 mins = (header.xyz&0xF)-ADD_SIZE;

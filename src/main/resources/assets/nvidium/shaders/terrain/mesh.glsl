@@ -26,6 +26,7 @@ layout(location=1) out Interpolants {
 taskNV in Task {
     vec3 origin;
     uint baseOffset;
+    uint quadCount;
 
     //Binary search indexs and data
     uvec4 binIa;
@@ -44,29 +45,7 @@ vec4 sampleLight(vec2 uv) {
     return texture(tex_light, clamp(uv / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
 }
 
-//Do a binary search via global invocation index to determine the base offset
-// Note, all threads in the work group are probably going to take the same path
-uint getOffset() {
-    uint gii = gl_GlobalInvocationID.x>>1;
-    if (gii < binIb.x) {
-        if (gii < binIa.z) {
-            v = gii < binIa.y ? binVa.x : binVa.y;
-        } else {
-
-        }
-    }
-
-    uint val = (gii < binIb.x ? (gii < bin[2] ? (gii < bin[1] ? 0 : 1) : (gii < bin[3] ? 2 : 3)) : (gii < bin[6] ? (gii < bin[5] ? 4 : 5) : 6));
-    return val + baseOffset;
-}
-
-
-void main() {
-    if ((gl_GlobalInvocationID.x>>1)>=quadCount) { //If its over the quad count, dont render
-        return;
-    }
-    //Each pair of meshlet invokations emits 2 vertices each and 1 primative each
-    uint id = (floatBitsToUint(originAndBaseData.w)<<2) + (gl_GlobalInvocationID.x<<1);//mul by 2 since there are 2 threads per quad each thread needs to process 2 vertices
+void processVertPair(uint id) {
 
     Vertex A = terrainData[id];
     Vertex B = terrainData[id|1];
@@ -74,8 +53,8 @@ void main() {
     //TODO: OPTIMIZE
     uint primId = gl_LocalInvocationID.x*3;
     uint idxBase = (gl_LocalInvocationID.x>>1)<<2;
-    vec3 posA = decodeVertex(A)+originAndBaseData.xyz;
-    vec3 posB = decodeVertex(B)+originAndBaseData.xyz;
+    vec3 posA = decodeVertex(A)+origin;
+    vec3 posB = decodeVertex(B)+origin;
     gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)].gl_Position   = MVP*vec4(posA,1.0);
     gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)|1].gl_Position = MVP*vec4(posB,1.0);
 
@@ -109,6 +88,46 @@ void main() {
     OUT[(gl_LocalInvocationID.x<<1)|1].addin = addiBO;
 
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
+}
+
+
+
+//Do a binary search via global invocation index to determine the base offset
+// Note, all threads in the work group are probably going to take the same path
+uint getOffset() {
+    uint gii = gl_GlobalInvocationID.x>>1;
+
+    //TODO: replace this with binary search
+    if (gii < binIa.x) {
+        return binVa.x + gii + baseOffset;
+    } else if (gii < binIa.y) {
+        return binVa.y + (gii - binIa.x) + baseOffset;
+    } else if (gii < binIa.z) {
+        return binVa.z + (gii - binIa.y) + baseOffset;
+    } else if (gii < binIa.w) {
+        return binVa.w + (gii - binIa.z) + baseOffset;
+    } else if (gii < binIb.x) {
+        return binVb.x + (gii - binIa.w) + baseOffset;
+    } else if (gii < binIb.y) {
+        return binVb.y + (gii - binIb.x) + baseOffset;
+    } else if (gii < binIb.z) {
+        return binVb.z + (gii - binIb.y) + baseOffset;
+    } else if (gii < binIb.w) {
+        return binVb.w + (gii - binIb.z) + baseOffset;
+    } else {
+        return uint(-1);
+    }
+}
+
+void main() {
+    uint id = getOffset();
+
+    //If its over, dont render
+    if (id == uint(-1)) {
+        return;
+    }
+
+    processVertPair(((id << 1) | (gl_LocalInvocationID.x&1)) << 1);
 
     if (gl_LocalInvocationID.x == 0) {
         //Remaining quads in workgroup
