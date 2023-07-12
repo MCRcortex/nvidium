@@ -1,16 +1,12 @@
 {
   "nvidium.options.pages.nvidium" : "Nvidium",
-  "nvidium.options.enable_mipping.name" : "Enable mipmapping",
-  "nvidium.options.enable_mipping.tooltip" : "Enables mipmapping of textures for non translucent terrain",
   "nvidium.options.region_keep_distance.name" : "Region Keep Distance",
   "nvidium.options.region_keep_distance.tooltip" : "Distance to keep loaded regions",
-  "nvidium.options.fog_distance.name" : "Fog Distance",
-  "nvidium.options.fog_distance.tooltip" : "Fog override distance",
+  "nvidium.options.automatic_memory_limit.name" : "Automatic memory limit",
+  "nvidium.options.automatic_memory_limit.tooltip" : "Automatically determines the memory limit to set given the amount of available vram on your system",
   "nvidium.options.max_gpu_memory.name" : "Max gpu memory",
   "nvidium.options.max_gpu_memory.tooltip" : "Max gpu memory allowed, will start to cull chunks if this limit is hit",
   "nvidium.options.enable_temporal_coherence.name" : "Enables temporal coherence",
   "nvidium.options.enable_temporal_coherence.tooltip" : "Removes artifacting when turning around",
-  "nvidium.options.fallback_allocation_size.name" : "Fallback buffer size",
-  "nvidium.options.fallback_allocation_size.tooltip" : "Sets the fallback buffer size if sparse buffer is unavailable (this currently only happens on linux)",
   "nvidium.options.mb" : "%s Mbs"
 }

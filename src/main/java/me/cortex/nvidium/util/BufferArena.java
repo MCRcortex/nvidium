@@ -63,13 +63,16 @@ public class BufferArena {
         return (int) ((totalQuads * vertexFormatSize * 4)/(1024*1024));
     }
 
+    public long getMemoryUsed() {
+        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
+            return (psab.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE);
+        } else {
+            return memory_size;
+        }
+    }
+
     public float getFragmentation() {
         long expected = totalQuads * vertexFormatSize * 4;
-        if (buffer instanceof PersistentSparseAddressableBuffer psab) {
-            long have = (psab.getPagesCommitted() * PersistentSparseAddressableBuffer.PAGE_SIZE);
-            return (float) ((double) expected / have);
-        } else {
-            return (float)((double)expected/(memory_size));
-        }
+        return (float) ((double)expected/getMemoryUsed());
     }
 }

@@ -249,7 +249,8 @@ public class RenderPipeline {
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
 
-        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+        //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
             outerLoop:
@@ -274,7 +275,8 @@ public class RenderPipeline {
         glDepthMask(true);
         glColorMask(true, true, true, true);
 
-        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+        //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
             int msk = 0;//This is such a dumb way to do this but it works
@@ -337,7 +339,7 @@ public class RenderPipeline {
 
     private void update_allowed_memory() {
         if (Nvidium.config.automatic_memory) {
-            max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getUsedMB());
+            max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getMemoryUsed()/(1024*1024));
             max_geometry_memory -= 1024;//Minus 1gb of vram
             max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 gb of vram
         } else {

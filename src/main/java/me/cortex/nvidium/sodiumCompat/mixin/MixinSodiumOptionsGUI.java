@@ -29,6 +29,18 @@ public class MixinSodiumOptionsGUI {
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", ordinal = 3, shift = At.Shift.AFTER))
     private void addNvidiumOptions(Screen prevScreen, CallbackInfo ci) {
         List<OptionGroup> groups = new ArrayList<>();
+        if (Nvidium.IS_COMPATIBLE && !Nvidium.IS_ENABLED) {
+            groups.add(OptionGroup.createBuilder()
+                    .add(OptionImpl.createBuilder(boolean.class, store)
+                            .setName(Text.literal("Nvidium disabled due to shaders being loaded"))
+                            .setTooltip(Text.literal("Nvidium disabled due to shaders being loaded"))
+                            .setControl(TickBoxControl::new)
+                            .setImpact(OptionImpact.VARIES)
+                            .setBinding((opts, value) -> {}, opts -> false)
+                            .setFlags()
+                            .build()
+                    ).build());
+        }
         groups.add(OptionGroup.createBuilder()
                 .add(OptionImpl.createBuilder(int.class, store)
                         .setName(Text.translatable("nvidium.options.region_keep_distance.name"))
@@ -48,7 +60,16 @@ public class MixinSodiumOptionsGUI {
                         .setBinding((opts, value) -> opts.enable_temporal_coherence = value, opts -> opts.enable_temporal_coherence)
                         .setFlags()
                         .build()
-                ).add(OptionImpl.createBuilder(int.class, store)
+                ).add(OptionImpl.createBuilder(boolean.class, store)
+                        .setName(Text.translatable("nvidium.options.automatic_memory_limit.name"))
+                        .setTooltip(Text.translatable("nvidium.options.automatic_memory_limit.tooltip"))
+                        .setControl(TickBoxControl::new)
+                        .setImpact(OptionImpact.VARIES)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setBinding((opts, value) -> opts.automatic_memory = value, opts -> opts.automatic_memory)
+                        .setFlags()
+                        .build())
+               .add(OptionImpl.createBuilder(int.class, store)
                         .setName(Text.translatable("nvidium.options.max_gpu_memory.name"))
                         .setTooltip(Text.translatable("nvidium.options.max_gpu_memory.tooltip"))
                         .setControl(option -> new SliderControl(option, 2048, 32768, 512, ControlValueFormatter.translateVariable("nvidium.options.mb")))

@@ -18,19 +18,7 @@
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
 layout(local_size_x=1) in;
 
-//In here add an array that is then "logged" on in the mesh shader to find the draw data
-taskNV out Task {
-    vec4 originAndBaseData;
-    uint quadCount;
-};
-uvec4 offsetData;
-uint32_t extractOffset(uint idx) {
-    if (idx == 0) {
-        return 0;
-    }
-    idx--;
-    return (uint16_t)((offsetData[idx>>1]>>((idx&1)*16))&0xFFFF);
-}
+
 
 
 bool shouldRenderVisible(uint sectionId) {
@@ -38,13 +26,7 @@ bool shouldRenderVisible(uint sectionId) {
     return (data&uint8_t(3)) == uint8_t(1);//If the section was not visible last frame but is visible this frame, render it
 }
 
-bool shouldRenderSide(uint side, ivec3 relativeChunkPos) {
-    if (side == UNASSIGNED) return true;
-    uint base = side>>1;
-    int dp = relativeChunkPos.yxz[base];
-    dp = ((side&1)==0?dp:-dp);
-    return dp <= 0;
-}
+#import <nvidium:terrain/task_common.glsl>
 
 void main() {
     uint sectionId = gl_WorkGroupID.x;
@@ -55,27 +37,13 @@ void main() {
         return;
     }
 
-    uint side = ((gl_WorkGroupID.x>>29)&7);//Dont need the &
-
     ivec4 header = sectionData[sectionId].header;
-    uint baseDataOffset = (uint)header.w;
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
     chunk -= chunkPosition.xyz;
-    if (!shouldRenderSide(side, chunk)) {
-        gl_TaskCountNV = 0;
-        return ;
-    }
 
-    originAndBaseData.xyz = vec3(chunk<<4);
+    origin = vec3(chunk<<4);
+    baseOffset = (uint)header.w;
 
-    offsetData = (uvec4)sectionData[sectionId].renderRanges;
-    uint a = extractOffset(side);
-    uint b = extractOffset(side+1);
-    quadCount = (b-a);
-    originAndBaseData.w = uintBitsToFloat(a+baseDataOffset);
-
-
-    //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
-    gl_TaskCountNV = (quadCount+MESH_WORKLOAD_PER_INVOCATION-1)/MESH_WORKLOAD_PER_INVOCATION;
+    populateTasks(chunk, (uvec4)sectionData[sectionId].renderRanges);
 }
