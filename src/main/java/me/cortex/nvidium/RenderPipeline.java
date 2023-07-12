@@ -38,6 +38,7 @@ import static org.lwjgl.opengl.NVShaderBufferStore.GL_SHADER_GLOBAL_ACCESS_BARRI
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
+import static org.lwjgl.opengl.NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
 
 
 /*
@@ -51,6 +52,8 @@ for (int i = 0; i < rm.maxRegionIndex(); i++) {
 }
 hm.size()
  */
+
+//TODO: extract out sectionManager, uploadStream, downloadStream and other funky things to an auxiliary parent NvidiumWorldRenderer class
 public class RenderPipeline {
     public static final int GL_DRAW_INDIRECT_UNIFIED_NV = 0x8F40;
     public static final int GL_DRAW_INDIRECT_ADDRESS_NV = 0x8F41;
@@ -81,15 +84,20 @@ public class RenderPipeline {
 
     private final BitSet regionVisibilityTracker;
 
+    //Max memory that the gpu can use to store geometry in mb
+    private long max_geometry_memory;
+    private long last_sample_time;
+
     public RenderPipeline() {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
-        sectionManager = new SectionManager(device, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
+        update_allowed_memory();
+        sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
-        temporalRasterizer = null;// new TemporalTerrainRasterizer();
+        temporalRasterizer = new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
@@ -210,11 +218,12 @@ public class RenderPipeline {
             addr += 2;
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
         }
+
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
 
         //TODO: FIXME: THIS FEELS ILLEGAL
         TickableManager.TickAll();
-        if (false) return;
+
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
@@ -226,14 +235,11 @@ public class RenderPipeline {
         //Bind the uniform, it doesnt get wiped between shader changes
         glBufferAddressRangeNV(GL_UNIFORM_BUFFER_ADDRESS_NV, 0, sceneUniform.getDeviceAddress(), SCENE_SIZE);
 
-
         if (prevRegionCount != 0) {
             glEnable(GL_DEPTH_TEST);
             terrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
             glMemoryBarrier(GL_FRAMEBUFFER_BARRIER_BIT);
         }
-        //glClearColor(1,1,1,1);
-        //glClear(GL11C.GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
         //NOTE: For GL_REPRESENTATIVE_FRAGMENT_TEST_NV to work, depth testing must be disabled, or depthMask = false
         glEnable(GL_DEPTH_TEST);
@@ -262,20 +268,13 @@ public class RenderPipeline {
             }
         }
 
-        /*
-        {//Download the region visibility from the gpu, used for determining culling
-            downloadStream.download(regionVisibility, 0, visibleRegions, addr->{
-                for (long i = 0; i < size; i++) {
-                    System.out.println(MemoryUtil.memGetByte(addr + i));
-                }
-            });
-        }*/
 
-        //glColorMask(true, true, true, true);
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);
         glColorMask(true, true, true, true);
+
+        glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
 
         {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
             int msk = 0;//This is such a dumb way to do this but it works
@@ -295,8 +294,7 @@ public class RenderPipeline {
         prevRegionCount = visibleRegions;
 
         //Do temporal rasterization
-        if (Nvidium.config.enable_temporal_coherence && false) {
-            //glFinish();
+        if (Nvidium.config.enable_temporal_coherence) {
             glMemoryBarrier(GL_COMMAND_BARRIER_BIT);
             temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
         }
@@ -327,10 +325,24 @@ public class RenderPipeline {
         }
 
 
-        if (Nvidium.config.enable_temporal_coherence && sectionManager.terrainAreana.getUsedMB()>(Nvidium.config.max_geometry_memory-50)) {
+        if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER && (System.currentTimeMillis() - last_sample_time) > 60000) {
+            last_sample_time = System.currentTimeMillis();
+            update_allowed_memory();
+        }
+
+        if (sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
             removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
         }
-        //glFinish();
+    }
+
+    private void update_allowed_memory() {
+        if (Nvidium.config.automatic_memory) {
+            max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getUsedMB());
+            max_geometry_memory -= 1024;//Minus 1gb of vram
+            max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 gb of vram
+        } else {
+            max_geometry_memory = Nvidium.config.max_geometry_memory;
+        }
     }
 
     private void removeRegion(int id) {
@@ -348,7 +360,7 @@ public class RenderPipeline {
             int id = sectionManager.getSectionRegionIndex(cx, cy, cz);
             if (id != -1) {
                 id |= rid << 8;
-                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte) (-1)});
+                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{-1});
             }
         }
     }
@@ -394,7 +406,7 @@ public class RenderPipeline {
         terrainRasterizer.delete();
         regionRasterizer.delete();
         sectionRasterizer.delete();
-        //temporalRasterizer.delete();
+        temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
 
         downloadStream.delete();
@@ -406,8 +418,9 @@ public class RenderPipeline {
     }
 
     public void addDebugInfo(List<String> info) {
-        info.add("Using nvidium renderer");
+        info.add("Using nvidium renderer: "+ Nvidium.MOD_VERSION);
         info.add("Other Memory MB: " + getOtherBufferSizesMB());
+        info.add("Memory limit MB: " + max_geometry_memory);
         info.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
         info.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
         info.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());

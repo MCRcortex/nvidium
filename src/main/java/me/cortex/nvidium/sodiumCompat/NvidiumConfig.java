@@ -18,6 +18,7 @@ public class NvidiumConfig {
     public int extra_rd = 100;
     public boolean enable_temporal_coherence = true;
     public int max_geometry_memory = 2048;
+    public boolean automatic_memory = true;
 
     public int region_keep_distance = 32;
 

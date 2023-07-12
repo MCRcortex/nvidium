@@ -35,7 +35,7 @@ public class SectionManager {
     private final int formatSize;
 
     private final int bufferSize;
-    public SectionManager(RenderDevice device, UploadingBufferStream uploadStream, int rd, int height, int quadVertexSize) {
+    public SectionManager(RenderDevice device, long fallback_memory_size, UploadingBufferStream uploadStream, int rd, int height, int quadVertexSize) {
         this.device = device;
         this.uploadStream = uploadStream;
         int bs = 16000000;
@@ -48,7 +48,7 @@ public class SectionManager {
         this.formatSize = quadVertexSize;
         this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * (8*4*8) * SECTION_SIZE);
         bs += (long) maxRegions * (8*4*8) * SECTION_SIZE;
-        this.terrainAreana = new BufferArena(device, quadVertexSize);
+        this.terrainAreana = new BufferArena(device, fallback_memory_size, quadVertexSize);
         this.sectionOffset.defaultReturnValue(-1);
         this.regionManager = new RegionManager(device, maxRegions);
         bs += maxRegions * RegionManager.META_SIZE;
