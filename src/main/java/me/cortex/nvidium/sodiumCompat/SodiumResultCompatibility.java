@@ -143,7 +143,7 @@ public class SodiumResultCompatibility {
                     //Update the meta bits of the model format
                     dst = uploadBuffer + offset * 4L * formatSize;
                     for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
-                        short flags = (short) 0b110;//mipping, 0.5 cut
+                        short flags = (short)(IrisCheck.IRIS_LOADED?0b101: 0b110);//mipping, 0.5 cut without iris 0.1 with iris
                         MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
                     }
 
