@@ -1,0 +1,16 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.enable_mipping.name" : "启用Mipmap",
+  "nvidium.options.enable_mipping.tooltip" : "启用非半透明地形的Mipmap纹理",
+  "nvidium.options.region_keep_distance.name" : "区域保持距离",
+  "nvidium.options.region_keep_distance.tooltip" : "保持加载区域的距离",
+  "nvidium.options.fog_distance.name" : "雾气距离",
+  "nvidium.options.fog_distance.tooltip" : "雾气覆盖距离",
+  "nvidium.options.max_gpu_memory.name" : "最大显存",
+  "nvidium.options.max_gpu_memory.tooltip" : "允许的最大显存，如果达到这个限制，将开始剔除区块",
+  "nvidium.options.enable_temporal_coherence.name" : "实现时间一致性",
+  "nvidium.options.enable_temporal_coherence.tooltip" : "消除转身时的伪影",
+  "nvidium.options.fallback_allocation_size.name" : "后备缓冲区大小",
+  "nvidium.options.fallback_allocation_size.tooltip" : "如果稀疏缓冲区不可用，则设置后备缓冲区大小（这目前只发生在Linux上）",
+  "nvidium.options.mb" : "%s Mbs"
+}
