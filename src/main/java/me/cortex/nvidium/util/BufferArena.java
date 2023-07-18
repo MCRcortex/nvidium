@@ -20,7 +20,7 @@ public class BufferArena {
         this.vertexFormatSize = vertexFormatSize;
         this.memory_size = memory;
         if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER) {
-            buffer = device.createSparseBuffer(memory);//Create a 80gb buffer
+            buffer = device.createSparseBuffer(80000000000L);//Create a 80gb buffer
         } else {
             buffer = device.createDeviceOnlyMappedBuffer(memory);
         }

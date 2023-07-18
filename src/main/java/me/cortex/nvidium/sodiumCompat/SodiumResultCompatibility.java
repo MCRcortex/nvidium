@@ -15,11 +15,64 @@ public class SodiumResultCompatibility {
     public static void uploadChunkGeometry(long uploadBuffer, short[] outOffsets, ChunkBuildResult result) {
         int formatSize = 20;
         int offset = 0;
+
+        //Do translucent first
+        var translucentData  = result.meshes.get(BlockRenderPass.TRANSLUCENT);
+        if (translucentData != null) {
+            for (int i = 0; i < 7; i++) {
+                var segment = translucentData.getParts().get(ModelQuadFacing.values()[i]);
+                if (segment != null) {
+                    long srcVert = MemoryUtil.memAddress(translucentData.getVertexData().vertexBuffer().getDirectBuffer());
+                    long srcIdx = segment.elementPointer() + MemoryUtil.memAddress(translucentData.getVertexData().indexBuffer().getDirectBuffer());
+                    long dst = uploadBuffer + offset * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6); j++) {
+                        int a = MemoryUtil.memGetInt(srcIdx+4*6*j);
+                        if (MemoryUtil.memGetInt(srcIdx+4*6*j+4) == a+1) {
+                            MemoryUtil.memCopy(srcVert + (long) MemoryUtil.memGetInt(srcIdx + 4 * 6 * j) * formatSize,
+                                    dst,
+                                    formatSize * 4);
+                            dst += formatSize * 4;
+                        } else {
+                            long base = (long) MemoryUtil.memGetInt(srcIdx + 4 * 6 * j) * formatSize + srcVert;
+                            MemoryUtil.memCopy(base,
+                                    dst,
+                                    formatSize);
+                            dst += formatSize;
+                            MemoryUtil.memCopy(base + 3*formatSize,
+                                    dst,
+                                    formatSize);
+                            dst += formatSize;
+                            MemoryUtil.memCopy(base + 2*formatSize,
+                                    dst,
+                                    formatSize);
+                            dst += formatSize;
+                            MemoryUtil.memCopy(base + formatSize,
+                                    dst,
+                                    formatSize);
+                            dst += formatSize;
+                        }
+                    }
+
+                    //Update the meta bits of the model format
+                    dst = uploadBuffer + offset * 4L * formatSize;
+                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
+                        short flags = (short) 0b000;//No mipping, No alpha cut
+                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
+                    }
+
+                    offset += (segment.elementCount()/6);
+                }
+            }
+        }
+        outOffsets[7] = (short) offset;
+
+
         var solid  = result.meshes.get(BlockRenderPass.SOLID);
         var cutout = result.meshes.get(BlockRenderPass.CUTOUT);
         var mipped = result.meshes.get(BlockRenderPass.CUTOUT_MIPPED);
         //Do all but translucent
         for (int i = 0; i < 7; i++) {
+            int poff = offset;
             if (solid != null) {
                 //TODO Optimize from .values()
                 var segment = solid.getParts().get(ModelQuadFacing.values()[i]);
@@ -150,58 +203,8 @@ public class SodiumResultCompatibility {
                     offset += (segment.elementCount()/6);
                 }
             }
-            outOffsets[i] = (short) offset;
+            outOffsets[i] = (short) (offset - poff);
         }
-        //Do translucent
-        int translucent = offset;
-        var translucentData  = result.meshes.get(BlockRenderPass.TRANSLUCENT);
-        if (translucentData != null) {
-            for (int i = 0; i < 7; i++) {
-                var segment = translucentData.getParts().get(ModelQuadFacing.values()[i]);
-                if (segment != null) {
-                    long srcVert = MemoryUtil.memAddress(translucentData.getVertexData().vertexBuffer().getDirectBuffer());
-                    long srcIdx = segment.elementPointer() + MemoryUtil.memAddress(translucentData.getVertexData().indexBuffer().getDirectBuffer());
-                    long dst = uploadBuffer + translucent * 4L * formatSize;
-                    for (int j = 0; j < (segment.elementCount()/6); j++) {
-                        int a = MemoryUtil.memGetInt(srcIdx+4*6*j);
-                        if (MemoryUtil.memGetInt(srcIdx+4*6*j+4) == a+1) {
-                            MemoryUtil.memCopy(srcVert + (long) MemoryUtil.memGetInt(srcIdx + 4 * 6 * j) * formatSize,
-                                    dst,
-                                    formatSize * 4);
-                            dst += formatSize * 4;
-                        } else {
-                            long base = (long) MemoryUtil.memGetInt(srcIdx + 4 * 6 * j) * formatSize + srcVert;
-                            MemoryUtil.memCopy(base,
-                                    dst,
-                                    formatSize);
-                            dst += formatSize;
-                            MemoryUtil.memCopy(base + 3*formatSize,
-                                    dst,
-                                    formatSize);
-                            dst += formatSize;
-                            MemoryUtil.memCopy(base + 2*formatSize,
-                                    dst,
-                                    formatSize);
-                            dst += formatSize;
-                            MemoryUtil.memCopy(base + formatSize,
-                                    dst,
-                                    formatSize);
-                            dst += formatSize;
-                        }
-                    }
-
-                    //Update the meta bits of the model format
-                    dst = uploadBuffer + translucent * 4L * formatSize;
-                    for (int j = 0; j < (segment.elementCount()/6)*4; j++) {
-                        short flags = (short) 0b000;//No mipping, No alpha cut
-                        MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
-                    }
-
-                    translucent += (segment.elementCount()/6);
-                }
-            }
-        }
-        outOffsets[7] = (short) translucent;
     }
 
     //TODO: FIXME: dont use these bounds as they are not accurate (e.g. grass can take up multiple blocks cause vertices extend outside of block)

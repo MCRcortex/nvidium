@@ -121,7 +121,6 @@ public class SegmentedManager {
         addr &= ADDR_MSK;//encase addr stores shit in its upper bits
         var iter = TAKEN.iterator(addr<<SIZE_BITS);
         if (!iter.hasNext()) {
-            System.out.println("WAA");
             return false;
         }
         long slot = iter.nextLong();

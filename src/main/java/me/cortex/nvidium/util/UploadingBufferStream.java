@@ -36,7 +36,7 @@ public class UploadingBufferStream {
             allocations[i] = new LongArrayList();
         }
         segments.setLimit(size);
-        buffer = device.createClientMappedBuffer(size);
+        buffer = device.createClientMappedBuffer(size);//Fixes an off by one in the limit testing of the segment buffer
         TickableManager.register(this);
     }
 
@@ -65,11 +65,13 @@ public class UploadingBufferStream {
         for (long offset : batchedFlushes) {
             device.flush(buffer, offset, (int)segments.getSize(offset));
         }
+
         batchedFlushes.clear();
         device.barrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
         for (var batch : batchedCopies) {
             device.copyBuffer(buffer, batch.dest, batch.sourceOffset, batch.destOffset, batch.size);
         }
+
         batchedCopies.clear();
         device.barrier(GL_BUFFER_UPDATE_BARRIER_BIT);
     }

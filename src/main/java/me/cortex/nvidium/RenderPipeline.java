@@ -90,7 +90,7 @@ public class RenderPipeline {
 
     public RenderPipeline() {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
-        this.uploadStream = new UploadingBufferStream(device, frames, 160000000);
+        this.uploadStream = new UploadingBufferStream(device, frames, 250000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
         update_allowed_memory();
         sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
@@ -227,6 +227,7 @@ public class RenderPipeline {
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
+
 
         glEnableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
         glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
