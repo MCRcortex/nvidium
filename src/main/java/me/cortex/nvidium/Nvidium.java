@@ -62,4 +62,8 @@ public class Nvidium {
     public static void setupGLDebugCallback() {
 
     }
+
+    public static void preWindowInit() {
+        DriverFix.patch();
+    }
 }
