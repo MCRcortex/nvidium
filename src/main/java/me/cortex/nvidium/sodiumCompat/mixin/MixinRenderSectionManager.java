@@ -7,16 +7,13 @@ import me.cortex.nvidium.sodiumCompat.IRenderPipelineSetter;
 import me.cortex.nvidium.sodiumCompat.IrisCheck;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
-import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPassManager;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
-import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
-import net.fabricmc.loader.api.FabricLoader;
-import net.irisshaders.iris.api.v0.IrisApi;
+import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
+import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
+import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -33,13 +30,13 @@ import java.util.Collection;
 
 @Mixin(value = RenderSectionManager.class, remap = false)
 public class MixinRenderSectionManager implements IRenderPipelineGetter {
-    @Shadow private Frustum frustum;
+    @Shadow private Viewport viewport;
     @Shadow @Final private RenderRegionManager regions;
     @Unique private RenderPipeline pipeline;
 
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void init(SodiumWorldRenderer worldRenderer, BlockRenderPassManager renderPassManager, ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
+    private void init(SodiumWorldRenderer worldRenderer, ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
         Nvidium.IS_ENABLED = Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
         if (Nvidium.IS_ENABLED) {
             if (pipeline != null)
@@ -70,12 +67,12 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
     }
 
     @Inject(method = "renderLayer", at = @At("HEAD"), cancellable = true)
-    public void renderLayer(ChunkRenderMatrices matrices, BlockRenderPass pass, double x, double y, double z, CallbackInfo ci) {
+    public void renderLayer(ChunkRenderMatrices matrices, TerrainRenderPass pass, double x, double y, double z, CallbackInfo ci) {
         if (Nvidium.IS_ENABLED) {
             ci.cancel();
-            if (pass == BlockRenderPass.SOLID) {
-                pipeline.renderFrame(frustum, matrices, x, y, z);
-            } else if (pass == BlockRenderPass.TRANSLUCENT) {
+            if (pass == DefaultTerrainRenderPasses.SOLID) {
+                pipeline.renderFrame(viewport, matrices, x, y, z);
+            } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
                 pipeline.renderTranslucent();
             }
         }

@@ -6,7 +6,7 @@ import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
-import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
+import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.util.math.ChunkSectionPos;
 import org.lwjgl.system.MemoryUtil;
 
@@ -196,7 +196,7 @@ public class RegionManager {
         return idProvider.maxIndex();
     }
 
-    public boolean isRegionVisible(Frustum frustum, int regionId) {
+    public boolean isRegionVisible(Viewport frustum, int regionId) {
         var region = regions[regionId];
         if (region == null) {
             return false;

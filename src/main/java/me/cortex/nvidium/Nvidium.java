@@ -3,7 +3,6 @@ package me.cortex.nvidium;
 import me.cortex.nvidium.sodiumCompat.NvidiumConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.util.Util;
 import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
@@ -64,6 +63,6 @@ public class Nvidium {
     }
 
     public static void preWindowInit() {
-        DriverFix.patch();
+
     }
 }

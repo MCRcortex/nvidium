@@ -5,10 +5,8 @@
   "client": [
     "LightMapAccessor",
     "MixinBackgroundRenderer",
-    "MixinChunkRenderBoundsBuilder",
     "MixinGameRenderer",
     "MixinRenderRegionManager",
-    "MixinRenderSection",
     "MixinRenderSectionManager",
     "MixinSodiumOptionsGUI",
     "MixinSodiumWorldRenderer",

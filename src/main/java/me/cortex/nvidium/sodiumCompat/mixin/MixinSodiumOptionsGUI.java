@@ -45,7 +45,7 @@ public class MixinSodiumOptionsGUI {
                 .add(OptionImpl.createBuilder(int.class, store)
                         .setName(Text.translatable("nvidium.options.region_keep_distance.name"))
                         .setTooltip(Text.translatable("nvidium.options.region_keep_distance.tooltip"))
-                        .setControl(option -> new SliderControl(option, 32, 256, 1, x->x==32?"Vanilla":(x==256?"Keep All":x+" chunks")))
+                        .setControl(option -> new SliderControl(option, 32, 256, 1, x->Text.literal(x==32?"Vanilla":(x==256?"Keep All":x+" chunks"))))
                         .setImpact(OptionImpact.VARIES)
                         .setEnabled(Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.region_keep_distance = value, opts -> opts.region_keep_distance)
