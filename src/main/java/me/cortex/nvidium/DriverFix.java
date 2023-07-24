@@ -10,10 +10,12 @@ public class DriverFix {
     }
 
     private static void setLinuxDisableEnv() {
-        final SharedLibrary sharedLibrary = Library.loadNative("me.cortex.nvidium", "libc.so.6");
-        final long pfnSetenv = APIUtil.apiGetFunctionAddress(sharedLibrary, "setenv");
-        try (var stack = MemoryStack.stackPush()) {
-            JNI.callPPI(MemoryUtil.memAddress0(stack.UTF8("__GL_THREADED_OPTIMIZATIONS")),MemoryUtil.memAddress0(stack.UTF8("0")), 1, pfnSetenv);
+        try (SharedLibrary sharedLibrary = Library.loadNative("me.cortex.nvidium", "libc.so.6")) {
+            final long pfnSetenv = APIUtil.apiGetFunctionAddress(sharedLibrary, "setenv");
+            if (pfnSetenv == 0) return;
+            try (var stack = MemoryStack.stackPush()) {
+                JNI.callPPI(MemoryUtil.memAddress0(stack.UTF8("__GL_THREADED_OPTIMIZATIONS")),MemoryUtil.memAddress0(stack.UTF8("0")), 1, pfnSetenv);
+            }
         }
     }
 }
