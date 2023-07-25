@@ -3,7 +3,7 @@
   "id": "nvidium",
   "version": "${version}",
   "name": "Nvidium",
-  "description": "",
+  "description": "Uses NVIDIA-exclusive OpenGL mesh shaders to significantly improve perfomance.",
   "authors": [
     "Cortex"
   ],

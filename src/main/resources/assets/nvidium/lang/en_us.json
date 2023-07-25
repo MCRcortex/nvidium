@@ -3,10 +3,13 @@
   "nvidium.options.region_keep_distance.name" : "Region Keep Distance",
   "nvidium.options.region_keep_distance.tooltip" : "Distance to keep loaded regions",
   "nvidium.options.automatic_memory_limit.name" : "Automatic memory limit",
-  "nvidium.options.automatic_memory_limit.tooltip" : "Automatically determines the memory limit to set given the amount of available vram on your system",
-  "nvidium.options.max_gpu_memory.name" : "Max gpu memory",
-  "nvidium.options.max_gpu_memory.tooltip" : "Max gpu memory allowed, will start to cull chunks if this limit is hit",
-  "nvidium.options.enable_temporal_coherence.name" : "Enables temporal coherence",
+  "nvidium.options.automatic_memory_limit.tooltip" : "Automatically determines the memory limit to set given the amount of available VRAM on your system",
+  "nvidium.options.max_gpu_memory.name" : "Max GPU memory",
+  "nvidium.options.max_gpu_memory.tooltip" : "Max GPU memory allowed, will start to cull chunks if this limit is hit",
+  "nvidium.options.enable_temporal_coherence.name" : "Enable temporal coherence",
   "nvidium.options.enable_temporal_coherence.tooltip" : "Removes artifacting when turning around",
-  "nvidium.options.mb" : "%s Mbs"
+  "nvidium.options.mb" : "%s Mbs",
+  
+  "modmenu.summaryTranslation.nvidium": "Uses NVIDIA-exclusive OpenGL mesh shaders and GPU's VRAM to significantly improve perfomance.",
+  "modmenu.descriptionTranslation.nvidium": "Replaces Sodium rendering backend with use of NVIDIA-exclusive OpenGL mesh shaders and direct access to GPU's VRAM. This allows you to increase the render distance and improve performance."
 }
