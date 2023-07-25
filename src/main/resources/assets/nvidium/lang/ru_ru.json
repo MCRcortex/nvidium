@@ -1,0 +1,15 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.region_keep_distance.name" : "Дистанция отрисовки",
+  "nvidium.options.region_keep_distance.tooltip" : "Дистанция, до которой прогруженные части мира будут отрисовываться",
+  "nvidium.options.automatic_memory_limit.name" : "Автоматический лимит памяти",
+  "nvidium.options.automatic_memory_limit.tooltip" : "Автоматически определяет лимит используемой памяти исходя из объёма доступной памяти видеокарты",
+  "nvidium.options.max_gpu_memory.name" : "Лимит памяти",
+  "nvidium.options.max_gpu_memory.tooltip" : "Лимит используемой памяти, при его превышении начнётся отбраковка чанков",
+  "nvidium.options.enable_temporal_coherence.name" : "Включить временную согласованность",
+  "nvidium.options.enable_temporal_coherence.tooltip" : "Убирает артефакты при поворотах",
+  "nvidium.options.mb" : "%s МБ",
+  
+  "modmenu.summaryTranslation.nvidium": "Использует эксклюзивную для видеокарт NVIDIA технологию \"Mesh Shaders\" и VRAM видеокарты для увеличения производительности.",
+  "modmenu.descriptionTranslation.nvidium": "Заменяет систему отрисовки Sodium с использованием эксклюзивной для видеокарт NVIDIA технологии \"Mesh Shaders\" и прямого доступа к VRAM видеокарты. Это позволяет значительно увеличить дистанцию прорисовки и производительность."
+}
