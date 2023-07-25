@@ -1,0 +1,12 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.region_keep_distance.name" : "区域保持距离",
+  "nvidium.options.region_keep_distance.tooltip" : "保持加载区域的距离",
+  "nvidium.options.automatic_memory_limit.name" : "自动内存上限",
+  "nvidium.options.automatic_memory_limit.tooltip" : "根据系统可用的内存量，自动确定要设置的内存上限",
+  "nvidium.options.max_gpu_memory.name" : "最大显存",
+  "nvidium.options.max_gpu_memory.tooltip" : "允许的最大显存，如果达到这个限制，将开始剔除区块",
+  "nvidium.options.enable_temporal_coherence.name" : "实现时间一致性",
+  "nvidium.options.enable_temporal_coherence.tooltip" : "消除转身时的伪影",
+  "nvidium.options.mb" : "%s Mbs"
+}
