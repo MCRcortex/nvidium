@@ -34,17 +34,17 @@ void populateTasks(ivec3 relChunkPos, uvec4 ranges) {
 
     uint fr = (ranges.w>>16)&0xFFFF;
 
-    if (relChunkPos.y <= 0) {
+    if (relChunkPos.x <= 0) {
         putBinData(idx, lastIndex, fr, fr + (ranges.x&0xFFFF));
     }
     fr += ranges.x&0xFFFF;
 
-    if (relChunkPos.y >= 0) {
+    if (relChunkPos.y <= 0) {
         putBinData(idx, lastIndex, fr, fr + ((ranges.x>>16)&0xFFFF));
     }
     fr += (ranges.x>>16)&0xFFFF;
 
-    if (relChunkPos.x <= 0) {
+    if (relChunkPos.z <= 0) {
         putBinData(idx, lastIndex, fr, fr + (ranges.y&0xFFFF));
     }
     fr += ranges.y&0xFFFF;
@@ -54,7 +54,7 @@ void populateTasks(ivec3 relChunkPos, uvec4 ranges) {
     }
     fr += (ranges.y>>16)&0xFFFF;
 
-    if (relChunkPos.z <= 0) {
+    if (relChunkPos.y >= 0) {
         putBinData(idx, lastIndex, fr, fr + (ranges.z&0xFFFF));
     }
     fr += ranges.z&0xFFFF;

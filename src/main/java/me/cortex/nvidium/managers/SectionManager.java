@@ -8,7 +8,6 @@ import me.cortex.nvidium.util.BufferArena;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
-import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
 import net.minecraft.util.math.ChunkSectionPos;
 import org.joml.Vector3i;
 import org.joml.Vector4i;
@@ -62,7 +61,7 @@ public class SectionManager {
     //TODO: need too check that the section count does not go above the max sections (same with regions)
     public void uploadSetSection(ChunkBuildResult result) {
         int geometrySize = SodiumResultCompatibility.getTotalGeometryQuadCount(result);
-        if (result.meshes.isEmpty() || result.data == null || result.data == ChunkRenderData.ABSENT || result.data == ChunkRenderData.EMPTY || geometrySize == 0) {
+        if (result.meshes.isEmpty() || geometrySize == 0) {
             deleteSection(result.render);
             return;
         }

@@ -20,7 +20,7 @@ public class SodiumResultCompatibility {
         var translucentData  = result.meshes.get(DefaultTerrainRenderPasses.TRANSLUCENT);
         if (translucentData != null) {
             for (int i = 0; i < 7; i++) {
-                var part = translucentData.getPart(ModelQuadFacing.values()[i]);
+                var part = translucentData.getVertexRanges()[i];
                 if (part != null) {
                     long src = MemoryUtil.memAddress(translucentData.getVertexData().getDirectBuffer()) + (long) part.vertexStart() * formatSize;
                     long dst = uploadBuffer + offset * 4L * formatSize;
@@ -46,7 +46,7 @@ public class SodiumResultCompatibility {
         for (int i = 0; i < 7; i++) {
             int poff = offset;
             if (solid != null) {
-                var part = solid.getPart(ModelQuadFacing.values()[i]);
+                var part = solid.getVertexRanges()[i];
                 if (part != null) {
                     long src = MemoryUtil.memAddress(solid.getVertexData().getDirectBuffer()) + (long) part.vertexStart() * formatSize;
                     long dst = uploadBuffer + offset * 4L * formatSize;
@@ -54,7 +54,7 @@ public class SodiumResultCompatibility {
 
                     //Update the meta bits of the model format
                     for (int j = 0; j < part.vertexCount(); j++) {
-                        short flags = (short) 0b100;//No mipping, No alpha cut
+                        short flags = (short) 0b100;//Mipping, No alpha cut
                         MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
                     }
 
@@ -62,7 +62,7 @@ public class SodiumResultCompatibility {
                 }
             }
             if (cutout != null) {
-                var part = cutout.getPart(ModelQuadFacing.values()[i]);
+                var part = cutout.getVertexRanges()[i];
                 if (part != null) {
                     long src = MemoryUtil.memAddress(cutout.getVertexData().getDirectBuffer()) + (long) part.vertexStart() * formatSize;
                     long dst = uploadBuffer + offset * 4L * formatSize;
@@ -70,7 +70,8 @@ public class SodiumResultCompatibility {
 
                     //Update the meta bits of the model format
                     for (int j = 0; j < part.vertexCount(); j++) {
-                        short flags = (short) 0b100;//TODO: FIXME! this needs to be derived from sodiums value as they do something similar
+                        short sflags = MemoryUtil.memGetShort(dst+ (long) j *formatSize+ 6L);
+                        short flags = (short) (((sflags&1)<<2) | ((sflags&(3<<1))>>(1)));
                         MemoryUtil.memPutShort(dst+ (long) j *formatSize+ 6L, flags);//Note: the 6 here is the offset into the vertex format
                     }
 

@@ -23,16 +23,6 @@ struct Section {
 //Header.w -> quad offset
 
 
-#define UP 0
-#define DOWN 1
-#define EAST 2
-#define WEST 3
-#define SOUTH 4
-#define NORTH 5
-#define UNASSIGNED 6
-
-
-
 layout(std140, binding=0) uniform SceneData {
     //Need to basicly go in order of alignment
     //align(16)
