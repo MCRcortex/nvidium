@@ -9,7 +9,6 @@
     "MixinRenderRegionManager",
     "MixinRenderSectionManager",
     "MixinSodiumOptionsGUI",
-    "MixinSodiumWorldRenderer",
     "MixinWindow",
     "MixinWorldRenderer"
   ],

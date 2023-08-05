@@ -1,18 +1,18 @@
 package me.cortex.nvidium.sodiumCompat;
 
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
-import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
+import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import org.joml.Vector3i;
 import org.lwjgl.system.MemoryUtil;
 
 public class SodiumResultCompatibility {
-    public static int getTotalGeometryQuadCount(ChunkBuildResult result) {
+    public static int getTotalGeometryQuadCount(ChunkBuildOutput result) {
         return result.meshes.values().stream().mapToInt(a->(a.getVertexData().getLength()/20)/4).sum();
     }
 
     //Everything is /6*4 cause its in indices and we want verticies
-    public static void uploadChunkGeometry(long uploadBuffer, short[] outOffsets, ChunkBuildResult result) {
+    public static void uploadChunkGeometry(long uploadBuffer, short[] outOffsets, ChunkBuildOutput result) {
         int formatSize = 20;
         int offset = 0;
 
@@ -83,7 +83,7 @@ public class SodiumResultCompatibility {
     }
 
     //TODO: FIXME: dont use these bounds as they are not accurate (e.g. grass can take up multiple blocks cause vertices extend outside of block)
-    public static Vector3i getMinBounds(ChunkBuildResult result) {
+    public static Vector3i getMinBounds(ChunkBuildOutput result) {
         int mx = 0;
         int my = 0;
         int mz = 0;
@@ -95,7 +95,7 @@ public class SodiumResultCompatibility {
 
     //Note: this is adjusted since you cant ever have a size == 0 (the chunk would be air)
     // so its size -1
-    public static Vector3i getSizeBounds(ChunkBuildResult result) {
+    public static Vector3i getSizeBounds(ChunkBuildOutput result) {
         int sx = 16;
         int sy = 16;
         int sz = 16;

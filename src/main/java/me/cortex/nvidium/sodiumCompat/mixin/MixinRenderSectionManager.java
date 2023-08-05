@@ -14,6 +14,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.client.render.Camera;
 import net.minecraft.client.world.ClientWorld;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,13 +32,13 @@ import java.util.Collection;
 
 @Mixin(value = RenderSectionManager.class, remap = false)
 public class MixinRenderSectionManager implements IRenderPipelineGetter {
-    @Shadow private Viewport viewport;
     @Shadow @Final private RenderRegionManager regions;
     @Unique private RenderPipeline pipeline;
+    @Unique private Viewport viewport;
 
 
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void init(SodiumWorldRenderer worldRenderer, ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
+    private void init(ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
         Nvidium.IS_ENABLED = Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
         if (Nvidium.IS_ENABLED) {
             if (pipeline != null)
@@ -66,6 +67,11 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
             }
         }
         section.delete();
+    }
+
+    @Inject(method = "updateRenderLists", at = @At("HEAD"))
+    private void trackViewport(Camera camera, Viewport viewport, int frame, boolean spectator, CallbackInfo ci) {
+        this.viewport = viewport;
     }
 
     @Inject(method = "renderLayer", at = @At("HEAD"), cancellable = true)
