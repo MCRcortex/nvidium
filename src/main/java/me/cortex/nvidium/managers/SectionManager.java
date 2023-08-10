@@ -61,7 +61,7 @@ public class SectionManager {
 
     public void uploadSetSection(ChunkBuildOutput result) {
         var output = ((IRepackagedResult)result).getOutput();
-        if (output == null) {
+        if (output == null || output.quads() == 0) {
             deleteSection(result.render);
             return;
         }
