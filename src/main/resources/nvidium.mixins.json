@@ -10,7 +10,9 @@
     "MixinRenderSectionManager",
     "MixinSodiumOptionsGUI",
     "MixinWindow",
-    "MixinWorldRenderer"
+    "MixinWorldRenderer",
+    "MixinChunkBuilderMeshingTask",
+    "MixinChunkBuildOutput"
   ],
   "injectors": {
     "defaultRequire": 1
