@@ -13,6 +13,7 @@
 
 #import <nvidium:occlusion/scene.glsl>
 #import <nvidium:terrain/fog.glsl>
+#import <nvidium:terrain/vertex_format.glsl>
 
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
@@ -29,16 +30,10 @@ layout(location=1) out Interpolants {
     vec2 uv;
 } OUT[];
 
-
-vec3 decodeVertex(Vertex v) {
-    return vec3(v.a,v.b,v.c)*(32.0f/65535)-8.0f;
-}
-
-
 layout(binding = 1) uniform sampler2D tex_light;
 
-vec4 sampleLight(vec2 uv) {
-    return texture(tex_light, clamp(uv / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
+vec4 sampleLight(uvec2 uv) {
+    return vec4(texelFetch(tex_light, ivec2(uv), 0).rgb, 1);
 }
 
 //TODO: extra per quad culling
@@ -55,8 +50,8 @@ void main() {
     //TODO: OPTIMIZE
     uint primId = gl_LocalInvocationID.x*3;
     uint idxBase = (gl_LocalInvocationID.x>>1)<<2;
-    vec3 posA = decodeVertex(A)+originAndBaseData.xyz;
-    vec3 posB = decodeVertex(B)+originAndBaseData.xyz;
+    vec3 posA = decodeVertexPosition(A)+originAndBaseData.xyz;
+    vec3 posB = decodeVertexPosition(B)+originAndBaseData.xyz;
     gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)].gl_Position   = MVP*vec4(posA,1.0);
     gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)|1].gl_Position = MVP*vec4(posB,1.0);
     //TODO: see if ternary or array is faster
@@ -65,16 +60,16 @@ void main() {
     gl_PrimitiveIndicesNV[primId+1] = (isA?1:3)+idxBase;
     gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv = vec2(A.g,A.h)*(1f/65536);
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv = vec2(B.g,B.h)*(1f/65536);
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv = decodeVertexUV(A);
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv = decodeVertexUV(B);
 
-
-    vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;
-    vec4 tintB = vec4(B.e&int16_t(0xFF),(B.e>>8)&int16_t(0xFF),B.f&int16_t(0xFF),(B.f>>8)&int16_t(0xFF))/255;
-    tintA *= sampleLight(vec2(int16_t(A.i),int16_t(A.j)));
+    vec4 tintA = decodeVertexColour(A);
+    vec4 tintB = decodeVertexColour(B);
+    tintA *= sampleLight(decodeLightUV(A));
     tintA *= tintA.w;
-    tintB *= sampleLight(vec2(int16_t(B.i),int16_t(B.j)));
+    tintB *= sampleLight(decodeLightUV(B));
     tintB *= tintB.w;
+
     vec4 tintAO;
     vec4 addiAO;
     vec4 tintBO;

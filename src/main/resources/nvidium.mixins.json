@@ -5,14 +5,15 @@
   "client": [
     "LightMapAccessor",
     "MixinBackgroundRenderer",
+    "MixinChunkBuilderMeshingTask",
+    "MixinChunkBuildOutput",
     "MixinGameRenderer",
     "MixinRenderRegionManager",
     "MixinRenderSectionManager",
     "MixinSodiumOptionsGUI",
     "MixinWindow",
     "MixinWorldRenderer",
-    "MixinChunkBuilderMeshingTask",
-    "MixinChunkBuildOutput"
+    "MixinViewport"
   ],
   "injectors": {
     "defaultRequire": 1

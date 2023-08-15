@@ -4,6 +4,7 @@ package me.cortex.nvidium.managers;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
+import me.cortex.nvidium.sodiumCompat.IViewportTest;
 import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
@@ -202,7 +203,7 @@ public class RegionManager {
             return false;
         } else {
             //FIXME: should make it use the region data so that the frustum bounds check is more accurate
-            return frustum.isBoxVisible(region.rx<<7,region.ry<<6, region.rz<<7, (region.rx+1)<<7, (region.ry+1)<<6, (region.rz+1)<<7);
+            return ((IViewportTest)(Object)frustum).isBoxVisible(region.rx<<7,region.ry<<6, region.rz<<7, 1<<7, 1<<6, 1<<7);
         }
     }
     public boolean regionExists(int regionId) {

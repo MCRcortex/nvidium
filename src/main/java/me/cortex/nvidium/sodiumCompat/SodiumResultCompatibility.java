@@ -11,7 +11,7 @@ import org.lwjgl.system.MemoryUtil;
 public class SodiumResultCompatibility {
 
     public static RepackagedSectionOutput repackage(ChunkBuildOutput result) {
-        int formatSize = 20;
+        int formatSize = 16;
         int geometryBytes = result.meshes.values().stream().mapToInt(a->a.getVertexData().getLength()).sum();
         var output = new NativeBuffer(geometryBytes);
         var offsets = new short[8];
@@ -93,7 +93,7 @@ public class SodiumResultCompatibility {
                     //Update the meta bits of the model format
                     for (int j = 0; j < part.vertexCount(); j++) {
                         long base = dst+ (long) j * formatSize;
-                        short flags = (short) 0b000;//Mipping, No alpha cut
+                        short flags = (short) 0b100;//Mipping, No alpha cut
                         MemoryUtil.memPutShort(base + 6L, flags);//Note: the 6 here is the offset into the vertex format
 
                         updateSectionBounds(min, max, base);
@@ -113,7 +113,7 @@ public class SodiumResultCompatibility {
                     for (int j = 0; j < part.vertexCount(); j++) {
                         long base = dst+ (long) j * formatSize;
                         short sflags = MemoryUtil.memGetShort(base + 6L);
-                        short flags = (short) (((sflags&1)<<2) | ((sflags&(3<<1))>>(1)));
+                        short flags = (short) ((((~sflags)&1)<<2) | ((sflags&(3<<1))>>(1)));
                         MemoryUtil.memPutShort(base + 6L, flags);//Note: the 6 here is the offset into the vertex format
 
                         updateSectionBounds(min, max, base);

@@ -69,7 +69,7 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
         section.delete();
     }
 
-    @Inject(method = "updateRenderLists", at = @At("HEAD"))
+    @Inject(method = "update", at = @At("HEAD"))
     private void trackViewport(Camera camera, Viewport viewport, int frame, boolean spectator, CallbackInfo ci) {
         this.viewport = viewport;
     }

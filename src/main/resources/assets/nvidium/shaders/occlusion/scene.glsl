@@ -1,15 +1,4 @@
-struct Vertex {
-    uint16_t a;
-    uint16_t b;
-    uint16_t c;
-    int16_t d;
-    int16_t e;
-    int16_t f;
-    uint16_t g;
-    uint16_t h;
-    int16_t i;
-    int16_t j;
-};
+#define Vertex uvec4
 
 // this is cause in the section rasterizer you get less cache misses thus higher throughput
 struct Section {
