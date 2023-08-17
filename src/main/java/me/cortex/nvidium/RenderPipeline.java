@@ -253,24 +253,6 @@ public class RenderPipeline {
         //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-        {//This uses the clear buffer to set the byte for the region the player is standing in, this should be cheaper than comparing it on the gpu
-            outerLoop:
-            for (int i = 0; i < visibleRegions; i++) {
-                int rid = MemoryUtil.memGetShort(queryAddr+(i<<1));
-                for (int x = -1; x <= 1; x++) {
-                    for (int y = -1; y <= 1; y++) {
-                        for (int z = -1; z <= 1; z++) {
-                            if (rm.regionIsAtPos(rid, (blockPos.x+x) >> 7, (blockPos.y+y) >> 6, (blockPos.z+z) >> 7)) {
-                                setRegionVisible(i);
-                                continue outerLoop;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);
@@ -278,21 +260,6 @@ public class RenderPipeline {
 
         //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-
-        {//This uses the clear buffer to set the byte for the section the player is standing in, this should be cheaper than comparing it on the gpu
-            int msk = 0;//This is such a dumb way to do this but it works
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    for (int z = -1; z <= 1; z++) {
-                        int mid = 1<<(((chunkPos.x - ((blockPos.x + x) >> 4))+1)+((chunkPos.y - ((blockPos.y + y) >> 4))+1)*3+((chunkPos.z - ((blockPos.z + z) >> 4))+1)*9);
-                        if ((msk&mid)==0) {
-                            setSectionVisible((blockPos.x + x) >> 4, (blockPos.y + y) >> 4, (blockPos.z + z) >> 4);
-                            msk |= mid;
-                        }
-                    }
-                }
-            }
-        }
 
         prevRegionCount = visibleRegions;
 
@@ -356,18 +323,6 @@ public class RenderPipeline {
     private void setRegionVisible(long rid) {
         glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, rid, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(1)});
     }
-
-    private void setSectionVisible(int cx, int cy, int cz) {
-        int rid = sectionManager.getRegionManager().regionKeyToId(RegionManager.getRegionKey(cx, cy, cz));
-        if (rid != -1) {
-            int id = sectionManager.getSectionRegionIndex(cx, cy, cz);
-            if (id != -1) {
-                id |= rid << 8;
-                glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, id, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{-1});
-            }
-        }
-    }
-
 
     //Translucency is rendered in a very cursed and incorrect way
     // it hijacks the unassigned indirect command dispatch and uses that to dispatch the translucent chunks as well

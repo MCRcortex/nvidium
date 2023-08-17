@@ -41,8 +41,10 @@ void main() {
     // this remove an entire level of indirection and also puts region data in the very fast path
     uint64_t data = regionData[regionIndicies[gl_WorkGroupID.x]];//fetch the region data
 
-    vec3 start = ivec3((((int32_t)(data<<12))>>12), (int32_t)((int8_t)(data>>40)), (((int32_t)(data>>8))>>12)) - chunkPosition.xyz - ADD_SIZE;
-    vec3 end = start + 1 + (ivec3(i64vec3(data)>>ivec3(59,62,56))&ivec3(7,3,7)) + (ADD_SIZE*2);
+    ivec3 pos = ivec3((((int32_t)(data<<12))>>12), (int32_t)((int8_t)(data>>40)), (((int32_t)(data>>8))>>12));
+    ivec3 size = (ivec3(i64vec3(data)>>ivec3(59,62,56))&ivec3(7,3,7));
+    vec3 start = pos - chunkPosition.xyz - ADD_SIZE;
+    vec3 end = start + 1 + size + (ADD_SIZE*2);
 
     //TODO: Look into only doing 4 locals, for 2 reasons, its more effective for reducing duplicate computation and bandwidth
     // it also means that each thread can emit 3 primatives, 9 indicies each
@@ -55,7 +57,8 @@ void main() {
 
     int visibilityIndex = (int)gl_WorkGroupID.x;
 
-    regionVisibility[visibilityIndex] = uint8_t(0);
+    bool cameraInRegion = all(lessThan(start, vec3(0.1))) && all(lessThan(vec3(-0.1), end));
+    regionVisibility[visibilityIndex] = cameraInRegion?uint8_t(1):uint8_t(0);
 
     emitIndicies(visibilityIndex);
     if (gl_LocalInvocationID.x < 4) {
