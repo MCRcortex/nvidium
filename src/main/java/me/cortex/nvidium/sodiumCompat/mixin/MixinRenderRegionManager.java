@@ -21,7 +21,8 @@ import java.util.List;
 @Mixin(value = RenderRegionManager.class, remap = false)
 public abstract class MixinRenderRegionManager implements IRenderPipelineSetter {
 
-    @Shadow public abstract void uploadMeshes(CommandList commandList, Collection<ChunkBuildOutput> results);
+
+    @Shadow protected abstract void uploadMeshes(CommandList commandList, RenderRegion region, Collection<ChunkBuildOutput> results);
 
     @Unique private RenderPipeline pipeline;
 
@@ -31,7 +32,7 @@ public abstract class MixinRenderRegionManager implements IRenderPipelineSetter 
         if (Nvidium.IS_ENABLED) {
             uploadQueue.forEach(pipeline.sectionManager::uploadSetSection);
         } else {
-            uploadMeshes(cmdList, uploadQueue);
+            uploadMeshes(cmdList, pass, uploadQueue);
         }
     }
 

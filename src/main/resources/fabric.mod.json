@@ -16,6 +16,7 @@
     "nvidium.mixins.json"
   ],
   "depends": {
-    "fabricloader": ">=0.14"
+    "fabricloader": ">=0.14",
+    "sodium": "=0.5.2"
   }
 }

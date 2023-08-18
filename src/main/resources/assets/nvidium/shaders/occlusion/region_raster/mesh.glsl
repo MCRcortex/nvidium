@@ -57,7 +57,7 @@ void main() {
 
     int visibilityIndex = (int)gl_WorkGroupID.x;
 
-    bool cameraInRegion = all(lessThan(start, vec3(0.1))) && all(lessThan(vec3(-0.1), end));
+    bool cameraInRegion = all(lessThan(start, vec3(16.1))) && all(lessThan(vec3(-16.1), end));
     regionVisibility[visibilityIndex] = cameraInRegion?uint8_t(1):uint8_t(0);
 
     emitIndicies(visibilityIndex);
