@@ -1,8 +1,7 @@
-package me.cortex.nvidium.sodiumCompat.mixin;
+package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.RenderPipeline;
-import me.cortex.nvidium.sodiumCompat.IRenderPipelineGetter;
 import me.cortex.nvidium.sodiumCompat.IRenderPipelineSetter;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
@@ -15,8 +14,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
 
 @Mixin(value = RenderRegionManager.class, remap = false)
 public abstract class MixinRenderRegionManager implements IRenderPipelineSetter {

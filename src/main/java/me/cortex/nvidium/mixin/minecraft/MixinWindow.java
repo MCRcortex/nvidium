@@ -1,4 +1,4 @@
-package me.cortex.nvidium.sodiumCompat.mixin;
+package me.cortex.nvidium.mixin.minecraft;
 
 import me.cortex.nvidium.Nvidium;
 import net.minecraft.client.WindowEventHandler;

@@ -1,4 +1,4 @@
-package me.cortex.nvidium.sodiumCompat.mixin;
+package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.sodiumCompat.IRepackagedResult;

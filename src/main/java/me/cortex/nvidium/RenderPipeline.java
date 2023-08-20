@@ -93,7 +93,7 @@ public class RenderPipeline {
         this.uploadStream = new UploadingBufferStream(device, frames, 250000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
         update_allowed_memory();
-        sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, MinecraftClient.getInstance().options.getClampedViewDistance() + Nvidium.config.extra_rd, 24, CompactChunkVertex.STRIDE);
+        sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
@@ -253,6 +253,7 @@ public class RenderPipeline {
         //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+        glColorMask(true, true, true, true);
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);

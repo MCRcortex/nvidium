@@ -1,8 +1,7 @@
-package me.cortex.nvidium.sodiumCompat.mixin;
+package me.cortex.nvidium.mixin.minecraft;
 
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 

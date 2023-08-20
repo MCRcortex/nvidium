@@ -1,4 +1,4 @@
-package me.cortex.nvidium.sodiumCompat.mixin;
+package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.sodiumCompat.IViewportTest;
 import me.jellysquid.mods.sodium.client.render.viewport.CameraTransform;

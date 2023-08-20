@@ -2,7 +2,7 @@ package me.cortex.nvidium.renderers;
 
 import me.cortex.nvidium.gl.shader.Shader;
 import me.cortex.nvidium.sodiumCompat.ShaderLoader;
-import me.cortex.nvidium.sodiumCompat.mixin.LightMapAccessor;
+import me.cortex.nvidium.mixin.minecraft.LightMapAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 import org.lwjgl.opengl.GL45;
