@@ -33,6 +33,10 @@ void main() {
         return;
     }
 
+    #ifdef STATISTICS_SECTIONS
+    atomicAdd(statistics_buffer[1], 1);
+    #endif
+
     ivec4 header = sectionData[sectionId].header;
     ivec3 chunk = ivec3(header.xyz)>>8;
     chunk.y >>= 16;
@@ -42,4 +46,8 @@ void main() {
     baseOffset = (uint)header.w;
 
     populateTasks(chunk, (uvec4)sectionData[sectionId].renderRanges);
+
+    #ifdef STATISTICS_QUADS
+    atomicAdd(statistics_buffer[2], quadCount);
+    #endif
 }

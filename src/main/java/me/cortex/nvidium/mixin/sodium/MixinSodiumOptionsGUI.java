@@ -2,7 +2,7 @@ package me.cortex.nvidium.mixin.sodium;
 
 import com.google.common.collect.ImmutableList;
 import me.cortex.nvidium.Nvidium;
-import me.cortex.nvidium.util.NvidiumConfigStore;
+import me.cortex.nvidium.config.NvidiumConfigStore;
 import me.jellysquid.mods.sodium.client.gui.SodiumOptionsGUI;
 import me.jellysquid.mods.sodium.client.gui.options.*;
 import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;

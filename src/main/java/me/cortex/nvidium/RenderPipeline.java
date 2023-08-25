@@ -71,7 +71,7 @@ public class RenderPipeline {
     private final TranslucentTerrainRasterizer translucencyTerrainRasterizer;
 
     private final IDeviceMappedBuffer sceneUniform;
-    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*6+3*4+3, 2);
+    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*7+3*4+3, 2);
 
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
@@ -208,6 +208,8 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
+            MemoryUtil.memPutLong(addr, 0);//Logging buffer
+            addr += 8;
             MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogStart());//FogStart
             addr += 4;
             MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogEnd());//FogEnd
@@ -253,7 +255,7 @@ public class RenderPipeline {
         //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-        glColorMask(true, true, true, true);
+        //glColorMask(true, true, true, true);
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);

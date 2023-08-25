@@ -35,6 +35,8 @@ layout(std140, binding=0) uniform SceneData {
     //readonly restrict u64vec4 *terrainData;
     //uvec4 *terrainData;
 
+    uint32_t *statistics_buffer;
+
     float fogStart;
     float fogEnd;
     bool isSphericalFog;

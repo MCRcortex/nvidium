@@ -1,8 +1,9 @@
-package me.cortex.nvidium;
+package me.cortex.nvidium.config;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import me.cortex.nvidium.Nvidium;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.FileReader;
@@ -20,7 +21,7 @@ public class NvidiumConfig {
 
     public int region_keep_distance = 32;
 
-    public int logging_draw_data_level = 0;
+    public StatisticsLoggingLevel statistics_level = StatisticsLoggingLevel.NONE;
 
 
     private static final Gson GSON = new GsonBuilder()

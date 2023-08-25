@@ -37,6 +37,9 @@ void main() {
         terrainCommandBuffer[cmdIdx] = uvec2(0);
         return;
     }
+    #ifdef STATISTICS_REGIONS
+    atomicAdd(statistics_buffer[0], 1);
+    #endif
 
     //FIXME: It might actually be more efficent to just upload the region data straight into the ubo
     uint32_t offset = regionIndicies[gl_WorkGroupID.x];
