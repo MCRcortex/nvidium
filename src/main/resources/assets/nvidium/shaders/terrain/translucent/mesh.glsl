@@ -87,4 +87,8 @@ void main() {
         //Remaining quads in workgroup
         gl_PrimitiveCountNV = min(uint(int(quadCount)-int(gl_WorkGroupID.x<<4))<<1, 32);//2 primatives per quad
     }
+
+    #ifdef STATISTICS_QUADS
+    atomicAdd(statistics_buffer[2], quadCount);
+    #endif
 }
