@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
+import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.RegionManager;
@@ -55,6 +56,7 @@ hm.size()
 
 //TODO: extract out sectionManager, uploadStream, downloadStream and other funky things to an auxiliary parent NvidiumWorldRenderer class
 public class RenderPipeline {
+
     public static final int GL_DRAW_INDIRECT_UNIFIED_NV = 0x8F40;
     public static final int GL_DRAW_INDIRECT_ADDRESS_NV = 0x8F41;
 
@@ -76,6 +78,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
     private final IDeviceMappedBuffer terrainCommandBuffer;
+    private final IDeviceMappedBuffer statisticsBuffer;
 
     private final UploadingBufferStream uploadStream;
     private final DownloadTaskStream downloadStream;
@@ -87,6 +90,16 @@ public class RenderPipeline {
     //Max memory that the gpu can use to store geometry in mb
     private long max_geometry_memory;
     private long last_sample_time;
+
+
+    private static final class Statistics {
+        public int frustumCount;
+        public int regionCount;
+        public int sectionCount;
+        public int quadCount;
+    }
+
+    private final Statistics stats;
 
     public RenderPipeline() {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
@@ -115,6 +128,14 @@ public class RenderPipeline {
 
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
 
+        if (Nvidium.config.statistics_level.ordinal()>1) {
+            statisticsBuffer = device.createDeviceOnlyMappedBuffer(4*4);
+            cbs += 4*4;
+            stats = new Statistics();
+        } else {
+            stats = null;
+            statisticsBuffer = null;
+        }
         bufferSizesMB = cbs/(1024*1024);
     }
 
@@ -176,6 +197,9 @@ public class RenderPipeline {
                 j++;
             }
 
+            if (stats != null) {
+                stats.frustumCount = regions.size();
+            }
         }
 
         {
@@ -208,7 +232,7 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
-            MemoryUtil.memPutLong(addr, 0);//Logging buffer
+            MemoryUtil.memPutLong(addr, statisticsBuffer == null?0:statisticsBuffer.getDeviceAddress());//Logging buffer
             addr += 8;
             MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogStart());//FogStart
             addr += 4;
@@ -272,6 +296,15 @@ public class RenderPipeline {
             temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
         }
 
+        //Download statistics
+        if (stats != null){
+            downloadStream.download(statisticsBuffer, 0, 4*4, (addr)-> {
+                stats.regionCount = MemoryUtil.memGetInt(addr);
+                stats.sectionCount = MemoryUtil.memGetInt(addr+4);
+                stats.quadCount = MemoryUtil.memGetInt(addr+8);
+            });
+        }
+
         {//Do proper visibility tracking
             glDepthMask(false);
             glColorMask(false, false, false, false);
@@ -283,6 +316,7 @@ public class RenderPipeline {
             glDepthMask(true);
             glColorMask(true, true, true, true);
         }
+
 
 
         glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
@@ -306,6 +340,10 @@ public class RenderPipeline {
         if (sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
             removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
         }
+        if (stats != null && statisticsBuffer != null) {
+            glFinish();
+            glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
+        }//glFinish();
     }
 
     private void update_allowed_memory() {
@@ -372,6 +410,10 @@ public class RenderPipeline {
 
         downloadStream.delete();
         uploadStream.delete();
+
+        if (statisticsBuffer != null) {
+            statisticsBuffer.delete();
+        }
     }
 
     public int getOtherBufferSizesMB() {
@@ -385,6 +427,22 @@ public class RenderPipeline {
         info.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
         info.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
         info.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
-
+        if (stats != null) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("Statistics: \n");
+            if (Nvidium.config.statistics_level.ordinal() >=  StatisticsLoggingLevel.FRUSTUM.ordinal()) {
+                builder.append("Frustum: ").append(stats.frustumCount).append("\n");
+            }
+            if (Nvidium.config.statistics_level.ordinal() >=  StatisticsLoggingLevel.REGIONS.ordinal()) {
+                builder.append("Regions: ").append(stats.regionCount).append("\n");
+            }
+            if (Nvidium.config.statistics_level.ordinal() >=  StatisticsLoggingLevel.SECTIONS.ordinal()) {
+                builder.append("Sections: ").append(stats.sectionCount).append("\n");
+            }
+            if (Nvidium.config.statistics_level.ordinal() >=  StatisticsLoggingLevel.QUADS.ordinal()) {
+                builder.append("Quads: ").append(stats.quadCount).append("\n");
+            }
+            info.addAll(List.of(builder.toString().split("\n")));
+        }
     }
 }
