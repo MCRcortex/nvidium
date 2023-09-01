@@ -145,34 +145,4 @@ public class SodiumResultCompatibility {
         max.y = (int) Math.max(max.y, Math.ceil(y));
         max.z = (int) Math.max(max.z, Math.ceil(z));
     }
-
-
-    //TODO: FIXME: dont use these bounds as they are not accurate (e.g. grass can take up multiple blocks cause vertices extend outside of block)
-    public Vector3i getMinBounds() {
-        int mx = 0;
-        int my = 0;
-        int mz = 0;
-        mx = Math.min(15, mx);
-        my = Math.min(15, my);
-        mz = Math.min(15, mz);
-        return new Vector3i(mx,my,mz);
-    }
-
-    //Note: this is adjusted since you cant ever have a size == 0 (the chunk would be air)
-    // so its size -1
-    public Vector3i getSizeBounds() {
-        int sx = 16;
-        int sy = 16;
-        int sz = 16;
-        sx--;
-        sy--;
-        sz--;
-        sx = Math.max(0, sx);
-        sy = Math.max(0, sy);
-        sz = Math.max(0, sz);
-        sx = Math.min(15, sx);
-        sy = Math.min(15, sy);
-        sz = Math.min(15, sz);
-        return new Vector3i(sx,sy,sz);
-    }
 }
