@@ -50,4 +50,8 @@ void main() {
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
     gl_TaskCountNV = (quadCount+MESH_WORKLOAD_PER_INVOCATION-1)/MESH_WORKLOAD_PER_INVOCATION;
+
+    #ifdef STATISTICS_QUADS
+    atomicAdd(statistics_buffer+2, quadCount);
+    #endif
 }

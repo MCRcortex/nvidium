@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 //Download stream from gpu to cpu
+//TODO: i think it needs to be one extra frame
 public class DownloadTaskStream {
     public interface IDownloadFinishedCallback {void accept(long addr);}
 
