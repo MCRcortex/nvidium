@@ -23,7 +23,7 @@ vec2 decodeVertexUV(Vertex v) {
 }
 
 float decodeVertexMippingBias(Vertex v) {
-    return ((v.y>>16)&4)==0?0:-8;
+    return ((v.y>>16)&4)==0?-8:0;
 }
 
 float decodeVertexAlphaCutoff(Vertex v) {

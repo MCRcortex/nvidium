@@ -12,7 +12,7 @@ public class MixinGameRenderer {
     @Inject(method = "method_32796", at = @At("HEAD"), cancellable = true)
     public void method_32796(CallbackInfoReturnable<Float> cir) {
         if (Nvidium.IS_ENABLED) {
-            cir.setReturnValue(16 * 5000f);
+            cir.setReturnValue(16 * 512f);
             cir.cancel();
         }
     }

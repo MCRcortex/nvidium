@@ -1,5 +1,6 @@
 package me.cortex.nvidium.sodiumCompat;
 
+import me.cortex.nvidium.Nvidium;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
@@ -111,9 +112,14 @@ public class SodiumResultCompatibility {
 
                     //Update the meta bits of the model format
                     for (int j = 0; j < part.vertexCount(); j++) {
-                        long base = dst+ (long) j * formatSize;
+                        long base = dst + (long) j * formatSize;
                         short sflags = MemoryUtil.memGetShort(base + 6L);
-                        short flags = (short) ((((~sflags)&1)<<2) | ((sflags&(3<<1))>>(1)));
+                        short mipbits = (short) ((sflags&(3<<1))>>1);
+                        //mipping, remap 0.5 cut to 0.1 when iris is loaded
+                        if (mipbits == 0b10 && IrisCheck.IRIS_LOADED) {
+                            mipbits = 0b01;
+                        }
+                        short flags = (short) (((sflags&1)<<2) | mipbits);
                         MemoryUtil.memPutShort(base + 6L, flags);//Note: the 6 here is the offset into the vertex format
 
                         updateSectionBounds(min, max, base);
