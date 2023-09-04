@@ -75,6 +75,6 @@ void main() {
         //sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(maxDist<=1?1:0);//Inject visibility aswell
         sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(0);
 
-        gl_PrimitiveCountNV = 16;
+        gl_PrimitiveCountNV = 12;
     }
 }
