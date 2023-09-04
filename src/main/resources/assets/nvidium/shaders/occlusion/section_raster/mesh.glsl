@@ -72,7 +72,8 @@ void main() {
         int maxDist = min(absRelPos.x, min(absRelPos.y, absRelPos.z));
 
         //Shift and set, this gives us a bonus of having the last 8 frames as visibility history
-        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(maxDist<=1?1:0);//Inject visibility aswell
+        //sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(maxDist<=1?1:0);//Inject visibility aswell
+        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(0);
 
         gl_PrimitiveCountNV = 16;
     }

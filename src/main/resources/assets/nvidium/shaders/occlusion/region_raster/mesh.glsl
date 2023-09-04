@@ -57,11 +57,13 @@ void main() {
 
     int visibilityIndex = (int)gl_WorkGroupID.x;
 
-    bool cameraInRegion = all(lessThan(start, vec3(16.1))) && all(lessThan(vec3(-16.1), end));
-    regionVisibility[visibilityIndex] = cameraInRegion?uint8_t(1):uint8_t(0);
-
     emitIndicies(visibilityIndex);
     if (gl_LocalInvocationID.x < 4) {
         emitParital(visibilityIndex);
+
+        if (gl_LocalInvocationID.x == 0) {
+            bool cameraInRegion = false;//all(lessThan(start, vec3(16.1))) && all(lessThan(vec3(-16.1), end));
+            regionVisibility[visibilityIndex] = cameraInRegion?uint8_t(1):uint8_t(0);
+        }
     }
 }
