@@ -3,12 +3,15 @@ package me.cortex.nvidium.mixin.sodium;
 import com.google.common.collect.ImmutableList;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.NvidiumConfigStore;
+import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.jellysquid.mods.sodium.client.gui.SodiumOptionsGUI;
 import me.jellysquid.mods.sodium.client.gui.options.*;
 import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;
+import me.jellysquid.mods.sodium.client.gui.options.control.CyclingControl;
 import me.jellysquid.mods.sodium.client.gui.options.control.SliderControl;
 import me.jellysquid.mods.sodium.client.gui.options.control.TickBoxControl;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.option.AttackIndicator;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -77,6 +80,27 @@ public class MixinSodiumOptionsGUI {
                         .setEnabled(Nvidium.IS_ENABLED && !Nvidium.config.automatic_memory)
                         .setBinding((opts, value) -> opts.max_geometry_memory = value, opts -> opts.max_geometry_memory)
                         .setFlags(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?new OptionFlag[0]:new OptionFlag[]{OptionFlag.REQUIRES_RENDERER_RELOAD})
+                        .build()
+                ).add(OptionImpl.createBuilder(StatisticsLoggingLevel.class, store)
+                        .setName(Text.translatable("nvidium.options.statistics_level.name"))
+                        .setTooltip(Text.translatable("nvidium.options.statistics_level.tooltip"))
+                        .setControl(
+                            opts -> new CyclingControl<>(
+                                opts,
+                                StatisticsLoggingLevel.class,
+                                new Text[]{
+                                        Text.translatable("nvidium.options.statistics_level.none"),
+                                        Text.translatable("nvidium.options.statistics_level.frustum"),
+                                        Text.translatable("nvidium.options.statistics_level.regions"),
+                                        Text.translatable("nvidium.options.statistics_level.sections"),
+                                        Text.translatable("nvidium.options.statistics_level.quads")
+                                }
+                            )
+                        )
+                        .setBinding((opts, value) -> opts.statistics_level = value, opts -> opts.statistics_level)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setImpact(OptionImpact.HIGH)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 )/*
                 .add(OptionImpl.createBuilder(boolean.class, store)
