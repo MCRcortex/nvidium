@@ -114,6 +114,8 @@ public class MixinSodiumOptionsGUI {
                         .build()
                 )*/
                 .build());
-        this.pages.add(new OptionPage(Text.translatable("nvidium.options.pages.nvidium"), ImmutableList.copyOf(groups)));
+        if (Nvidium.IS_COMPATIBLE) {
+            this.pages.add(new OptionPage(Text.translatable("nvidium.options.pages.nvidium"), ImmutableList.copyOf(groups)));
+        }
     }
 }
