@@ -8,5 +8,12 @@
   "nvidium.options.max_gpu_memory.tooltip" : "Max gpu memory allowed, will start to cull chunks if this limit is hit",
   "nvidium.options.enable_temporal_coherence.name" : "Enables temporal coherence",
   "nvidium.options.enable_temporal_coherence.tooltip" : "Removes artifacting when turning around",
-  "nvidium.options.mb" : "%s Mbs"
+  "nvidium.options.mb" : "%s Mbs",
+  "nvidium.options.statistics_level.name" : "Debug Level",
+  "nvidium.options.statistics_level.tooltip" : "Statistics logging level, tracks the visibility count of cull layers",
+  "nvidium.options.statistics_level.none" : "None",
+  "nvidium.options.statistics_level.frustum" : "Frustum",
+  "nvidium.options.statistics_level.regions" : "Regions",
+  "nvidium.options.statistics_level.sections" : "Sections",
+  "nvidium.options.statistics_level.quads" : "Quads"
 }

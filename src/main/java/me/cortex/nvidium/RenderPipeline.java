@@ -66,11 +66,11 @@ public class RenderPipeline {
 
     public final RegionVisibilityTracker regionVisibilityTracking;
 
-    private final PrimaryTerrainRasterizer terrainRasterizer;
-    private final RegionRasterizer regionRasterizer;
-    private final SectionRasterizer sectionRasterizer;
-    private final TemporalTerrainRasterizer temporalRasterizer;
-    private final TranslucentTerrainRasterizer translucencyTerrainRasterizer;
+    private PrimaryTerrainRasterizer terrainRasterizer;
+    private RegionRasterizer regionRasterizer;
+    private SectionRasterizer sectionRasterizer;
+    private TemporalTerrainRasterizer temporalRasterizer;
+    private TranslucentTerrainRasterizer translucencyTerrainRasterizer;
 
     private final IDeviceMappedBuffer sceneUniform;
     private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*7+3*4+3, 2);
@@ -444,5 +444,19 @@ public class RenderPipeline {
             }
             info.addAll(List.of(builder.toString().split("\n")));
         }
+    }
+
+    public void reloadShaders() {
+        terrainRasterizer.delete();
+        regionRasterizer.delete();
+        sectionRasterizer.delete();
+        temporalRasterizer.delete();
+        translucencyTerrainRasterizer.delete();
+
+        terrainRasterizer = new PrimaryTerrainRasterizer();
+        regionRasterizer = new RegionRasterizer();
+        sectionRasterizer = new SectionRasterizer();
+        temporalRasterizer = new TemporalTerrainRasterizer();
+        translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
     }
 }

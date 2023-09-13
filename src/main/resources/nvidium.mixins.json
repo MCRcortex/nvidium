@@ -5,16 +5,17 @@
   "client": [
     "minecraft.LightMapAccessor",
     "minecraft.MixinBackgroundRenderer",
+    "minecraft.MixinGameRenderer",
     "minecraft.MixinWindow",
     "minecraft.MixinWorldRenderer",
-    "minecraft.MixinGameRenderer",
-    
     "sodium.MixinChunkBuilderMeshingTask",
     "sodium.MixinChunkBuildOutput",
+    "sodium.MixinOptionFlag",
     "sodium.MixinRenderRegionManager",
     "sodium.MixinRenderSectionManager",
     "sodium.MixinSodiumOptionsGUI",
-    "sodium.MixinViewport"
+    "sodium.MixinViewport",
+    "sodium.MixinSodiumWorldRenderer"
   ],
   "injectors": {
     "defaultRequire": 1
