@@ -7,18 +7,15 @@ import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
-import me.cortex.nvidium.managers.RegionManager;
 import me.cortex.nvidium.managers.RegionVisibilityTracker;
 import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.renderers.*;
 import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
-import net.minecraft.client.MinecraftClient;
 import org.joml.*;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
@@ -35,34 +32,22 @@ import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
 import static org.lwjgl.opengl.GL42.*;
 import static org.lwjgl.opengl.GL43C.GL_SHADER_STORAGE_BARRIER_BIT;
 import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FRAGMENT_TEST_NV;
-import static org.lwjgl.opengl.NVShaderBufferStore.GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
 import static org.lwjgl.opengl.NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
 
 
-/*
-var hm = new HashSet<Long>();
-for (int i = 0; i < rm.maxRegionIndex(); i++) {
-    if (rm.isRegionVisible(frustum, i)) {
-        if(rm.regions[i] != null) {
-            hm.add(ChunkPos.toLong(rm.regions[i].rx, rm.regions[i].rz))
-        }
-    }
-}
-hm.size()
- */
-
 //TODO: extract out sectionManager, uploadStream, downloadStream and other funky things to an auxiliary parent NvidiumWorldRenderer class
 public class RenderPipeline {
-
     public static final int GL_DRAW_INDIRECT_UNIFIED_NV = 0x8F40;
     public static final int GL_DRAW_INDIRECT_ADDRESS_NV = 0x8F41;
 
-    private static final RenderDevice device = new RenderDevice();
+    private final RenderDevice device;
+    private final UploadingBufferStream uploadStream;
+    private final DownloadTaskStream downloadStream;
 
-    public final SectionManager sectionManager;
+    private final SectionManager sectionManager;
 
     public final RegionVisibilityTracker regionVisibilityTracking;
 
@@ -80,17 +65,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer terrainCommandBuffer;
     private final IDeviceMappedBuffer statisticsBuffer;
 
-    private final UploadingBufferStream uploadStream;
-    private final DownloadTaskStream downloadStream;
-
-    private final int bufferSizesMB;
-
     private final BitSet regionVisibilityTracker;
-
-    //Max memory that the gpu can use to store geometry in mb
-    private long max_geometry_memory;
-    private long last_sample_time;
-
 
     private static final class Statistics {
         public int frustumCount;
@@ -101,12 +76,12 @@ public class RenderPipeline {
 
     private final Statistics stats;
 
-    public RenderPipeline() {
-        int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
-        this.uploadStream = new UploadingBufferStream(device, frames, 250000000);
-        this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
-        update_allowed_memory();
-        sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
+    public RenderPipeline(RenderDevice device, UploadingBufferStream uploadStream, DownloadTaskStream downloadStream, SectionManager sectionManager) {
+        this.device = device;
+        this.uploadStream = uploadStream;
+        this.downloadStream = downloadStream;
+        this.sectionManager = sectionManager;
+
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
@@ -114,29 +89,22 @@ public class RenderPipeline {
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
-        int cbs = sectionManager.getTotalBufferSizes();
+
         sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2L);
-        cbs += SCENE_SIZE+ maxRegions*2L;
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
-        cbs += maxRegions;
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
-        cbs += maxRegions * 256L;
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
-        cbs += maxRegions*8L;
 
         regionVisibilityTracker = new BitSet(maxRegions);
-
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
 
         if (Nvidium.config.statistics_level.ordinal()>1) {
             statisticsBuffer = device.createDeviceOnlyMappedBuffer(4*4);
-            cbs += 4*4;
             stats = new Statistics();
         } else {
             stats = null;
             statisticsBuffer = null;
         }
-        bufferSizesMB = cbs/(1024*1024);
     }
 
     private int prevRegionCount;
@@ -188,7 +156,7 @@ public class RenderPipeline {
             }
             regionMap = new short[regions.size()];
             if (visibleRegions == 0) return;
-            long addr = sectionManager.uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
+            long addr = uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
             queryAddr = addr;//This is ungodly hacky
             int j = 0;
             for (int i : regions) {
@@ -206,7 +174,7 @@ public class RenderPipeline {
             //TODO: maybe segment the uniform buffer into 2 parts, always updating and static where static holds pointers
             Vector3f delta = new Vector3f((float) (px-(chunkPos.x<<4)), (float) (py-(chunkPos.y<<4)), (float) (pz-(chunkPos.z<<4)));
             delta.negate();
-            long addr = sectionManager.uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
+            long addr = uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
             var mvp =new Matrix4f(crm.projection())
                     .mul(crm.modelView())
                     .translate(delta)//Translate the subchunk position
@@ -331,39 +299,27 @@ public class RenderPipeline {
             throw new IllegalStateException("GLERROR: "+err);
         }
 
-
-        if (Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER && (System.currentTimeMillis() - last_sample_time) > 60000) {
-            last_sample_time = System.currentTimeMillis();
-            update_allowed_memory();
-        }
-
-        if (sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
-            removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
-        }
         if (stats != null && statisticsBuffer != null) {
             glFinish();
             glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
-        }//glFinish();
-    }
-
-    private void update_allowed_memory() {
-        if (Nvidium.config.automatic_memory) {
-            max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getMemoryUsed()/(1024*1024));
-            max_geometry_memory -= 1024;//Minus 1gb of vram
-            max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 gb of vram
-        } else {
-            max_geometry_memory = Nvidium.config.max_geometry_memory;
         }
     }
 
+    //TODO: refactor to different location
     private void removeRegion(int id) {
         sectionManager.removeRegionById(id);
         regionVisibilityTracking.resetRegion(id);
     }
 
+    //TODO: refactor out of the render pipeline along with regionVisibilityTracking and removeRegion and statistics
+    public void removeARegion() {
+        removeRegion(regionVisibilityTracking.findMostLikelyLeastSeenRegion(sectionManager.getRegionManager().maxRegionIndex()));
+    }
+
+    /*
     private void setRegionVisible(long rid) {
         glClearNamedBufferSubData(regionVisibility.getId(), GL_R8UI, rid, 1, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{(byte)(1)});
-    }
+    }*/
 
     //Translucency is rendered in a very cursed and incorrect way
     // it hijacks the unassigned indirect command dispatch and uses that to dispatch the translucent chunks as well
@@ -394,7 +350,6 @@ public class RenderPipeline {
     }
 
     public void delete() {
-        sectionManager.delete();
         regionVisibilityTracking.delete();
 
         sceneUniform.delete();
@@ -408,25 +363,12 @@ public class RenderPipeline {
         temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
 
-        downloadStream.delete();
-        uploadStream.delete();
-
         if (statisticsBuffer != null) {
             statisticsBuffer.delete();
         }
     }
 
-    public int getOtherBufferSizesMB() {
-        return bufferSizesMB;
-    }
-
     public void addDebugInfo(List<String> info) {
-        info.add("Using nvidium renderer: "+ Nvidium.MOD_VERSION);
-        info.add("Other Memory MB: " + getOtherBufferSizesMB());
-        info.add("Memory limit MB: " + max_geometry_memory);
-        info.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
-        info.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
-        info.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
         if (stats != null) {
             StringBuilder builder = new StringBuilder();
             builder.append("Statistics: \n");

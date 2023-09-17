@@ -4,7 +4,6 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.sodiumCompat.IRepackagedResult;
-import me.cortex.nvidium.sodiumCompat.SodiumResultCompatibility;
 import me.cortex.nvidium.util.BufferArena;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
@@ -34,11 +33,9 @@ public class SectionManager {
 
     private final int formatSize;
 
-    private final int bufferSize;
     public SectionManager(RenderDevice device, long fallback_memory_size, UploadingBufferStream uploadStream, int rd, int height, int quadVertexSize) {
         this.device = device;
         this.uploadStream = uploadStream;
-        int bs = 16000000;
         //int widthSquared = (rd*2+1)*(rd*2+1);
 
         //int maxRegions = (int) Math.ceil((((double) widthSquared*height)/256))*2;
@@ -47,19 +44,16 @@ public class SectionManager {
 
         this.formatSize = quadVertexSize;
         this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * (8*4*8) * SECTION_SIZE);
-        bs += (long) maxRegions * (8*4*8) * SECTION_SIZE;
         this.terrainAreana = new BufferArena(device, fallback_memory_size, quadVertexSize);
         this.sectionOffset.defaultReturnValue(-1);
         this.regionManager = new RegionManager(device, maxRegions);
-        bs += maxRegions * RegionManager.META_SIZE;
-        bufferSize = bs;
     }
 
     private long getSectionKey(int x, int y, int z) {
         return ChunkSectionPos.asLong(x,y,z);
     }
 
-    public void uploadSetSection(ChunkBuildOutput result) {
+    public void uploadChunkBuildResult(ChunkBuildOutput result) {
         var output = ((IRepackagedResult)result).getOutput();
         if (output == null || output.quads() == 0) {
             deleteSection(result.render);
@@ -137,10 +131,6 @@ public class SectionManager {
 
     public int getSectionRegionIndex(int x, int y, int z) {
         return sectionOffset.getOrDefault(getSectionKey(x,y,z), -1);
-    }
-
-    public int getTotalBufferSizes() {
-        return bufferSize;
     }
 
     public void removeRegionById(int regionId) {

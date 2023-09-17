@@ -1,9 +1,9 @@
 package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.Nvidium;
-import me.cortex.nvidium.RenderPipeline;
-import me.cortex.nvidium.sodiumCompat.IRenderPipelineGetter;
-import me.cortex.nvidium.sodiumCompat.IRenderPipelineSetter;
+import me.cortex.nvidium.NvidiumWorldRenderer;
+import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
+import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererSetter;
 import me.cortex.nvidium.sodiumCompat.IrisCheck;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
@@ -29,9 +29,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 @Mixin(value = RenderSectionManager.class, remap = false)
-public class MixinRenderSectionManager implements IRenderPipelineGetter {
+public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Shadow @Final private RenderRegionManager regions;
-    @Unique private RenderPipeline pipeline;
+    @Unique private NvidiumWorldRenderer renderer;
     @Unique private Viewport viewport;
 
 
@@ -39,21 +39,21 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
     private void init(ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
         Nvidium.IS_ENABLED = Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
         if (Nvidium.IS_ENABLED) {
-            if (pipeline != null)
-                throw new IllegalStateException("Cannot have multiple pipelines");
-            pipeline = new RenderPipeline();
-            ((IRenderPipelineSetter)regions).setPipeline(pipeline);
+            if (renderer != null)
+                throw new IllegalStateException("Cannot have multiple world renderers");
+            renderer = new NvidiumWorldRenderer();
+            ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
 
     @Inject(method = "destroy", at = @At("TAIL"))
     private void destroy(CallbackInfo ci) {
         if (Nvidium.IS_ENABLED) {
-            if (pipeline == null)
+            if (renderer == null)
                 throw new IllegalStateException("Pipeline already destroyed");
-            ((IRenderPipelineSetter)regions).setPipeline(null);
-            pipeline.delete();
-            pipeline = null;
+            ((INvidiumWorldRendererSetter)regions).setWorldRenderer(null);
+            renderer.delete();
+            renderer = null;
         }
     }
 
@@ -61,7 +61,7 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
     private void deleteSection(RenderSection section) {
         if (Nvidium.IS_ENABLED) {
             if (Nvidium.config.region_keep_distance == 32) {
-                pipeline.sectionManager.deleteSection(section);
+                renderer.deleteSection(section);
             }
         }
         section.delete();
@@ -77,9 +77,9 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
         if (Nvidium.IS_ENABLED) {
             ci.cancel();
             if (pass == DefaultTerrainRenderPasses.SOLID) {
-                pipeline.renderFrame(viewport, matrices, x, y, z);
+                renderer.renderFrame(viewport, matrices, x, y, z);
             } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
-                pipeline.renderTranslucent();
+                renderer.renderTranslucent();
             }
         }
     }
@@ -88,14 +88,14 @@ public class MixinRenderSectionManager implements IRenderPipelineGetter {
     private void redirectDebug(CallbackInfoReturnable<Collection<String>> cir) {
         if (Nvidium.IS_ENABLED) {
             var debugStrings = new ArrayList<String>();
-            pipeline.addDebugInfo(debugStrings);
+            renderer.addDebugInfo(debugStrings);
             cir.setReturnValue(debugStrings);
             cir.cancel();
         }
     }
 
     @Override
-    public RenderPipeline getPipeline() {
-        return pipeline;
+    public NvidiumWorldRenderer getRenderer() {
+        return renderer;
     }
 }

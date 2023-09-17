@@ -1,29 +1,17 @@
 package me.cortex.nvidium.mixin.sodium;
 
-import com.google.common.collect.ImmutableList;
-import me.cortex.nvidium.Nvidium;
-import me.cortex.nvidium.RenderPipeline;
+import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.config.ConfigGuiBuilder;
-import me.cortex.nvidium.config.NvidiumConfigStore;
-import me.cortex.nvidium.config.StatisticsLoggingLevel;
-import me.cortex.nvidium.sodiumCompat.IRenderPipelineGetter;
-import me.cortex.nvidium.sodiumCompat.NvidiumOptionFlags;
+import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import me.jellysquid.mods.sodium.client.gui.SodiumOptionsGUI;
 import me.jellysquid.mods.sodium.client.gui.options.*;
-import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;
-import me.jellysquid.mods.sodium.client.gui.options.control.CyclingControl;
-import me.jellysquid.mods.sodium.client.gui.options.control.SliderControl;
-import me.jellysquid.mods.sodium.client.gui.options.control.TickBoxControl;
 import me.jellysquid.mods.sodium.client.gui.options.storage.OptionStorage;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.option.AttackIndicator;
-import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -45,7 +33,7 @@ public class MixinSodiumOptionsGUI {
         if (client.world != null) {
             SodiumWorldRenderer swr = SodiumWorldRenderer.instanceNullable();
             if (swr != null) {
-                RenderPipeline pipeline = ((IRenderPipelineGetter)((MixinSodiumWorldRenderer)swr).getRenderSectionManager()).getPipeline();
+                NvidiumWorldRenderer pipeline = ((INvidiumWorldRendererGetter)((MixinSodiumWorldRenderer)swr).getRenderSectionManager()).getRenderer();
                 if (pipeline != null)
                     pipeline.reloadShaders();
             }
