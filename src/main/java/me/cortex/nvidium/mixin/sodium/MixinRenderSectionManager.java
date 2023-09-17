@@ -8,6 +8,7 @@ import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererSetter;
 import me.cortex.nvidium.sodiumCompat.IRenderSectionExtension;
 import me.cortex.nvidium.sodiumCompat.IrisCheck;
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkUpdateType;
@@ -16,6 +17,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
+import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.world.ClientWorld;
@@ -133,6 +135,20 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
             // while some sections that arnt updated/ticked yet still have the old frame id
             int delta = Math.abs(render.getLastVisibleFrame() - renderer.getAsyncFrameId());
             cir.setReturnValue(delta <= 1);
+        }
+    }
+
+    @Inject(method = "tickVisibleRenders", at = @At("HEAD"), cancellable = true)
+    private void redirectAnimatedSpriteUpdates(CallbackInfo ci) {
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs && SodiumClientMod.options().performance.animateOnlyVisibleTextures) {
+            ci.cancel();
+            var sprites = renderer.getAnimatedSpriteSet();
+            if (sprites == null) {
+                return;
+            }
+            for (var sprite : sprites) {
+                SpriteUtil.markSpriteActive(sprite);
+            }
         }
     }
 }

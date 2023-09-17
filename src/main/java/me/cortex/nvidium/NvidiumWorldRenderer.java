@@ -12,9 +12,12 @@ import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.texture.Sprite;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.lwjgl.opengl.GL11.glGetInteger;
 import static org.lwjgl.opengl.NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
@@ -114,5 +117,10 @@ public class NvidiumWorldRenderer {
 
     public List<RenderSection> getSectionsWithEntities() {
         return asyncChunkTracker.getLatestSectionsWithEntities();
+    }
+
+    @Nullable
+    public Sprite[] getAnimatedSpriteSet() {
+        return asyncChunkTracker.getVisibleAnimatedSprites();
     }
 }

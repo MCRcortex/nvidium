@@ -9,8 +9,10 @@ import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionFlags;
 import me.jellysquid.mods.sodium.client.render.chunk.occlusion.OcclusionCuller;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.client.texture.Sprite;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -30,6 +32,7 @@ public class AsyncOcclusionTracker {
 
     private final Deque<List<RenderSection>> atomicBatchedRebuildQueue = new ConcurrentLinkedDeque<>();
     private final AtomicReference<List<RenderSection>> blockEntitySectionsRef = new AtomicReference<>(new ArrayList<>());
+    private final AtomicReference<Sprite[]> visibleAnimatedSpritesRef = new AtomicReference<>();
 
     private final Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue;
 
@@ -50,14 +53,22 @@ public class AsyncOcclusionTracker {
         while (running) {
             framesAhead.acquireUninterruptibly();
             if (!running) break;
-
+            final boolean animateVisibleSpritesOnly = SodiumClientMod.options().performance.animateOnlyVisibleTextures;
             //The reason for batching is so that ordering is strongly defined
             List<RenderSection> chunkUpdates = new ArrayList<>();
             List<RenderSection> blockEntitySections = new ArrayList<>();
+            Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
             final Consumer<RenderSection> visitor = section -> {
                 if ((section.getFlags()&RenderSectionFlags.HAS_BLOCK_ENTITIES)!=0 &&
-                        section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//16 rd max chunk distance
+                        section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance
                     blockEntitySections.add(section);
+                }
+                if (animateVisibleSpritesOnly && (section.getFlags()&RenderSectionFlags.HAS_ANIMATED_SPRITES) != 0 &&
+                        section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance (i.e. only animate sprites up to 32 chunks away)
+                    var animatedSprites = section.getAnimatedSprites();
+                    if (animatedSprites != null) {
+                        animatedSpriteSet.addAll(List.of(animatedSprites));
+                    }
                 }
                 if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
                     if (!((IRenderSectionExtension)section).isEnqueued()) {//If it is enqueued, dont enqueue it again
@@ -82,6 +93,7 @@ public class AsyncOcclusionTracker {
                 atomicBatchedRebuildQueue.add(chunkUpdates);
             }
             blockEntitySectionsRef.set(blockEntitySections);
+            visibleAnimatedSpritesRef.set(animatedSpriteSet==null?null:animatedSpriteSet.toArray(new Sprite[0]));
         }
     }
 
@@ -154,5 +166,10 @@ public class AsyncOcclusionTracker {
 
     public List<RenderSection> getLatestSectionsWithEntities() {
         return blockEntitySectionsRef.get();
+    }
+
+    @Nullable
+    public Sprite[] getVisibleAnimatedSprites() {
+        return visibleAnimatedSpritesRef.get();
     }
 }
