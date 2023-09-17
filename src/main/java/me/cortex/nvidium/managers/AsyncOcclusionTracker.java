@@ -137,4 +137,8 @@ public class AsyncOcclusionTracker {
     private float getRenderDistance() {
         return (float)this.renderDistance;
     }
+
+    public int getFrame() {
+        return frame;
+    }
 }

@@ -29,6 +29,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Shadow @Final private RenderRegionManager regions;
     @Shadow @Final private Long2ReferenceMap<RenderSection> sectionByPosition;
     @Shadow private @NotNull Map<ChunkUpdateType, ArrayDeque<RenderSection>> rebuildLists;
+    @Shadow @Final private int renderDistance;
     @Unique private NvidiumWorldRenderer renderer;
     @Unique private Viewport viewport;
 
@@ -121,6 +123,16 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
             //We need to reset the enqueued state to false since the build has been submitted
             ((IRenderSectionExtension) instance).setEnqueued(false);
+        }
+    }
+
+    @Inject(method = "isSectionVisible", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;getLastVisibleFrame()I", shift = At.Shift.BEFORE), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD)
+    private void redirectIsSectionVisible(int x, int y, int z, CallbackInfoReturnable<Boolean> cir, RenderSection render) {
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
+            //The reason why this is done is that since the bfs search is async it could be updating the frame counter with the next frame
+            // while some sections that arnt updated/ticked yet still have the old frame id
+            int delta = Math.abs(render.getLastVisibleFrame() - renderer.getAsyncFrameId());
+            cir.setReturnValue(delta <= 1);
         }
     }
 }
