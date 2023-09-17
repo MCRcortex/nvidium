@@ -26,7 +26,7 @@ public class AsyncOcclusionTracker {
 
     private final Semaphore framesAhead = new Semaphore(0);
 
-    private final Deque<RenderSection> atomicRebuildQueue = new ConcurrentLinkedDeque<>();
+    private final Deque<List<RenderSection>> atomicBatchedRebuildQueue = new ConcurrentLinkedDeque<>();
 
     private final Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue;
 
@@ -43,19 +43,22 @@ public class AsyncOcclusionTracker {
     }
 
     private void run() {
-        final Consumer<RenderSection> visitor = section -> {
-            if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
-                if (!((IRenderSectionExtension)section).isEnqueued()) {//If it is enqueued, dont enqueue it again
-                    //Set that the section is in the rebuild queue
-                    ((IRenderSectionExtension)section).setEnqueued(true);
-                    atomicRebuildQueue.add(section);
-                }
-            }
-        };
 
         while (running) {
             framesAhead.acquireUninterruptibly();
             if (!running) break;
+
+            //The reason for batching is so that ordering is strongly defined
+            List<RenderSection> batch = new ArrayList<>();
+            final Consumer<RenderSection> visitor = section -> {
+                if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
+                    if (!((IRenderSectionExtension)section).isEnqueued()) {//If it is enqueued, dont enqueue it again
+                        //Set that the section is in the rebuild queue
+                        ((IRenderSectionExtension)section).setEnqueued(true);
+                        batch.add(section);
+                    }
+                }
+            };
 
             frame++;
             float searchDistance = this.getSearchDistance();
@@ -66,6 +69,8 @@ public class AsyncOcclusionTracker {
                 System.err.println("Error doing traversal");
                 e.printStackTrace();
             }
+
+            atomicBatchedRebuildQueue.add(batch);
         }
     }
 
@@ -76,17 +81,20 @@ public class AsyncOcclusionTracker {
             framesAhead.release();
         }
 
-        while (!atomicRebuildQueue.isEmpty()) {
-            RenderSection section = atomicRebuildQueue.poll();
-            if (section.isDisposed()) continue;
-            var type = section.getPendingUpdate();
-            if (type != null && section.getBuildCancellationToken() == null) {
-                var queue = outputRebuildQueue.get(type);
-                if (queue.size() < Math.min(type.getMaximumQueueSize(), 64)) {
-                    queue.add(section);
-                } else {
-                    //Reset that the section was not enqueued
-                    ((IRenderSectionExtension)section).setEnqueued(false);
+        while (!atomicBatchedRebuildQueue.isEmpty()) {
+            var batch = atomicBatchedRebuildQueue.poll();
+            for (var section : batch) {
+                if (section.isDisposed())
+                    continue;
+                var type = section.getPendingUpdate();
+                if (type != null && section.getBuildCancellationToken() == null) {
+                    var queue = outputRebuildQueue.get(type);
+                    if (queue.size() < Math.min(type.getMaximumQueueSize(), 64)) {
+                        queue.add(section);
+                    } else {
+                        //Reset that the section was not enqueued
+                        ((IRenderSectionExtension) section).setEnqueued(false);
+                    }
                 }
             }
         }
