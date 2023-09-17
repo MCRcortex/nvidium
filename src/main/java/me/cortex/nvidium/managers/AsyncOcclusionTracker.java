@@ -6,6 +6,7 @@ import me.cortex.nvidium.sodiumCompat.IRenderSectionExtension;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkUpdateType;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
+import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionFlags;
 import me.jellysquid.mods.sodium.client.render.chunk.occlusion.OcclusionCuller;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.util.math.MathHelper;
@@ -14,6 +15,7 @@ import net.minecraft.world.World;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public class AsyncOcclusionTracker {
@@ -27,6 +29,7 @@ public class AsyncOcclusionTracker {
     private final Semaphore framesAhead = new Semaphore(0);
 
     private final Deque<List<RenderSection>> atomicBatchedRebuildQueue = new ConcurrentLinkedDeque<>();
+    private final AtomicReference<List<RenderSection>> blockEntitySectionsRef = new AtomicReference<>(new ArrayList<>());
 
     private final Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue;
 
@@ -49,13 +52,18 @@ public class AsyncOcclusionTracker {
             if (!running) break;
 
             //The reason for batching is so that ordering is strongly defined
-            List<RenderSection> batch = new ArrayList<>();
+            List<RenderSection> chunkUpdates = new ArrayList<>();
+            List<RenderSection> blockEntitySections = new ArrayList<>();
             final Consumer<RenderSection> visitor = section -> {
+                if ((section.getFlags()&RenderSectionFlags.HAS_BLOCK_ENTITIES)!=0 &&
+                        section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//16 rd max chunk distance
+                    blockEntitySections.add(section);
+                }
                 if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
                     if (!((IRenderSectionExtension)section).isEnqueued()) {//If it is enqueued, dont enqueue it again
                         //Set that the section is in the rebuild queue
                         ((IRenderSectionExtension)section).setEnqueued(true);
-                        batch.add(section);
+                        chunkUpdates.add(section);
                     }
                 }
             };
@@ -69,9 +77,11 @@ public class AsyncOcclusionTracker {
                 System.err.println("Error doing traversal");
                 e.printStackTrace();
             }
-            if (!batch.isEmpty()) {
-                atomicBatchedRebuildQueue.add(batch);
+
+            if (!chunkUpdates.isEmpty()) {
+                atomicBatchedRebuildQueue.add(chunkUpdates);
             }
+            blockEntitySectionsRef.set(blockEntitySections);
         }
     }
 
@@ -140,5 +150,9 @@ public class AsyncOcclusionTracker {
 
     public int getFrame() {
         return frame;
+    }
+
+    public List<RenderSection> getLatestSectionsWithEntities() {
+        return blockEntitySectionsRef.get();
     }
 }

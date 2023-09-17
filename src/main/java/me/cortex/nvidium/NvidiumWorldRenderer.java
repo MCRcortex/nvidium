@@ -14,6 +14,7 @@ import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.lwjgl.opengl.GL11.glGetInteger;
 import static org.lwjgl.opengl.NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
@@ -109,5 +110,9 @@ public class NvidiumWorldRenderer {
 
     public int getAsyncFrameId() {
         return asyncChunkTracker.getFrame();
+    }
+
+    public List<RenderSection> getSectionsWithEntities() {
+        return asyncChunkTracker.getLatestSectionsWithEntities();
     }
 }

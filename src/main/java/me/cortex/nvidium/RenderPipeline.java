@@ -300,7 +300,7 @@ public class RenderPipeline {
         }
 
         if (stats != null && statisticsBuffer != null) {
-            glFinish();
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
             glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
     }
