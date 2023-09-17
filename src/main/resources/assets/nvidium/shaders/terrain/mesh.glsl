@@ -78,8 +78,11 @@ void processVertPair(uint id) {
     vec4 addiAO;
     vec4 tintBO;
     vec4 addiBO;
-    computeFog(isSphericalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
-    computeFog(isSphericalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
+
+    //TODO: MOVE FOG TO FRAGMENT SHADER (its computed a heckin lot less than in the vertex shdaer, so should help alot)
+    // in reducing computational complexity
+    computeFog(isCylindricalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
+    computeFog(isCylindricalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
     OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintAO;
     OUT[(gl_LocalInvocationID.x<<1)|0].addin = addiAO;
     OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintBO;

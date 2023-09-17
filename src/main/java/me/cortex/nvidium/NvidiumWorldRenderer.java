@@ -11,6 +11,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.texture.Sprite;
 import org.jetbrains.annotations.Nullable;
@@ -76,7 +77,16 @@ public class NvidiumWorldRenderer {
     }
 
     public void renderTranslucent() {
+        //Why is minecraft like this
+        if (MinecraftClient.isFabulousGraphicsOrBetter()) {
+            MinecraftClient.getInstance().worldRenderer.getTranslucentFramebuffer().beginWrite(false);
+        }
+
         renderPipeline.renderTranslucent();
+
+        if (MinecraftClient.isFabulousGraphicsOrBetter()) {
+            MinecraftClient.getInstance().getFramebuffer().beginWrite(false);
+        }
     }
 
     public void deleteSection(RenderSection section) {

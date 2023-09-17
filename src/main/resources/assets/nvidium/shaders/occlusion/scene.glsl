@@ -39,7 +39,7 @@ layout(std140, binding=0) uniform SceneData {
 
     float fogStart;
     float fogEnd;
-    bool isSphericalFog;
+    bool isCylindricalFog;
 
     //align(2)
     uint16_t regionCount;//Number of regions in regionIndicies

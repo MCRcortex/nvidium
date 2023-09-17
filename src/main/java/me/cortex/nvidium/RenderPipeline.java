@@ -130,7 +130,6 @@ public class RenderPipeline {
         //Enqueue all the visible regions
         {
             //The region data indicies is located at the end of the sceneUniform
-            //TODO: Sort the regions from closest to furthest from the camera
             IntSortedSet regions = new IntAVLTreeSet();
             for (int i = 0; i < rm.maxRegionIndex(); i++) {
                 if (!rm.regionExists(i)) continue;
@@ -138,6 +137,8 @@ public class RenderPipeline {
                     removeRegion(i);
                     continue;
                 }
+                //TODO: fog culling/region removal cause with bobby the removal distance is huge and people run out of vram very fast
+
 
                 if (rm.isRegionVisible(frustum, i)) {
                     regions.add((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z)<<16)|i);
