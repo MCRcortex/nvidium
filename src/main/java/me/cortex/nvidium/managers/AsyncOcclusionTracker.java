@@ -112,7 +112,7 @@ public class AsyncOcclusionTracker {
                 var type = section.getPendingUpdate();
                 if (type != null && section.getBuildCancellationToken() == null) {
                     var queue = outputRebuildQueue.get(type);
-                    if (queue.size() < Math.min(type.getMaximumQueueSize(), 64)) {
+                    if (queue.size() < 512) {
                         queue.add(section);
                     } else {
                         //Reset that the section was not enqueued
