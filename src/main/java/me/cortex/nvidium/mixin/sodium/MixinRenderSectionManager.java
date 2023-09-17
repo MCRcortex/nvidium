@@ -110,7 +110,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
 
     @Inject(method = "createTerrainRenderList", at = @At("HEAD"), cancellable = true)
     private void redirectTerrainRenderList(Camera camera, Viewport viewport, int frame, boolean spectator, CallbackInfo ci) {
-        if (Nvidium.IS_ENABLED) {
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
             ci.cancel();
         }
     }
@@ -118,7 +118,9 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Redirect(method = "submitRebuildTasks", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;setPendingUpdate(Lme/jellysquid/mods/sodium/client/render/chunk/ChunkUpdateType;)V"))
     private void injectEnqueueFalse(RenderSection instance, ChunkUpdateType type) {
         instance.setPendingUpdate(type);
-        //We need to reset the enqueued state to false since the build has been submitted
-        ((IRenderSectionExtension)instance).setEnqueued(false);
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
+            //We need to reset the enqueued state to false since the build has been submitted
+            ((IRenderSectionExtension) instance).setEnqueued(false);
+        }
     }
 }

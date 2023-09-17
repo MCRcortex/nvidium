@@ -69,8 +69,9 @@ public class AsyncOcclusionTracker {
                 System.err.println("Error doing traversal");
                 e.printStackTrace();
             }
-
-            atomicBatchedRebuildQueue.add(batch);
+            if (!batch.isEmpty()) {
+                atomicBatchedRebuildQueue.add(batch);
+            }
         }
     }
 

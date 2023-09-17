@@ -18,7 +18,7 @@ public class MixinSodiumWorldRenderer {
 
     @Inject(method = "setupTerrain", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSectionManager;needsUpdate()Z", shift = At.Shift.BEFORE))
     private void injectTerrainSetup(Camera camera, Viewport viewport, int frame, boolean spectator, boolean updateChunksImmediately, CallbackInfo ci) {
-        if (Nvidium.IS_ENABLED) {
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
             ((INvidiumWorldRendererGetter)renderSectionManager).getRenderer().update(camera, viewport, frame, spectator);
         }
     }
