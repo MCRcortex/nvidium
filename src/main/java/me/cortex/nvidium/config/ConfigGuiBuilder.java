@@ -93,7 +93,7 @@ public class ConfigGuiBuilder {
                         )
                         .setBinding((opts, value) -> opts.statistics_level = value, opts -> opts.statistics_level)
                         .setEnabled(Nvidium.IS_ENABLED)
-                        .setImpact(OptionImpact.HIGH)
+                        .setImpact(OptionImpact.LOW)
                         .setFlags(NvidiumOptionFlags.REQUIRES_SHADER_RELOAD)
                         .build()
                 )
