@@ -62,7 +62,7 @@ void main() {
         emitParital(visibilityIndex);
 
         if (gl_LocalInvocationID.x == 0) {
-            bool cameraInRegion = all(lessThan(start, vec3(ADD_SIZE))) && all(lessThan(vec3(-ADD_SIZE), end));
+            bool cameraInRegion = all(lessThan(start*16+subchunkOffset.xyz, vec3(ADD_SIZE*16))) && all(lessThan(vec3(-ADD_SIZE*16), end*16+subchunkOffset.xyz));
             regionVisibility[visibilityIndex] = cameraInRegion?uint8_t(1):uint8_t(0);
         }
     }

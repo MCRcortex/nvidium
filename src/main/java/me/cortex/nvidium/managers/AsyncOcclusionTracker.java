@@ -20,6 +20,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static java.lang.Thread.MAX_PRIORITY;
+
 public class AsyncOcclusionTracker {
     private final OcclusionCuller occlusionCuller;
     private final Thread cullThread;
@@ -42,6 +44,7 @@ public class AsyncOcclusionTracker {
         this.occlusionCuller = new OcclusionCuller(sections, world);
         this.cullThread = new Thread(this::run);
         this.cullThread.setName("Cull thread");
+        this.cullThread.setPriority(MAX_PRIORITY);
         this.cullThread.start();
         this.renderDistance = renderDistance * 16f;
 
@@ -53,6 +56,8 @@ public class AsyncOcclusionTracker {
         while (running) {
             framesAhead.acquireUninterruptibly();
             if (!running) break;
+            //long startTime = System.currentTimeMillis();
+
             final boolean animateVisibleSpritesOnly = SodiumClientMod.options().performance.animateOnlyVisibleTextures;
             //The reason for batching is so that ordering is strongly defined
             List<RenderSection> chunkUpdates = new ArrayList<>();
@@ -94,6 +99,7 @@ public class AsyncOcclusionTracker {
             }
             blockEntitySectionsRef.set(blockEntitySections);
             visibleAnimatedSpritesRef.set(animatedSpriteSet==null?null:animatedSpriteSet.toArray(new Sprite[0]));
+            //System.err.println(System.currentTimeMillis()-startTime);
         }
     }
 
@@ -112,7 +118,7 @@ public class AsyncOcclusionTracker {
                 var type = section.getPendingUpdate();
                 if (type != null && section.getBuildCancellationToken() == null) {
                     var queue = outputRebuildQueue.get(type);
-                    if (queue.size() < 512) {
+                    if (queue.size() < type.getMaximumQueueSize()) {
                         queue.add(section);
                     } else {
                         //Reset that the section was not enqueued

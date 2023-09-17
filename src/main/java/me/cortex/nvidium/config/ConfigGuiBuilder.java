@@ -17,7 +17,19 @@ public class ConfigGuiBuilder {
     private static final NvidiumConfigStore store = new NvidiumConfigStore();
     public static void addNvidiumGui(List<OptionPage> pages) {
         List<OptionGroup> groups = new ArrayList<>();
-        if (Nvidium.IS_COMPATIBLE && !Nvidium.IS_ENABLED) {
+
+        groups.add(OptionGroup.createBuilder()
+                .add(OptionImpl.createBuilder(boolean.class, store)
+                        .setName(Text.literal("Disable nvidium"))
+                        .setTooltip(Text.literal("Used to disable nvidium (DOES NOT SAVE, WILL RE-ENABLE AFTER A RE-LAUNCH)"))
+                        .setControl(TickBoxControl::new)
+                        .setImpact(OptionImpact.HIGH)
+                        .setBinding((opts, value) -> Nvidium.FORCE_DISABLE = value, opts -> Nvidium.FORCE_DISABLE)
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
+                        .build()
+                ).build());
+
+        if (Nvidium.IS_COMPATIBLE && !Nvidium.IS_ENABLED && !Nvidium.FORCE_DISABLE) {
             groups.add(OptionGroup.createBuilder()
                     .add(OptionImpl.createBuilder(boolean.class, store)
                             .setName(Text.literal("Nvidium disabled due to shaders being loaded"))
