@@ -33,7 +33,7 @@ public class MixinSodiumOptionsGUI {
         if (client.world != null) {
             SodiumWorldRenderer swr = SodiumWorldRenderer.instanceNullable();
             if (swr != null) {
-                NvidiumWorldRenderer pipeline = ((INvidiumWorldRendererGetter)((MixinSodiumWorldRenderer)swr).getRenderSectionManager()).getRenderer();
+                NvidiumWorldRenderer pipeline = ((INvidiumWorldRendererGetter)((SodiumWorldRendererAccessor)swr).getRenderSectionManager()).getRenderer();
                 if (pipeline != null)
                     pipeline.reloadShaders();
             }

@@ -12,9 +12,11 @@
     "sodium.MixinChunkBuildOutput",
     "sodium.MixinOptionFlag",
     "sodium.MixinRenderRegionManager",
+    "sodium.MixinRenderSection",
     "sodium.MixinRenderSectionManager",
     "sodium.MixinSodiumOptionsGUI",
     "sodium.MixinViewport",
+    "sodium.SodiumWorldRendererAccessor",
     "sodium.MixinSodiumWorldRenderer"
   ],
   "injectors": {

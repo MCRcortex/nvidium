@@ -1,6 +1,7 @@
 package me.cortex.nvidium;
 
 import me.cortex.nvidium.gl.RenderDevice;
+import me.cortex.nvidium.managers.AsyncOcclusionTracker;
 import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.UploadingBufferStream;
@@ -10,6 +11,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.client.render.Camera;
 
 import java.util.ArrayList;
 
@@ -25,11 +27,14 @@ public class NvidiumWorldRenderer {
     private final SectionManager sectionManager;
     private final RenderPipeline renderPipeline;
 
+    private final AsyncOcclusionTracker asyncChunkTracker;
+
     //Max memory that the gpu can use to store geometry in mb
     private long max_geometry_memory;
     private long last_sample_time;
 
-    public NvidiumWorldRenderer() {
+    //Note: the reason that asyncChunkTracker is passed in as an already constructed object is cause of the amount of argmuents it takes to construct it
+    public NvidiumWorldRenderer(AsyncOcclusionTracker asyncChunkTracker) {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         this.uploadStream = new UploadingBufferStream(device, frames, 250000000);
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
@@ -37,6 +42,8 @@ public class NvidiumWorldRenderer {
         update_allowed_memory();
         this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
         this.renderPipeline = new RenderPipeline(device, uploadStream, downloadStream, sectionManager);
+
+        this.asyncChunkTracker = asyncChunkTracker;
     }
 
     public void delete() {
@@ -44,6 +51,7 @@ public class NvidiumWorldRenderer {
         downloadStream.delete();
         renderPipeline.delete();
         sectionManager.delete();
+        asyncChunkTracker.delete();
     }
 
     public void reloadShaders() {
@@ -95,4 +103,7 @@ public class NvidiumWorldRenderer {
         }
     }
 
+    public void update(Camera camera, Viewport viewport, int frame, boolean spectator) {
+        asyncChunkTracker.update(viewport);
+    }
 }

@@ -1,12 +1,16 @@
 package me.cortex.nvidium.mixin.sodium;
 
+import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
+import me.cortex.nvidium.managers.AsyncOcclusionTracker;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererSetter;
+import me.cortex.nvidium.sodiumCompat.IRenderSectionExtension;
 import me.cortex.nvidium.sodiumCompat.IrisCheck;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkUpdateType;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
@@ -15,6 +19,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.world.ClientWorld;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,12 +30,16 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 @Mixin(value = RenderSectionManager.class, remap = false)
 public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Shadow @Final private RenderRegionManager regions;
+    @Shadow @Final private Long2ReferenceMap<RenderSection> sectionByPosition;
+    @Shadow private @NotNull Map<ChunkUpdateType, ArrayDeque<RenderSection>> rebuildLists;
     @Unique private NvidiumWorldRenderer renderer;
     @Unique private Viewport viewport;
 
@@ -41,7 +50,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
-            renderer = new NvidiumWorldRenderer();
+            renderer = new NvidiumWorldRenderer(new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, rebuildLists));
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
@@ -97,5 +106,19 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Override
     public NvidiumWorldRenderer getRenderer() {
         return renderer;
+    }
+
+    @Inject(method = "createTerrainRenderList", at = @At("HEAD"), cancellable = true)
+    private void redirectTerrainRenderList(Camera camera, Viewport viewport, int frame, boolean spectator, CallbackInfo ci) {
+        if (Nvidium.IS_ENABLED) {
+            ci.cancel();
+        }
+    }
+
+    @Redirect(method = "submitRebuildTasks", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/RenderSection;setPendingUpdate(Lme/jellysquid/mods/sodium/client/render/chunk/ChunkUpdateType;)V"))
+    private void injectEnqueueFalse(RenderSection instance, ChunkUpdateType type) {
+        instance.setPendingUpdate(type);
+        //We need to reset the enqueued state to false since the build has been submitted
+        ((IRenderSectionExtension)instance).setEnqueued(false);
     }
 }
