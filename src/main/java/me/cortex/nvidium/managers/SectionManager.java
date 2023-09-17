@@ -81,8 +81,11 @@ public class SectionManager {
         Vector3i min  = output.min();
         Vector3i size = output.size();
 
+        //NOTE:TODO: The y encoded height position only has a range of like 6 bits max, that gives 18 bits free/spare for something
+        // realistically it would only be 16 free bits cause ee but still thats 2 bytes free
+
         int px = section.getChunkX()<<8  | size.x<<4 | min.x;
-        int py = section.getChunkY()<<24 | size.y<<4 | min.y;
+        int py = section.getChunkY()<<24 | size.y<<4 | min.y;//TODO: figure out how to make this << 8 just like the others
         int pz = section.getChunkZ()<<8  | size.z<<4 | min.z;
         int pw = addr;
         new Vector4i(px, py, pz, pw).getToAddress(segment);

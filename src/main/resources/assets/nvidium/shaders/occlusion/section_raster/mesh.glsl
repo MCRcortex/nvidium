@@ -42,6 +42,7 @@ void emitParital(int visIndex) {
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x+8].gl_PrimitiveID = visIndex;
 }
 
+//TODO: Check if the section can be culled via fog
 void main() {
     int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
 
@@ -53,9 +54,10 @@ void main() {
     vec3 mins = (header.xyz&0xF)-ADD_SIZE;
     vec3 maxs = mins+((header.xyz>>4)&0xF)+1+(ADD_SIZE*2);
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y >>= 16;//TODO: figure out how to remove this from here and in the SectionManager, when i remove it everything dies
     ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
     vec3 corner = vec3(relativeChunkPos<<4);
+    vec3 cornerCopy = corner;
 
     //TODO: try mix instead or something other than just ternaries, i think they get compiled to a cmov type instruction but not sure
     corner += vec3(((gl_LocalInvocationID.x&1)==0)?mins.x:maxs.x, ((gl_LocalInvocationID.x&4)==0)?mins.y:maxs.y, ((gl_LocalInvocationID.x&2)==0)?mins.z:maxs.z);
@@ -68,12 +70,14 @@ void main() {
         emitParital(prim_payload);
     }
     if (gl_LocalInvocationID.x == 0) {
-        //ivec3 absRelPos = abs(relativeChunkPos);
-        //int maxDist = min(absRelPos.x, min(absRelPos.y, absRelPos.z));
+        cornerCopy += subchunkOffset.xyz;
+        vec3 minPos = mins + cornerCopy;
+        vec3 maxPos = maxs + cornerCopy;
+        bool isInSection = all(lessThan(minPos, vec3(ADD_SIZE))) && all(lessThan(vec3(-ADD_SIZE), maxPos));
 
         //Shift and set, this gives us a bonus of having the last 8 frames as visibility history
-        //sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(maxDist<=1?1:0);//Inject visibility aswell
-        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(0);
+        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(isInSection?1:0);//Inject visibility aswell
+        //sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(0);
 
         gl_PrimitiveCountNV = 12;
     }
