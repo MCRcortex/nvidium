@@ -17,6 +17,6 @@
   ],
   "depends": {
     "fabricloader": ">=0.14",
-    "sodium": "=0.5.2"
+    "sodium": "=0.5.3"
   }
 }

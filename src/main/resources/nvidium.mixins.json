@@ -15,11 +15,15 @@
     "sodium.MixinRenderSection",
     "sodium.MixinRenderSectionManager",
     "sodium.MixinSodiumOptionsGUI",
+    "sodium.MixinSodiumWorldRenderer",
     "sodium.MixinViewport",
-    "sodium.SodiumWorldRendererAccessor",
-    "sodium.MixinSodiumWorldRenderer"
+    "sodium.SodiumWorldRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+    "sodium.MixinChunkBuilder",
+    "sodium.MixinChunkJobQueue"
+  ]
 }
