@@ -98,13 +98,8 @@ public class RenderPipeline {
         regionVisibilityTracker = new BitSet(maxRegions);
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
 
-        if (Nvidium.config.statistics_level.ordinal()>1) {
-            statisticsBuffer = device.createDeviceOnlyMappedBuffer(4*4);
-            stats = new Statistics();
-        } else {
-            stats = null;
-            statisticsBuffer = null;
-        }
+        statisticsBuffer = device.createDeviceOnlyMappedBuffer(4*4);
+        stats = new Statistics();
     }
 
     private int prevRegionCount;
@@ -166,7 +161,7 @@ public class RenderPipeline {
                 j++;
             }
 
-            if (stats != null) {
+            if (Nvidium.config.statistics_level != StatisticsLoggingLevel.NONE) {
                 stats.frustumCount = regions.size();
             }
         }
@@ -266,7 +261,7 @@ public class RenderPipeline {
         }
 
         //Download statistics
-        if (stats != null){
+        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()){
             downloadStream.download(statisticsBuffer, 0, 4*4, (addr)-> {
                 stats.regionCount = MemoryUtil.memGetInt(addr);
                 stats.sectionCount = MemoryUtil.memGetInt(addr+4);
@@ -300,7 +295,7 @@ public class RenderPipeline {
             throw new IllegalStateException("GLERROR: "+err);
         }
 
-        if (stats != null && statisticsBuffer != null) {
+        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
@@ -370,7 +365,7 @@ public class RenderPipeline {
     }
 
     public void addDebugInfo(List<String> info) {
-        if (stats != null) {
+        if (Nvidium.config.statistics_level != StatisticsLoggingLevel.NONE) {
             StringBuilder builder = new StringBuilder();
             builder.append("Statistics: \n");
             if (Nvidium.config.statistics_level.ordinal() >=  StatisticsLoggingLevel.FRUSTUM.ordinal()) {

@@ -13,6 +13,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactC
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.texture.Sprite;
 import org.jetbrains.annotations.Nullable;
 
@@ -74,6 +75,7 @@ public class NvidiumWorldRenderer {
             last_sample_time = System.currentTimeMillis();
             update_allowed_memory();
         }
+        RenderLayer.getSolid().endDrawing();
     }
 
     public void renderTranslucent() {
@@ -87,6 +89,7 @@ public class NvidiumWorldRenderer {
         if (MinecraftClient.isFabulousGraphicsOrBetter()) {
             MinecraftClient.getInstance().getFramebuffer().beginWrite(false);
         }
+        RenderLayer.getTranslucent().endDrawing();
     }
 
     public void deleteSection(RenderSection section) {
