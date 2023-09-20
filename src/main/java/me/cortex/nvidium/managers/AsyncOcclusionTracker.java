@@ -15,7 +15,6 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -32,7 +31,7 @@ public class AsyncOcclusionTracker {
 
     private final Semaphore framesAhead = new Semaphore(0);
 
-    private final Deque<List<RenderSection>> atomicBatchedRebuildQueue = new ConcurrentLinkedDeque<>();
+    private final AtomicReference<List<RenderSection>> atomicBfsResult = new AtomicReference<>();
     private final AtomicReference<List<RenderSection>> blockEntitySectionsRef = new AtomicReference<>(new ArrayList<>());
     private final AtomicReference<Sprite[]> visibleAnimatedSpritesRef = new AtomicReference<>();
 
@@ -76,9 +75,9 @@ public class AsyncOcclusionTracker {
                     }
                 }
                 if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
-                    if (!((IRenderSectionExtension)section).isEnqueued()) {//If it is enqueued, dont enqueue it again
-                        //Set that the section is in the rebuild queue
-                        ((IRenderSectionExtension)section).setEnqueued(true);
+                    if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
+                        //Set that the section has been seen
+                        ((IRenderSectionExtension)section).isSeen(true);
                         chunkUpdates.add(section);
                     }
                 }
@@ -95,7 +94,16 @@ public class AsyncOcclusionTracker {
             }
 
             if (!chunkUpdates.isEmpty()) {
-                atomicBatchedRebuildQueue.add(chunkUpdates);
+                var previous = atomicBfsResult.getAndSet(chunkUpdates);
+                if (previous != null) {
+                    //We need to cleanup our state from a previous iteration
+                    for (var section : previous) {
+                        if (section.isDisposed())
+                            continue;
+                        //Reset that it hasnt been seen
+                        ((IRenderSectionExtension) section).isSeen(false);
+                    }
+                }
             }
             blockEntitySectionsRef.set(blockEntitySections);
             visibleAnimatedSpritesRef.set(animatedSpriteSet==null?null:animatedSpriteSet.toArray(new Sprite[0]));
@@ -106,25 +114,25 @@ public class AsyncOcclusionTracker {
     public final void update(Viewport viewport) {
         this.viewport = viewport;
 
-        if (framesAhead.availablePermits() < 200) {//This stops a runaway when the traversal time is greater than frametime
+        if (framesAhead.availablePermits() < 5) {//This stops a runaway when the traversal time is greater than frametime
             framesAhead.release();
         }
 
-        while (!atomicBatchedRebuildQueue.isEmpty()) {
-            var batch = atomicBatchedRebuildQueue.poll();
-            for (var section : batch) {
+        var bfsResult = atomicBfsResult.getAndSet(null);
+        if (bfsResult != null) {
+            for (var section : bfsResult) {
                 if (section.isDisposed())
                     continue;
                 var type = section.getPendingUpdate();
                 if (type != null && section.getBuildCancellationToken() == null) {
                     var queue = outputRebuildQueue.get(type);
                     if (queue.size() < type.getMaximumQueueSize()) {
+                        ((IRenderSectionExtension) section).isSubmittedRebuild(true);
                         queue.add(section);
-                    } else {
-                        //Reset that the section was not enqueued
-                        ((IRenderSectionExtension) section).setEnqueued(false);
                     }
                 }
+                //Reset that the section has not been seen (whether its been submitted to the queue or not)
+                ((IRenderSectionExtension) section).isSeen(false);
             }
         }
     }

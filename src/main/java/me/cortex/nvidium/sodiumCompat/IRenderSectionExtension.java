@@ -1,6 +1,9 @@
 package me.cortex.nvidium.sodiumCompat;
 
 public interface IRenderSectionExtension {
-    boolean isEnqueued();
-    void setEnqueued(boolean state);
+    boolean isSubmittedRebuild();
+    void isSubmittedRebuild(boolean state);
+
+    boolean isSeen();
+    void isSeen(boolean state);
 }

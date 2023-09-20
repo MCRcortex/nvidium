@@ -14,7 +14,6 @@ import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkUpdateType;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
-import me.jellysquid.mods.sodium.client.render.chunk.compile.executor.ChunkBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
@@ -124,8 +123,8 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     private void injectEnqueueFalse(RenderSection instance, ChunkUpdateType type) {
         instance.setPendingUpdate(type);
         if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
-            //We need to reset the enqueued state to false since the build has been submitted
-            ((IRenderSectionExtension) instance).setEnqueued(false);
+            //We need to reset the fact that its been submitted to the rebuild queue from the build queue
+            ((IRenderSectionExtension) instance).isSubmittedRebuild(false);
         }
     }
 
@@ -164,7 +163,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
             var queue = rebuildLists.get(pendingUpdate);
             //TODO:FIXME: this might result in the section being enqueued multiple times, if this gets executed, and the async search sees it at the exactly wrong moment
             if (isSectionVisibleBfs(section) && queue.size() < pendingUpdate.getMaximumQueueSize()) {
-                ((IRenderSectionExtension)section).setEnqueued(true);
+                ((IRenderSectionExtension)section).isSubmittedRebuild(true);
                 rebuildLists.get(pendingUpdate).add(section);
             }
         }
