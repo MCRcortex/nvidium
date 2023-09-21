@@ -1,12 +1,12 @@
 {
-  "nvidium.options.pages.nvidium" : "Nvidium",
-  "nvidium.options.region_keep_distance.name" : "Mantener distancia de region",
-  "nvidium.options.region_keep_distance.tooltip" : "Distancia para mantener las regiones cargadas",
-  "nvidium.options.automatic_memory_limit.name" : "Límite automático de memoria",
-  "nvidium.options.automatic_memory_limit.tooltip" : "Determina automáticamente el límite de memoria para establecer dada la cantidad de vram disponible en su sistema",
-  "nvidium.options.max_gpu_memory.name" : "Memoria maxima de gpu",
-  "nvidium.options.max_gpu_memory.tooltip" : "Memoria maxima de gpu, comenzará a eliminar fragmentos si se alcanza este límite",
-  "nvidium.options.enable_temporal_coherence.name" : "Permite la coherencia temporal",
-  "nvidium.options.enable_temporal_coherence.tooltip" : "Elimina los artefactos al dar la vuelta.",
-  "nvidium.options.mb" : "%s Mbs"
+  "nvidium.options.pages.nvidium": "Nvidium",
+  "nvidium.options.region_keep_distance.name": "Mantener distancia de región",
+  "nvidium.options.region_keep_distance.tooltip": "Distancia para mantener las regiones cargadas",
+  "nvidium.options.automatic_memory_limit.name": "Límite automático de memoria",
+  "nvidium.options.automatic_memory_limit.tooltip": "Determina automáticamente el límite de memoria a establecer dada la cantidad de VRAM disponible en tu sistema",
+  "nvidium.options.max_gpu_memory.name": "Memoria máxima de GPU",
+  "nvidium.options.max_gpu_memory.tooltip": "Memoria máxima de GPU, comenzará a eliminar fragmentos si se alcanza este límite",
+  "nvidium.options.enable_temporal_coherence.name": "Permite la coherencia temporal",
+  "nvidium.options.enable_temporal_coherence.tooltip": "Elimina los artefactos al dar la vuelta.",
+  "nvidium.options.mb": "%s MBs"
 }
