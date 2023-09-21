@@ -75,21 +75,10 @@ public class NvidiumWorldRenderer {
             last_sample_time = System.currentTimeMillis();
             update_allowed_memory();
         }
-        RenderLayer.getSolid().endDrawing();
     }
 
     public void renderTranslucent() {
-        //Why is minecraft like this
-        if (MinecraftClient.isFabulousGraphicsOrBetter()) {
-            MinecraftClient.getInstance().worldRenderer.getTranslucentFramebuffer().beginWrite(false);
-        }
-
         renderPipeline.renderTranslucent();
-
-        if (MinecraftClient.isFabulousGraphicsOrBetter()) {
-            MinecraftClient.getInstance().getFramebuffer().beginWrite(false);
-        }
-        RenderLayer.getTranslucent().endDrawing();
     }
 
     public void deleteSection(RenderSection section) {

@@ -89,11 +89,13 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     public void renderLayer(ChunkRenderMatrices matrices, TerrainRenderPass pass, double x, double y, double z, CallbackInfo ci) {
         if (Nvidium.IS_ENABLED) {
             ci.cancel();
+            pass.startDrawing();
             if (pass == DefaultTerrainRenderPasses.SOLID) {
                 renderer.renderFrame(viewport, matrices, x, y, z);
             } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
                 renderer.renderTranslucent();
             }
+            pass.endDrawing();
         }
     }
 
