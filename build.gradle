@@ -11,6 +11,10 @@ targetCompatibility = JavaVersion.VERSION_17
 
 apply plugin: "fabric-loom"
 
+loom {
+    mixin.defaultRefmapName = "nvidium.refmap.json"
+}
+
 processResources {
     inputs.property "version", project.version
 

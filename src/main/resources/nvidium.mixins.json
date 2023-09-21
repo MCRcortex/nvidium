@@ -17,13 +17,11 @@
     "sodium.MixinSodiumOptionsGUI",
     "sodium.MixinSodiumWorldRenderer",
     "sodium.MixinViewport",
+    "sodium.MixinChunkBuilder",
+    "sodium.MixinChunkJobQueue",
     "sodium.SodiumWorldRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "mixins": [
-    "sodium.MixinChunkBuilder",
-    "sodium.MixinChunkJobQueue"
-  ]
+  }
 }

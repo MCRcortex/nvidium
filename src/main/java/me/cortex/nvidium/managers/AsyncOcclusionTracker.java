@@ -63,11 +63,11 @@ public class AsyncOcclusionTracker {
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
             final Consumer<RenderSection> visitor = section -> {
-                if ((section.getFlags()&RenderSectionFlags.HAS_BLOCK_ENTITIES)!=0 &&
+                if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_ENTITIES))!=0 &&
                         section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance
                     blockEntitySections.add(section);
                 }
-                if (animateVisibleSpritesOnly && (section.getFlags()&RenderSectionFlags.HAS_ANIMATED_SPRITES) != 0 &&
+                if (animateVisibleSpritesOnly && (section.getFlags()&(1<<RenderSectionFlags.HAS_ANIMATED_SPRITES)) != 0 &&
                         section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance (i.e. only animate sprites up to 32 chunks away)
                     var animatedSprites = section.getAnimatedSprites();
                     if (animatedSprites != null) {
