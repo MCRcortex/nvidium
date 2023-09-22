@@ -19,9 +19,9 @@ layout(local_size_x = 32) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
 layout(location=1) out Interpolants {
-    vec4 tint;
-    vec4 addin;
-    vec4 uv_bias_cutoff;
+    f16vec4 tint;
+    f16vec4 addin;
+    f16vec4 uv_bias_cutoff;
 } OUT[];
 
 taskNV in Task {
@@ -63,8 +63,8 @@ void processVertPair(uint id) {
     float mippingBias = decodeVertexMippingBias(A);
     float alphaCutoff = decodeVertexAlphaCutoff(A);
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias_cutoff = vec4(decodeVertexUV(A), mippingBias, alphaCutoff);
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias_cutoff = vec4(decodeVertexUV(B), mippingBias, alphaCutoff);
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias_cutoff = f16vec4(vec4(decodeVertexUV(A), mippingBias, alphaCutoff));
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias_cutoff = f16vec4(vec4(decodeVertexUV(B), mippingBias, alphaCutoff));
 
 
     vec4 tintA = decodeVertexColour(A);
@@ -83,10 +83,10 @@ void processVertPair(uint id) {
     // in reducing computational complexity
     computeFog(isCylindricalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
     computeFog(isCylindricalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
-    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintAO;
-    OUT[(gl_LocalInvocationID.x<<1)|0].addin = addiAO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintBO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].addin = addiBO;
+    OUT[(gl_LocalInvocationID.x<<1)|0].tint = f16vec4(tintAO);
+    OUT[(gl_LocalInvocationID.x<<1)|0].addin = f16vec4(addiAO);
+    OUT[(gl_LocalInvocationID.x<<1)|1].tint = f16vec4(tintBO);
+    OUT[(gl_LocalInvocationID.x<<1)|1].addin = f16vec4(addiBO);
 
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
 }

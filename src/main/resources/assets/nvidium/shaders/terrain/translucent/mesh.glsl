@@ -25,9 +25,9 @@ taskNV in Task {
 };
 
 layout(location=1) out Interpolants {
-    vec4 tint;
-    vec4 addin;
-    vec2 uv;
+    f16vec4 tint;
+    f16vec4 addin;
+    f16vec2 uv;
 } OUT[];
 
 layout(binding = 1) uniform sampler2D tex_light;
@@ -60,8 +60,8 @@ void main() {
     gl_PrimitiveIndicesNV[primId+1] = (isA?1:3)+idxBase;
     gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
 
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv = decodeVertexUV(A);
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv = decodeVertexUV(B);
+    OUT[(gl_LocalInvocationID.x<<1)|0].uv = f16vec2(decodeVertexUV(A));
+    OUT[(gl_LocalInvocationID.x<<1)|1].uv = f16vec2(decodeVertexUV(B));
 
     vec4 tintA = decodeVertexColour(A);
     vec4 tintB = decodeVertexColour(B);
@@ -76,10 +76,10 @@ void main() {
     vec4 addiBO;
     computeFog(isCylindricalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
     computeFog(isCylindricalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
-    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintAO;
-    OUT[(gl_LocalInvocationID.x<<1)|0].addin = addiAO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintBO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].addin = addiBO;
+    OUT[(gl_LocalInvocationID.x<<1)|0].tint = f16vec4(tintAO);
+    OUT[(gl_LocalInvocationID.x<<1)|0].addin = f16vec4(addiAO);
+    OUT[(gl_LocalInvocationID.x<<1)|1].tint = f16vec4(tintBO);
+    OUT[(gl_LocalInvocationID.x<<1)|1].addin = f16vec4(addiBO);
 
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
 
