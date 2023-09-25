@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(GameRenderer.class)
 public class MixinGameRenderer {
-    @Inject(method = "method_32796", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getFarPlaneDistance", at = @At("HEAD"), cancellable = true)
     public void method_32796(CallbackInfoReturnable<Float> cir) {
         if (Nvidium.IS_ENABLED) {
             cir.setReturnValue(16 * 512f);
