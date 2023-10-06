@@ -43,8 +43,10 @@ public class NvidiumWorldRenderer {
     //Note: the reason that asyncChunkTracker is passed in as an already constructed object is cause of the amount of argmuents it takes to construct it
     public NvidiumWorldRenderer(AsyncOcclusionTracker asyncChunkTracker) {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
-        this.uploadStream = new UploadingBufferStream(device, frames, 250000000);
-        this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
+        //32 mb upload buffer
+        this.uploadStream = new UploadingBufferStream(device, frames, 32000000);
+        //8 mb download buffer
+        this.downloadStream = new DownloadTaskStream(device, frames, 8000000);
 
         update_allowed_memory();
         //this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
