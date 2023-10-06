@@ -48,7 +48,7 @@ public class NvidiumWorldRenderer {
 
         update_allowed_memory();
         //this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
-        this.sectionManager = new SectionManager(device, uploadStream, CompactChunkVertex.STRIDE);
+        this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, CompactChunkVertex.STRIDE);
         this.renderPipeline = new RenderPipeline(device, uploadStream, downloadStream, sectionManager);
 
 

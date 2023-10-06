@@ -30,13 +30,13 @@ public class SectionManager {
 
     private final LongSet hiddenSectionKeys = new LongOpenHashSet();
 
-    public SectionManager(RenderDevice device, UploadingBufferStream uploadStream, int quadVertexSize) {
+    public SectionManager(RenderDevice device, long fallbackMemorySize, UploadingBufferStream uploadStream, int quadVertexSize) {
         int maxRegions = 50_000;
 
         this.device = device;
         this.uploadStream = uploadStream;
 
-        this.terrainAreana = new BufferArena(device, 0, quadVertexSize);
+        this.terrainAreana = new BufferArena(device, fallbackMemorySize, quadVertexSize);
         this.regionManager = new RegionManager(device, maxRegions, maxRegions * 200, uploadStream);
 
         this.section2id.defaultReturnValue(-1);

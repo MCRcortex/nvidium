@@ -6,7 +6,7 @@ import net.irisshaders.iris.api.v0.IrisApi;
 public class IrisCheck {
     public static final boolean IRIS_LOADED = FabricLoader.getInstance().isModLoaded("iris");
 
-    public static boolean checkIrisShaders() {
+    private static boolean checkIrisShaders() {
         return IrisApi.getInstance().isShaderPackInUse();
     }
 
