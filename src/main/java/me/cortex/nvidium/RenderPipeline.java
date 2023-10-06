@@ -14,7 +14,6 @@ import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
-import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.impl.CompactChunkVertex;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import org.joml.*;
 import org.lwjgl.opengl.GL11C;
@@ -35,7 +34,6 @@ import static org.lwjgl.opengl.NVRepresentativeFragmentTest.GL_REPRESENTATIVE_FR
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_ADDRESS_NV;
 import static org.lwjgl.opengl.NVUniformBufferUnifiedMemory.GL_UNIFORM_BUFFER_UNIFIED_NV;
 import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.*;
-import static org.lwjgl.opengl.NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
 
 
 //TODO: extract out sectionManager, uploadStream, downloadStream and other funky things to an auxiliary parent NvidiumWorldRenderer class
@@ -90,7 +88,7 @@ public class RenderPipeline {
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
 
-        sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE+ maxRegions*2L);
+        sceneUniform = device.createDeviceOnlyMappedBuffer(SCENE_SIZE + maxRegions*2L);
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
@@ -184,9 +182,9 @@ public class RenderPipeline {
             addr += 16;
             MemoryUtil.memPutLong(addr, sceneUniform.getDeviceAddress() + SCENE_SIZE);//Put in the location of the region indexs
             addr += 8;
-            MemoryUtil.memPutLong(addr, sectionManager.getRegionManager().getRegionDataAddress());
+            MemoryUtil.memPutLong(addr, sectionManager.getRegionManager().getRegionBufferAddress());
             addr += 8;
-            MemoryUtil.memPutLong(addr, sectionManager.getSectionDataAddress());
+            MemoryUtil.memPutLong(addr, sectionManager.getRegionManager().getSectionBufferAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, regionVisibility.getDeviceAddress());
             addr += 8;
@@ -210,6 +208,7 @@ public class RenderPipeline {
         }
 
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
+        uploadStream.commit();
 
         //TODO: FIXME: THIS FEELS ILLEGAL
         TickableManager.TickAll();
@@ -297,7 +296,10 @@ public class RenderPipeline {
 
         if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
+            //Stupid bloody nvidia not following spec forcing me to use a upload stream
+            long upload = this.uploadStream.getUpload(statisticsBuffer, 0, 4*4);
+            MemoryUtil.memSet(upload, 0, 4*4);
+            //glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
     }
 

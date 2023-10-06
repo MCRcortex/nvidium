@@ -51,10 +51,26 @@ void main() {
     //barrier();
 
     uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
+    //If the section header was empty or the hide section bit is set, return
+
+    //NOTE: technically this has the infinitly small probability of not rendering a block if the block is located at
+    // 0,0,0 the only block in the chunk and the first thing in the buffer
+    // to fix, also check that the ranges are null
+    if (header == uvec4(0) || (header.y&(1<<17)) != 0) {
+        if (gl_LocalInvocationID.x == 0) {
+            sectionVisibility[visibilityIndex] = uint8_t(0);
+            gl_PrimitiveCountNV = 0;
+        }
+        return;
+    }
+
     vec3 mins = (header.xyz&0xF)-ADD_SIZE;
     vec3 maxs = mins+((header.xyz>>4)&0xF)+1+(ADD_SIZE*2);
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;//TODO: figure out how to remove this from here and in the SectionManager, when i remove it everything dies
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
+
     ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
     vec3 corner = vec3(relativeChunkPos<<4);
     vec3 cornerCopy = corner;

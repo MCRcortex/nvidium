@@ -41,7 +41,9 @@ void main() {
     ivec4 header = sectionData[sectionId].header;
     uint baseDataOffset = (uint)header.w;
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
     originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
 
     quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);

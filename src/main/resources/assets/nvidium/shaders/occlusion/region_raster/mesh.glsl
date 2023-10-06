@@ -39,10 +39,18 @@ void emitParital(int visIndex) {
 void main() {
     //FIXME: It might actually be more efficent to just upload the region data straight into the ubo
     // this remove an entire level of indirection and also puts region data in the very fast path
-    uint64_t data = regionData[regionIndicies[gl_WorkGroupID.x]];//fetch the region data
+    Region data = regionData[regionIndicies[gl_WorkGroupID.x]];//fetch the region data
 
-    ivec3 pos = ivec3((((int32_t)(data<<12))>>12), (int32_t)((int8_t)(data>>40)), (((int32_t)(data>>8))>>12));
-    ivec3 size = (ivec3(i64vec3(data)>>ivec3(59,62,56))&ivec3(7,3,7));
+    int visibilityIndex = (int)gl_WorkGroupID.x;
+    //If the region metadata was empty, return
+    if (data.a == uint64_t(-1)) {
+        regionVisibility[visibilityIndex] = uint8_t(0);
+        gl_PrimitiveCountNV = 0;
+        return;
+    }
+
+    ivec3 pos = ivec3((((int32_t)(data.a<<12))>>12), (int32_t)((int8_t)(data.a>>40)), (((int32_t)(data.a>>8))>>12));
+    ivec3 size = (ivec3(i64vec3(data.a)>>ivec3(59,62,56))&ivec3(7,3,7));
     vec3 start = pos - chunkPosition.xyz - ADD_SIZE;
     vec3 end = start + 1 + size + (ADD_SIZE*2);
 
@@ -55,7 +63,6 @@ void main() {
     corner *= 16.0f;
     gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = MVP*vec4(corner, 1.0);
 
-    int visibilityIndex = (int)gl_WorkGroupID.x;
 
     emitIndicies(visibilityIndex);
     if (gl_LocalInvocationID.x < 4) {

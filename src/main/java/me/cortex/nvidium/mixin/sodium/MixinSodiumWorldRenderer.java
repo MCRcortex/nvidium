@@ -2,6 +2,7 @@ package me.cortex.nvidium.mixin.sodium;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import me.cortex.nvidium.Nvidium;
+import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
@@ -22,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.SortedSet;
 
 @Mixin(value = SodiumWorldRenderer.class, remap = false)
-public abstract class MixinSodiumWorldRenderer {
+public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererGetter {
     @Shadow private RenderSectionManager renderSectionManager;
 
     @Shadow
@@ -48,6 +49,15 @@ public abstract class MixinSodiumWorldRenderer {
                     renderBlockEntity(matrices, bufferBuilders, blockBreakingProgressions, tickDelta, immediate, x, y, z, blockEntityRenderer, entity);
                 }
             }
+        }
+    }
+
+    @Override
+    public NvidiumWorldRenderer getRenderer() {
+        if (Nvidium.IS_ENABLED) {
+            return ((INvidiumWorldRendererGetter)renderSectionManager).getRenderer();
+        } else {
+            return null;
         }
     }
 }

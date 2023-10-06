@@ -1,8 +1,9 @@
 package me.cortex.nvidium.managers;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import me.cortex.nvidium.gl.RenderDevice;
-import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.sodiumCompat.IRepackagedResult;
 import me.cortex.nvidium.util.BufferArena;
 import me.cortex.nvidium.util.UploadingBufferStream;
@@ -19,133 +20,141 @@ public class SectionManager {
     //Sections should be grouped and batched into sizes of the count of sections in a region
     private final RegionManager regionManager;
 
-    //TODO: maybe replace with a int[] using bit masking thing
-    private final Long2IntOpenHashMap sectionOffset = new Long2IntOpenHashMap();
-
-    private final Long2IntOpenHashMap terrainDataLocation = new Long2IntOpenHashMap();
+    private final Long2IntOpenHashMap section2id = new Long2IntOpenHashMap();
+    private final Long2IntOpenHashMap section2terrain = new Long2IntOpenHashMap();
 
     public final UploadingBufferStream uploadStream;
-
-    private final IDeviceMappedBuffer sectionBuffer;
     public final BufferArena terrainAreana;
 
     private final RenderDevice device;
 
-    private final int formatSize;
+    private final LongSet hiddenSectionKeys = new LongOpenHashSet();
 
-    public SectionManager(RenderDevice device, long fallback_memory_size, UploadingBufferStream uploadStream, int rd, int height, int quadVertexSize) {
+    public SectionManager(RenderDevice device, UploadingBufferStream uploadStream, int quadVertexSize) {
+        int maxRegions = 50_000;
+
         this.device = device;
         this.uploadStream = uploadStream;
-        //int widthSquared = (rd*2+1)*(rd*2+1);
 
-        //int maxRegions = (int) Math.ceil((((double) widthSquared*height)/256))*2;
-        //TODO: optimize this to be more tight
-        int maxRegions = (int)(Math.ceil(Math.pow(Math.ceil((double)rd/8+1),2)*Math.PI) * Math.ceil(((double)height)/4+2));
+        this.terrainAreana = new BufferArena(device, 0, quadVertexSize);
+        this.regionManager = new RegionManager(device, maxRegions, maxRegions * 200, uploadStream);
 
-        this.formatSize = quadVertexSize;
-        this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * (8*4*8) * SECTION_SIZE);
-        this.terrainAreana = new BufferArena(device, fallback_memory_size, quadVertexSize);
-        this.sectionOffset.defaultReturnValue(-1);
-        this.regionManager = new RegionManager(device, maxRegions);
-    }
-
-    private long getSectionKey(int x, int y, int z) {
-        return ChunkSectionPos.asLong(x,y,z);
+        this.section2id.defaultReturnValue(-1);
+        this.section2terrain.defaultReturnValue(-1);
     }
 
     public void uploadChunkBuildResult(ChunkBuildOutput result) {
         var output = ((IRepackagedResult)result).getOutput();
+
+        RenderSection section = result.render;
+        long sectionKey = ChunkSectionPos.asLong(section.getChunkX(), section.getChunkY(), section.getChunkZ());
+
         if (output == null || output.quads() == 0) {
-            deleteSection(result.render);
+            deleteSection(sectionKey);
             return;
         }
 
-        RenderSection section = result.render;
-        long key = getSectionKey(section.getChunkX(), section.getChunkY(), section.getChunkZ());
-        int sectionIdx = sectionOffset.computeIfAbsent(//Get or fetch the section meta index
-                key,
-                a->regionManager.createSectionIndex(uploadStream, section.getChunkX(), section.getChunkY(), section.getChunkZ())
+        //Get the section id or allocate a new instance for it
+        int sectionIdx = this.section2id.computeIfAbsent(
+                sectionKey,
+                key -> this.regionManager.allocateSection(ChunkSectionPos.unpackX(key), ChunkSectionPos.unpackY(key), ChunkSectionPos.unpackZ(key))
         );
 
-        if (terrainDataLocation.containsKey(key)) {
-            terrainAreana.free(terrainDataLocation.get(key));
+        int terrainAddress;
+        {
+            //If the section had terrain data associated with it, free it
+            if ((terrainAddress = this.section2terrain.remove(sectionKey)) != -1) {
+                this.terrainAreana.free(terrainAddress);
+            }
+
+            terrainAddress = this.terrainAreana.allocQuads(output.quads());
+            this.section2terrain.put(sectionKey, terrainAddress);
+
+            long geometryUpload = terrainAreana.upload(uploadStream, terrainAddress);
+            MemoryUtil.memCopy(MemoryUtil.memAddress(output.geometry().getDirectBuffer()), geometryUpload, output.geometry().getLength());
         }
 
-        int addr = terrainAreana.allocQuads(output.quads());
-        terrainDataLocation.put(key, addr);
-        long geoUpload = terrainAreana.upload(uploadStream, addr);
-
-        MemoryUtil.memCopy(MemoryUtil.memAddress(output.geometry().getDirectBuffer()), geoUpload, output.geometry().getLength());
-
-        long segment = uploadStream.getUpload(sectionBuffer, (long) sectionIdx * SECTION_SIZE, SECTION_SIZE);
+        long metadata = regionManager.setSectionData(sectionIdx);
+        boolean hideSectionBitSet = this.hiddenSectionKeys.contains(sectionKey);
         Vector3i min  = output.min();
         Vector3i size = output.size();
 
         //NOTE:TODO: The y encoded height position only has a range of like 6 bits max, that gives 18 bits free/spare for something
         // realistically it would only be 16 free bits cause ee but still thats 2 bytes free
-
-        int px = section.getChunkX()<<8  | size.x<<4 | min.x;
-        int py = section.getChunkY()<<24 | size.y<<4 | min.y;//TODO: figure out how to make this << 8 just like the others
-        int pz = section.getChunkZ()<<8  | size.z<<4 | min.z;
-        int pw = addr;
-        new Vector4i(px, py, pz, pw).getToAddress(segment);
-        segment += 4*4;
+        int px = section.getChunkX()<<8 | size.x<<4 | min.x;
+        int py = (section.getChunkY()&0x1FF)<<8 | size.y<<4 | min.y | (hideSectionBitSet?1<<17:0);
+        int pz = section.getChunkZ()<<8 | size.z<<4 | min.z;
+        int pw = terrainAddress;
+        new Vector4i(px, py, pz, pw).getToAddress(metadata);
+        metadata += 4*4;
 
         //Write the geometry offsets, packed into ints
         for (int i = 0; i < 4; i++) {
             int geo = Short.toUnsignedInt(output.offsets()[i*2])|(Short.toUnsignedInt(output.offsets()[i*2+1])<<16);
-            MemoryUtil.memPutInt(segment, geo);
-            segment += 4;
+            MemoryUtil.memPutInt(metadata, geo);
+            metadata += 4;
+        }
+    }
+
+    public void setHideBit(int x, int y, int z, boolean hide) {
+        long sectionKey = ChunkSectionPos.asLong(x, y, z);
+
+        if (hide) {
+            //Do a fast return if it was already hidden
+            if (!this.hiddenSectionKeys.add(sectionKey)) {
+                return;
+            }
+        } else {
+            //Do a fast return if the section was not hidden
+            if (!this.hiddenSectionKeys.remove(sectionKey)) {
+                return;
+            }
+        }
+
+        int sectionId = this.section2id.get(sectionKey);
+        //Only update the section if it is loaded
+        if (sectionId != -1) {
+            long metadata = this.regionManager.setSectionData(sectionId);
+            MemoryUtil.memPutInt(metadata + 4, (MemoryUtil.memGetInt(metadata + 4)&~(1<<17))| (hide?1:0)<<17);
         }
     }
 
     public void deleteSection(RenderSection section) {
-        deleteSection(getSectionKey(section.getChunkX(), section.getChunkY(), section.getChunkZ()));
+        deleteSection(ChunkSectionPos.asLong(section.getChunkX(), section.getChunkY(), section.getChunkZ()));
     }
 
-    void deleteSection(long sectionKey) {
-        int sectionIdx = sectionOffset.remove(sectionKey);
+    private void deleteSection(long sectionKey) {
+        int sectionIdx = this.section2id.remove(sectionKey);
         if (sectionIdx != -1) {
-            terrainAreana.free(terrainDataLocation.remove(sectionKey));
-            regionManager.removeSectionIndex(uploadStream, sectionIdx);
+            this.terrainAreana.free(this.section2terrain.remove(sectionKey));
             //Clear the segment
-            long segment = uploadStream.getUpload(sectionBuffer, (long) sectionIdx * SECTION_SIZE, SECTION_SIZE);
-            MemoryUtil.memSet(segment, 0, SECTION_SIZE);
+            this.regionManager.removeSection(sectionIdx);
         }
     }
 
-    public void commitChanges() {
-        uploadStream.commit();
+    public void destroy() {
+        this.regionManager.destroy();
+        this.terrainAreana.delete();
     }
 
-    public void delete() {
-        sectionBuffer.delete();
-        terrainAreana.delete();
-        regionManager.delete();
+    public void commitChanges() {
+        this.regionManager.commitChanges();
     }
 
     public RegionManager getRegionManager() {
         return regionManager;
     }
 
-    public long getSectionDataAddress() {
-        return sectionBuffer.getDeviceAddress();
-    }
-
-    public int getSectionRegionIndex(int x, int y, int z) {
-        return sectionOffset.getOrDefault(getSectionKey(x,y,z), -1);
-    }
-
     public void removeRegionById(int regionId) {
-        if (!regionManager.regionExists(regionId)) return;
-        long rk = regionManager.regionIdToKey(regionId);
+        if (!this.regionManager.regionExists(regionId)) return;
+        long rk = this.regionManager.regionIdToKey(regionId);
         int X = ChunkSectionPos.unpackX(rk)<<3;
         int Y = ChunkSectionPos.unpackY(rk)<<2;
         int Z = ChunkSectionPos.unpackZ(rk)<<3;
         for (int x = X; x < X+8; x++) {
             for (int y = Y; y < Y+4; y++) {
                 for (int z = Z; z < Z+8; z++) {
-                    deleteSection(getSectionKey(x, y, z));
+                    this.deleteSection(ChunkSectionPos.asLong(x, y, z));
                 }
             }
         }

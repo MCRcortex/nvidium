@@ -5,6 +5,8 @@ import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer;
 
+//TODO: make it not remove and immediatly deallocate the sparse pages, wait until the end of a frame to deallocate
+// and do it intellegiently cause commiting/uncommiting pages is very expensive
 public class BufferArena {
     SegmentedManager segments = new SegmentedManager();
     private final RenderDevice device;

@@ -35,16 +35,18 @@ void main() {
     //Early exit if the region wasnt visible
     if (regionVisibility[gl_WorkGroupID.x] == uint8_t(0)) {
         terrainCommandBuffer[cmdIdx] = uvec2(0);
+        gl_TaskCountNV = 0;
         return;
     }
+
     #ifdef STATISTICS_REGIONS
     atomicAdd(statistics_buffer, 1);
     #endif
 
     //FIXME: It might actually be more efficent to just upload the region data straight into the ubo
     uint32_t offset = regionIndicies[gl_WorkGroupID.x];
-    uint64_t data = regionData[offset];
-    uint8_t count = (uint8_t)((data>>48)&0xFF);
+    Region data = regionData[offset];
+    uint8_t count = (uint8_t)((data.a>>48)&0xFF);
 
     //Write in order
     _visOutBase = offset<<8;//This makes checking visibility very fast and quick in the compute shader

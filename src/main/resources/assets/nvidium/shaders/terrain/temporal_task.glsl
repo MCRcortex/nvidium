@@ -39,7 +39,9 @@ void main() {
 
     ivec4 header = sectionData[sectionId].header;
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
     chunk -= chunkPosition.xyz;
 
     origin = vec3(chunk<<4);

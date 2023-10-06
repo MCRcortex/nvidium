@@ -1,5 +1,6 @@
 package me.cortex.nvidium;
 
+import me.cortex.nvidium.api0.NvidiumAPI;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.managers.AsyncOcclusionTracker;
 import me.cortex.nvidium.managers.SectionManager;
@@ -46,8 +47,10 @@ public class NvidiumWorldRenderer {
         this.downloadStream = new DownloadTaskStream(device, frames, 16000000);
 
         update_allowed_memory();
-        this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
+        //this.sectionManager = new SectionManager(device, max_geometry_memory*1024*1024, uploadStream, 150, 24, CompactChunkVertex.STRIDE);
+        this.sectionManager = new SectionManager(device, uploadStream, CompactChunkVertex.STRIDE);
         this.renderPipeline = new RenderPipeline(device, uploadStream, downloadStream, sectionManager);
+
 
         this.asyncChunkTracker = asyncChunkTracker;
     }
@@ -56,8 +59,9 @@ public class NvidiumWorldRenderer {
         uploadStream.delete();
         downloadStream.delete();
         renderPipeline.delete();
-        sectionManager.delete();
         asyncChunkTracker.delete();
+
+        sectionManager.destroy();
     }
 
     public void reloadShaders() {
@@ -65,6 +69,8 @@ public class NvidiumWorldRenderer {
     }
 
     public void renderFrame(Viewport viewport, ChunkRenderMatrices matrices, double x, double y, double z) {
+        new NvidiumAPI("a").hideSection(0, 0, 0);
+
         renderPipeline.renderFrame(viewport, matrices, x, y, z);
 
         if (sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
@@ -78,15 +84,15 @@ public class NvidiumWorldRenderer {
     }
 
     public void renderTranslucent() {
-        renderPipeline.renderTranslucent();
+        this.renderPipeline.renderTranslucent();
     }
 
     public void deleteSection(RenderSection section) {
-        sectionManager.deleteSection(section);
+        this.sectionManager.deleteSection(section);
     }
 
     public void uploadBuildResult(ChunkBuildOutput buildOutput) {
-        sectionManager.uploadChunkBuildResult(buildOutput);
+        this.sectionManager.uploadChunkBuildResult(buildOutput);
     }
 
     public void addDebugInfo(ArrayList<String> debugInfo) {
@@ -119,6 +125,10 @@ public class NvidiumWorldRenderer {
 
     public List<RenderSection> getSectionsWithEntities() {
         return asyncChunkTracker.getLatestSectionsWithEntities();
+    }
+
+    public SectionManager getSectionManager() {
+        return sectionManager;
     }
 
     @Nullable
