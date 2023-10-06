@@ -69,8 +69,6 @@ public class NvidiumWorldRenderer {
     }
 
     public void renderFrame(Viewport viewport, ChunkRenderMatrices matrices, double x, double y, double z) {
-        new NvidiumAPI("a").hideSection(0, 0, 0);
-
         renderPipeline.renderFrame(viewport, matrices, x, y, z);
 
         if (sectionManager.terrainAreana.getUsedMB()>(max_geometry_memory-50)) {
