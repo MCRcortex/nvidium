@@ -13,6 +13,11 @@ apply plugin: "fabric-loom"
 
 loom {
     mixin.defaultRefmapName = "nvidium.refmap.json"
+    runs {
+        it.configureEach {
+            vmArgs("-Xmx8G", "-XX:+UseZGC")
+        }
+    }
 }
 
 processResources {
