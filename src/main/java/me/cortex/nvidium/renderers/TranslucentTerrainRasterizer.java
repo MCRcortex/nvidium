@@ -25,7 +25,8 @@ public class TranslucentTerrainRasterizer extends Phase {
     private final Shader shader = Shader.make()
             .addSource(TASK, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/task.glsl")))
             .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/frag.frag"))).compile();
+            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/frag.frag")))
+            .compile();
 
     public TranslucentTerrainRasterizer() {
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);

@@ -14,9 +14,9 @@
 
 layout(location = 0) out vec4 colour;
 layout(location = 1) in Interpolants {
-    f16vec4 tint;
-    f16vec4 addin;
     f16vec4 uv_bias_cutoff;
+    f16vec3 tint;
+    f16vec3 addin;
 };
 
 
@@ -30,7 +30,7 @@ void main() {
     //colour = vec4(1.0,1.0,0,1);
     colour = texture(tex_diffuse, uv_bias_cutoff.xy, uv_bias_cutoff.z);
     if (colour.a < uv_bias_cutoff.w) discard;
-    colour *= tint;
-    colour += addin;
+    colour.xyz *= tint;
+    colour.xyz += addin;
     //colour = vec4(1.0,(uv_bias.z/-8.1f)+0.001f,0,1);
 }
