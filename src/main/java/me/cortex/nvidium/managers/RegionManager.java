@@ -78,13 +78,6 @@ public class RegionManager {
         }
     }
 
-
-    private static long packRegion(int tcount, int sizeX, int sizeY, int sizeZ, int startX, int startY, int startZ) {
-        long size = (long)sizeY<<62 | (long)sizeX<<59 | (long)sizeZ<<56;
-        long count = (long)tcount<<48;
-        long offset = ((long)startX&0xfffff)<<0 | ((long)startY&0xff)<<40 | ((long)startZ&0xfffff)<<20;
-        return size|count|offset;
-    }
     private void setRegionMetadata(long upload, Region region) {
         int minX = Integer.MAX_VALUE;
         int maxX = Integer.MIN_VALUE;
@@ -107,15 +100,14 @@ public class RegionManager {
             lastIdx = i;
         }
 
-        long pack = packRegion(lastIdx+1,
-                maxX-minX,
-                maxY-minY,
-                maxZ-minZ,
-                (region.rx<<3)+minX,
-                (region.ry<<2)+minY,
-                (region.rz<<3)+minZ);
-        MemoryUtil.memPutLong(upload, pack);
-        MemoryUtil.memPutLong(upload+8, -1);
+
+        long size = (long)(maxY-minY)<<62 | (long)(maxX-minX)<<59 | (long)(maxZ-minZ)<<56;
+        long count = (long)(lastIdx)<<48;
+        long x = ((((long) region.rx <<3)+minX)&((1<<24)-1))<<24;
+        long y = ((((long) region.ry <<2)+minY)&((1<<24)-1))<<0;//TODO:FIXME! y height does _not_ need to be 24 bits big
+        long z = ((((long) region.rz <<3)+minZ)&((1<<24)-1))<<(64-24);
+        MemoryUtil.memPutLong(upload, size|count|x|y);
+        MemoryUtil.memPutLong(upload+8, z);
     }
 
     //Returns a pointer to where the section data can be read or updated

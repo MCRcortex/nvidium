@@ -49,8 +49,8 @@ void main() {
         return;
     }
 
-    ivec3 pos = ivec3((((int32_t)(data.a<<12))>>12), (int32_t)((int8_t)(data.a>>40)), (((int32_t)(data.a>>8))>>12));
-    ivec3 size = (ivec3(i64vec3(data.a)>>ivec3(59,62,56))&ivec3(7,3,7));
+    ivec3 pos = unpackRegionPosition(data);
+    ivec3 size = unpackRegionSize(data);
     vec3 start = pos - chunkPosition.xyz - ADD_SIZE;
     vec3 end = start + 1 + size + (ADD_SIZE*2);
 

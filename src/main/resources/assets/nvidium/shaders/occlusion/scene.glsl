@@ -16,7 +16,21 @@ struct Region {
     uint64_t b;
 };
 
+ivec3 unpackRegionSize(Region region) {
+    return ivec3((region.a>>59)&7, region.a>>62, (region.a>>56)&7);
+}
 
+ivec3 unpackRegionPosition(Region region) {
+    //TODO: optimize
+    int x = int(int64_t(region.a<<(64-24-24))>>(64-24));
+    int y = (int(region.a)<<8)>>8;
+    int z = int(int64_t(region.b)>>(64-24));
+    return ivec3(x,y,z);
+}
+
+int unpackRegionCount(Region region) {
+    return int((region.a>>48)&255);
+}
 
 
 layout(std140, binding=0) uniform SceneData {

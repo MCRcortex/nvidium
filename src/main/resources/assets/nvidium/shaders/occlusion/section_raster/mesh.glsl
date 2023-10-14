@@ -20,7 +20,6 @@ layout(triangles, max_vertices=8, max_primitives=12) out;
 taskNV in Task {
     uint32_t _visOutBase;//Base output visibility index
     uint32_t _offset;
-    uint8_t _count;
 };
 
 const uint PILUTA[] = {0, 3, 6, 0, 1, 7, 4, 5};

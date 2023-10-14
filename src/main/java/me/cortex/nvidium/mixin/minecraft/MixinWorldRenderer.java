@@ -11,13 +11,19 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class MixinWorldRenderer {
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Ljava/lang/Math;max(FF)F"))
     private float redirectMax(float a, float b) {
-        return a;
+        if (Nvidium.IS_ENABLED) {
+            return a;
+        }
+        return Math.max(a, b);
     }
 
     @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/GameRenderer;getViewDistance()F"))
     private float changeRD(GameRenderer instance) {
         float viewDistance = instance.getViewDistance();
-        var dist = Nvidium.config.region_keep_distance*16;
-        return dist==32*16?viewDistance:(dist==256*16?9999999:dist);
+        if (Nvidium.IS_ENABLED) {
+            var dist = Nvidium.config.region_keep_distance * 16;
+            return dist == 32 * 16 ? viewDistance : (dist == 256 * 16 ? 9999999 : dist);
+        }
+        return viewDistance;
     }
 }

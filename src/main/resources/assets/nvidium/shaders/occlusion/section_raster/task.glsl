@@ -19,7 +19,6 @@ layout(local_size_x=1) in;
 taskNV out Task {
     uint32_t _visOutBase;// The base offset for the visibility output of the shader
     uint32_t _offset;//start offset for regions (can/should probably be a uint16 since this is just the region id << 8)
-    uint8_t _count;//incase i do that 1 mesh shader does multiple cubes
     //uint64_t bitcheck[4];//TODO: MAYBE DO THIS, each bit is whether there a section at that index, doing so is faster than pulling metadata to check if a section is valid or not
 };
 
@@ -46,12 +45,11 @@ void main() {
     //FIXME: It might actually be more efficent to just upload the region data straight into the ubo
     uint32_t offset = regionIndicies[gl_WorkGroupID.x];
     Region data = regionData[offset];
-    uint8_t count = (uint8_t)((data.a>>48)&0xFF);
+    int count = unpackRegionCount(data)+1;
 
     //Write in order
     _visOutBase = offset<<8;//This makes checking visibility very fast and quick in the compute shader
     _offset = offset<<8;
-    _count = count;
 
     gl_TaskCountNV = count;
 
