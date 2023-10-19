@@ -13,7 +13,7 @@
 
 #import <nvidium:occlusion/scene.glsl>
 
-#define MESH_WORKLOAD_PER_INVOCATION 16
+#define MESH_WORKLOAD_PER_INVOCATION 32
 
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
 layout(local_size_x=1) in;

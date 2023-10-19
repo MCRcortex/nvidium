@@ -1,3 +1,5 @@
+#define MESH_WORKLOAD_PER_INVOCATION 16
+
 taskNV out Task {
     vec3 origin;
     uint baseOffset;
@@ -9,6 +11,7 @@ taskNV out Task {
     uvec4 binVa;
     uvec4 binVb;
 };
+
 void putBinData(inout uint idx, inout uint lastIndex, uint offset, uint nextOffset) {
     uint len = nextOffset - offset;
     uint id = idx++;

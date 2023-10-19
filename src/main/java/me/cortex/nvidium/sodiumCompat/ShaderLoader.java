@@ -17,6 +17,8 @@ public class ShaderLoader {
             builder.add("STATISTICS_"+StatisticsLoggingLevel.values()[i].name());
         }
 
+        builder.add("TRANSLUCENCY_SORTING");
+
         return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());
     }
 }

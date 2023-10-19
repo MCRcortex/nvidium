@@ -52,7 +52,10 @@ layout(std140, binding=0) uniform SceneData {
     //Terrain command buffer, the first 4 bytes are actually the count
     writeonly restrict uvec2 *terrainCommandBuffer;
 
-    readonly restrict Vertex *terrainData;
+    //TODO:FIXME: only apply non readonly to translucency mesh
+    restrict Vertex *terrainData;//readonly
+
+
     //readonly restrict u64vec4 *terrainData;
     //uvec4 *terrainData;
 
