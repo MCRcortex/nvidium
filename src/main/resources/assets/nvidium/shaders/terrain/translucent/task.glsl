@@ -46,8 +46,9 @@ void main() {
     chunk.y >>= 32-9;
     originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
 
-    quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);
-    originAndBaseData.w = uintBitsToFloat(baseDataOffset);
+    uint jiggle = uint(frameId)&1;
+    quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF) - jiggle;
+    originAndBaseData.w = uintBitsToFloat(baseDataOffset + jiggle);
 
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount

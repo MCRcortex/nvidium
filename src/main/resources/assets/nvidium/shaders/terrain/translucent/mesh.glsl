@@ -48,7 +48,7 @@ void emitQuadIndicies() {
 }
 
 #ifdef TRANSLUCENCY_SORTING
-float depth = 0;
+vec3 depthPos = vec3(0);
 shared float depthArray[32];
 #endif
 
@@ -71,9 +71,7 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     OUT[outId].addin = f16vec3(addiO);
 
     #ifdef TRANSLUCENCY_SORTING
-    depth += abs(exactPos.x);
-    depth += abs(exactPos.y);
-    depth += abs(exactPos.z);
+    depthPos += exactPos;
     #endif
 }
 
@@ -96,20 +94,22 @@ void main() {
     emitVertex(id, 3);
 
     #ifdef TRANSLUCENCY_SORTING
-    depth *= 1/4f;
+    float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
 
     depthArray[gl_LocalInvocationID.x] = depth;
     barrier();
     memoryBarrierShared();
     int meta = 0;
     if (gl_LocalInvocationID.x < 16) {
-        uint idxA = (gl_LocalInvocationID.x<<1)+1;
-        uint idxB = (gl_LocalInvocationID.x<<1);
+        uint idxB = (gl_LocalInvocationID.x<<1)+1;
+        uint idxA = (gl_LocalInvocationID.x<<1);
         bool shouldSwap = depthArray[idxA]<depthArray[idxB];
         //Convert to global indexing
         idxA = idxA + (gl_WorkGroupID.x<<5);
         idxB = idxB + (gl_WorkGroupID.x<<5);
         if (shouldSwap && (idxB<quadCount)) {
+            //TODO: do a sorting network (configurable) of up to the full 16 quads at once and add jiggle for 16 quads
+            //TODO: can do a ballot vote to check if the quads are already sorted and if so, just skip the sorting
             idxA += floatBitsToUint(originAndBaseData.w);
             idxB += floatBitsToUint(originAndBaseData.w);
             Vertex A0 = terrainData[(idxA<<2)+0];
