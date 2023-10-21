@@ -17,6 +17,6 @@
   "nvidium.options.statistics_level.sections" : "部分",
   "nvidium.options.statistics_level.quads" : "四边形",
   "nvidium.options.async_bfs.name" : "启用异步 bfs",
-  "nvidium.options.async_bfs.tooltip" : "启用异步 bfs 块段加载，大大减小移动时的帧时间，在渲染距离较远时效果更明显",
+  "nvidium.options.async_bfs.tooltip" : "启用异步 bfs 区块加载，大大减小移动时的帧时间，在渲染距离较远时效果更明显",
   "modmenu.descriptionTranslation.nvidium": "钠的替代渲染引擎"
 }
