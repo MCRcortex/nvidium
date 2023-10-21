@@ -22,6 +22,7 @@ layout(local_size_x=1) in;
 taskNV out Task {
     vec4 originAndBaseData;
     uint quadCount;
+    uint8_t jiggle;
 };
 
 bool shouldRender(uint sectionId) {
@@ -46,10 +47,13 @@ void main() {
     chunk.y >>= 32-9;
     originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
 
-    uint jiggle = uint(frameId)&1;
-    quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF) - jiggle;
-    originAndBaseData.w = uintBitsToFloat(baseDataOffset + jiggle);
 
+    quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);
+    originAndBaseData.w = uintBitsToFloat(baseDataOffset);
+    #ifdef TRANSLUCENCY_SORTING
+    jiggle = uint8_t(min(quadCount>>1,(uint(frameId)&1)*15));//Jiggle by 15 quads (either 0 or 15)
+    quadCount += jiggle;
+    #endif
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
     gl_TaskCountNV = (quadCount+MESH_WORKLOAD_PER_INVOCATION-1)/MESH_WORKLOAD_PER_INVOCATION;

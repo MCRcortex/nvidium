@@ -63,12 +63,14 @@ void main() {
     //if (colour.a < 0.05f) discard;
     colour.xyz *= tint;
     colour.xyz += addin;
+
     /*
     #ifdef TRANSLUCENCY_SORTING
     float special = mod(intBitsToFloat(gl_PrimitiveID)/512f, 1f);
     colour.xyz = smoothRainbow(special);
     colour.a = 1;
 
-    colour.xyz = gl_PrimitiveID * vec3(1,1,1);
-    #endif*/
+    colour.xyz = gl_PrimitiveID * vec3(0.5,0.5,0.5);
+    #endif
+    */
 }

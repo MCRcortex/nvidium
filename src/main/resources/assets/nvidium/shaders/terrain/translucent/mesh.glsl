@@ -22,6 +22,7 @@ layout(triangles, max_vertices=128, max_primitives=64) out;
 taskNV in Task {
     vec4 originAndBaseData;
     uint quadCount;
+    uint8_t jiggle;
 };
 
 layout(location=1) out Interpolants {
@@ -78,15 +79,18 @@ void emitVertex(uint vertexBaseId, uint innerId) {
 //TODO: extra per quad culling
 void main() {
 
-    //TODO: add jiggle to sort different indicies to make it sort cross boundaries this jiggle needs to be on the source index offset
-
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
         return;
     }
+    //TODO:FIXME: the jiggling needs to be accounted for when emitting quads since otherwise it renders garbage data
+
     emitQuadIndicies();
 
+    //Jiggle by offsetting the index by 1
+    uint offsetFromBase = gl_GlobalInvocationID.x - uint(jiggle);
+
     //Each pair of meshlet invokations emits 4 vertices each and 2 primative each
-    uint id = (floatBitsToUint(originAndBaseData.w) + gl_GlobalInvocationID.x)<<2;
+    uint id = (floatBitsToUint(originAndBaseData.w) + offsetFromBase)<<2;
 
     emitVertex(id, 0);
     emitVertex(id, 1);
@@ -99,34 +103,52 @@ void main() {
     depthArray[gl_LocalInvocationID.x] = depth;
     barrier();
     memoryBarrierShared();
-    int meta = 0;
-    if (gl_LocalInvocationID.x < 16) {
-        uint idxB = (gl_LocalInvocationID.x<<1)+1;
-        uint idxA = (gl_LocalInvocationID.x<<1);
-        bool shouldSwap = depthArray[idxA]<depthArray[idxB];
-        //Convert to global indexing
-        idxA = idxA + (gl_WorkGroupID.x<<5);
-        idxB = idxB + (gl_WorkGroupID.x<<5);
-        if (shouldSwap && (idxB<quadCount)) {
-            //TODO: do a sorting network (configurable) of up to the full 16 quads at once and add jiggle for 16 quads
-            //TODO: can do a ballot vote to check if the quads are already sorted and if so, just skip the sorting
-            idxA += floatBitsToUint(originAndBaseData.w);
-            idxB += floatBitsToUint(originAndBaseData.w);
-            Vertex A0 = terrainData[(idxA<<2)+0];
-            Vertex A1 = terrainData[(idxA<<2)+1];
-            Vertex A2 = terrainData[(idxA<<2)+2];
-            Vertex A3 = terrainData[(idxA<<2)+3];
-            terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
-            terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
-            terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
-            terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
-            terrainData[(idxB<<2)+0] = A0;
-            terrainData[(idxB<<2)+1] = A1;
-            terrainData[(idxB<<2)+2] = A2;
-            terrainData[(idxB<<2)+3] = A3;
-        }
+    int meta = 2;
 
-        meta = int(shouldSwap);
+
+    if ( ((gl_GlobalInvocationID.x<<1) > uint(jiggle))&&
+    ((gl_LocalInvocationID.x<<1) + 1) < min(32, uint32_t(quadCount) - (gl_WorkGroupID.x<<5))) {
+        //TODO: optimize this shit alot
+        //Todo make into a sorting network
+        //THIS LOOP DOES JACK SHIT AS ITS JUST CHECKING THE DEPTH OF THE INDICIES IT JUST ORDERED
+        for (int i = 0; i < 1; i++) {
+            uint idxB = (gl_LocalInvocationID.x<<1)+1;
+            uint idxA = (gl_LocalInvocationID.x<<1);
+            bool shouldSwap = depthArray[idxA]<depthArray[idxB];
+            if (shouldSwap) {
+                //Swap the depth
+                float tmp = depthArray[idxA];
+                depthArray[idxA] = depthArray[idxB];
+                depthArray[idxB] = tmp;
+
+                //Convert to global indexing
+                idxA = uint(idxA) + floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
+                idxB = uint(idxB) + floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
+
+                //TODO: do a sorting network (configurable) of up to the full 16 quads at once and add jiggle for 16 quads
+                //TODO: make it sort more fast the closer the chunk section is to the player
+                // with really far away chunks only getting the normal 1 sort per frame treatment
+                //TODO: ^^^^
+                //TODO: can do a ballot vote to check if the quads are already sorted and if so, just skip the sorting
+                Vertex A0 = terrainData[(idxA<<2)+0];
+                Vertex A1 = terrainData[(idxA<<2)+1];
+                Vertex A2 = terrainData[(idxA<<2)+2];
+                Vertex A3 = terrainData[(idxA<<2)+3];
+                terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
+                terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
+                terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
+                terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
+                terrainData[(idxB<<2)+0] = A0;
+                terrainData[(idxB<<2)+1] = A1;
+                terrainData[(idxB<<2)+2] = A2;
+                terrainData[(idxB<<2)+3] = A3;
+
+            }
+            meta = int(shouldSwap);
+
+            barrier();
+            memoryBarrierShared();
+        }
     }
 
     #else
@@ -140,4 +162,5 @@ void main() {
         //Remaining quads in workgroup
         gl_PrimitiveCountNV = min(uint(int(quadCount)-int(gl_WorkGroupID.x<<5))<<1, 64);//2 primatives per quad
     }
+
 }
