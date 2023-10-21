@@ -32,6 +32,20 @@ bool shouldRender(uint sectionId) {
 
 void main() {
     uint sectionId = gl_WorkGroupID.x;
+    #ifdef TRANSLUCENCY_SORTING
+    //Compute indirection for translucency sorting
+    {
+        ivec4 header = sectionData[sectionId].header;
+        if (sectionEmpty(header)) {
+            //Early exit cause the section doesnt exist
+            gl_TaskCountNV = 0;
+            return;
+        }
+        //Compute the redirected section index
+        sectionId &= ~0xFF;
+        sectionId |= uint((header.y>>18)&0xFF);
+    }
+    #endif
 
     if (!shouldRender(sectionId)) {
         //Early exit if the section isnt visible
@@ -52,6 +66,7 @@ void main() {
     originAndBaseData.w = uintBitsToFloat(baseDataOffset);
     #ifdef TRANSLUCENCY_SORTING
     jiggle = uint8_t(min(quadCount>>1,(uint(frameId)&1)*15));//Jiggle by 15 quads (either 0 or 15)
+    //jiggle = uint8_t(0);
     quadCount += jiggle;
     #endif
 

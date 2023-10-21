@@ -81,8 +81,9 @@ public class SectionManager {
 
         //NOTE:TODO: The y encoded height position only has a range of like 6 bits max, that gives 18 bits free/spare for something
         // realistically it would only be 16 free bits cause ee but still thats 2 bytes free
+        //bits 18->26 taken by section id (used for translucency sorting/rendering)
         int px = section.getChunkX()<<8 | size.x<<4 | min.x;
-        int py = (section.getChunkY()&0x1FF)<<8 | size.y<<4 | min.y | (hideSectionBitSet?1<<17:0);
+        int py = (section.getChunkY()&0x1FF)<<8 | size.y<<4 | min.y | (hideSectionBitSet?1<<17:0) | ((sectionIdx&0xFF)<<18);
         int pz = section.getChunkZ()<<8 | size.z<<4 | min.z;
         int pw = terrainAddress;
         new Vector4i(px, py, pz, pw).getToAddress(metadata);

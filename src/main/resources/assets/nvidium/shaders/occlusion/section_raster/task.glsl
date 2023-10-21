@@ -54,4 +54,5 @@ void main() {
     gl_TaskCountNV = count;
 
     terrainCommandBuffer[cmdIdx] = uvec2(uint32_t(count), _visOutBase);
+    //TODO: make a special command buffer for translucent geometry
 }

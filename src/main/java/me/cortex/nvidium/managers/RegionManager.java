@@ -64,6 +64,11 @@ public class RegionManager {
                     // to prevent the gpu from rendering arbitary data
                     long regionUpload = this.uploadStream.getUpload(this.regionBuffer, (long) region.id * META_SIZE, META_SIZE);
                     MemoryUtil.memSet(regionUpload, -1, META_SIZE);
+
+                    long sectionUpload = this.uploadStream.getUpload(this.sectionBuffer,
+                            (long) region.id * TOTAL_SECTION_META_SIZE,
+                            TOTAL_SECTION_META_SIZE);
+                    MemoryUtil.memSet(sectionUpload, 0, TOTAL_SECTION_META_SIZE);
                 }
             } else {
                 //It is just a normal region update
@@ -151,16 +156,17 @@ public class RegionManager {
         region.freeIndices.set(sectionId);
         region.id2pos[sectionId] = -1;
 
+        //Set the metadata of the section to empty
+        MemoryUtil.memSet(region.sectionData + sectionId * SectionManager.SECTION_SIZE, 0, SectionManager.SECTION_SIZE);
+
         if (region.count == 0) {
             //Remove the region and mark it as removed
             region.isRemoved = true;
+            region.delete();
             this.regions[region.id] = null;
             this.idProvider.release(region.id);
             this.regionMap.remove(region.key);
         }
-
-        //Set the metadata of the section to empty
-        MemoryUtil.memSet(region.sectionData + sectionId * SectionManager.SECTION_SIZE, 0, SectionManager.SECTION_SIZE);
 
         this.markDirty(region);
     }
@@ -235,9 +241,12 @@ public class RegionManager {
 
     public int distance(int regionId, int camChunkX, int camChunkY, int camChunkZ) {
         var region = this.regions[regionId];
-        return  Math.abs((region.rx<<3)+4-camChunkX)+
+        return  (Math.abs((region.rx<<3)+4-camChunkX)+
                 Math.abs((region.ry<<2)+2-camChunkY)+
-                Math.abs((region.rz<<3)+4-camChunkZ);
+                Math.abs((region.rz<<3)+4-camChunkZ)+
+                Math.abs((region.rx<<3)+3-camChunkX)+
+                Math.abs((region.ry<<2)+1-camChunkY)+
+                Math.abs((region.rz<<3)+3-camChunkZ))>>1;
     }
 
     public boolean withinSquare(int dist, int regionId, int camChunkX, int camChunkY, int camChunkZ) {

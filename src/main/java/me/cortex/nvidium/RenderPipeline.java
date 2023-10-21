@@ -3,6 +3,8 @@ package me.cortex.nvidium;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSortedSet;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
@@ -54,13 +56,15 @@ public class RenderPipeline {
     private SectionRasterizer sectionRasterizer;
     private TemporalTerrainRasterizer temporalRasterizer;
     private TranslucentTerrainRasterizer translucencyTerrainRasterizer;
+    private SortRegionSectionPhase regionSectionSorter;
 
     private final IDeviceMappedBuffer sceneUniform;
-    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*7+3*4+3, 2);
+    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*7+3*4+3+4, 2);
 
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
     private final IDeviceMappedBuffer terrainCommandBuffer;
+    private final IDeviceMappedBuffer regionSortingList;
     private final IDeviceMappedBuffer statisticsBuffer;
 
     private final BitSet regionVisibilityTracker;
@@ -85,6 +89,7 @@ public class RenderPipeline {
         sectionRasterizer = new SectionRasterizer();
         temporalRasterizer = new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
+        regionSectionSorter = new SortRegionSectionPhase();
 
         int maxRegions = sectionManager.getRegionManager().maxRegions();
 
@@ -92,6 +97,7 @@ public class RenderPipeline {
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
+        regionSortingList = device.createDeviceOnlyMappedBuffer(maxRegions*2L);
 
         regionVisibilityTracker = new BitSet(maxRegions);
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
@@ -120,8 +126,11 @@ public class RenderPipeline {
         long queryAddr = 0;
         var rm = sectionManager.getRegionManager();
         short[] regionMap;
+        //List of regions that need to be sorted
+        IntList regionsToSort = new IntArrayList(rm.regionCount());
         //Enqueue all the visible regions
         {
+
             //The region data indicies is located at the end of the sceneUniform
             IntSortedSet regions = new IntAVLTreeSet();
             for (int i = 0; i < rm.maxRegionIndex(); i++) {
@@ -134,9 +143,13 @@ public class RenderPipeline {
 
 
                 if (rm.isRegionVisible(frustum, i)) {
-                    regions.add((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z)<<16)|i);
+                    regions.add(((-rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z))<<16)|i);
                     visibleRegions++;
                     regionVisibilityTracker.set(i);
+
+                    //TODO: make it only enqueue to be sorted if its within the range of the camera (specifically)
+                    // if the axis are all within range
+                    regionsToSort.add(i);
                 } else {
                     if (regionVisibilityTracker.get(i)) {//Going from visible to non visible
                         //Clear the visibility bits
@@ -148,6 +161,7 @@ public class RenderPipeline {
                 }
 
             }
+
             regionMap = new short[regions.size()];
             if (visibleRegions == 0) return;
             long addr = uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
@@ -192,6 +206,8 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, terrainCommandBuffer.getDeviceAddress());
             addr += 8;
+            MemoryUtil.memPutLong(addr, regionSortingList.getDeviceAddress());
+            addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, statisticsBuffer == null?0:statisticsBuffer.getDeviceAddress());//Logging buffer
@@ -205,6 +221,14 @@ public class RenderPipeline {
             MemoryUtil.memPutShort(addr, (short) visibleRegions);
             addr += 2;
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
+        }
+
+        if (!regionsToSort.isEmpty()){
+            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionsToSort.size()*2);
+            for (int region : regionsToSort) {
+                MemoryUtil.memPutShort(regionSortUpload, (short) region);
+                regionSortUpload += 2;
+            }
         }
 
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
@@ -282,6 +306,12 @@ public class RenderPipeline {
 
 
 
+        {
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            regionSectionSorter.dispatch(regionsToSort.size());
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        }
+
         glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
         glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
@@ -295,7 +325,7 @@ public class RenderPipeline {
         }
 
         if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            //glMemoryBarrier(GL_ALL_BARRIER_BITS);
             //Stupid bloody nvidia not following spec forcing me to use a upload stream
             long upload = this.uploadStream.getUpload(statisticsBuffer, 0, 4*4);
             MemoryUtil.memSet(upload, 0, 4*4);
@@ -354,12 +384,14 @@ public class RenderPipeline {
         regionVisibility.delete();
         sectionVisibility.delete();
         terrainCommandBuffer.delete();
+        regionSortingList.delete();
 
         terrainRasterizer.delete();
         regionRasterizer.delete();
         sectionRasterizer.delete();
         temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
+        regionSectionSorter.delete();
 
         if (statisticsBuffer != null) {
             statisticsBuffer.delete();
@@ -392,11 +424,13 @@ public class RenderPipeline {
         sectionRasterizer.delete();
         temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
+        regionSectionSorter.delete();
 
         terrainRasterizer = new PrimaryTerrainRasterizer();
         regionRasterizer = new RegionRasterizer();
         sectionRasterizer = new SectionRasterizer();
         temporalRasterizer = new TemporalTerrainRasterizer();
         translucencyTerrainRasterizer = new TranslucentTerrainRasterizer();
+        regionSectionSorter = new SortRegionSectionPhase();
     }
 }

@@ -97,6 +97,14 @@ void main() {
     emitVertex(id, 2);
     emitVertex(id, 3);
 
+    //TODO: fixme: make faster and less hacky and not just do this
+    if (gl_GlobalInvocationID.x < jiggle) {
+        gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+0].gl_Position = vec4(1,1,1,-1);
+        gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+1].gl_Position = vec4(1,1,1,-1);
+        gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+2].gl_Position = vec4(1,1,1,-1);
+        gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+3].gl_Position = vec4(1,1,1,-1);
+    }
+
     #ifdef TRANSLUCENCY_SORTING
     float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
 
@@ -106,7 +114,8 @@ void main() {
     int meta = 2;
 
 
-    if ( ((gl_GlobalInvocationID.x<<1) > uint(jiggle))&&
+    if (
+    ((gl_GlobalInvocationID.x<<1) >= uint(jiggle))&&
     ((gl_LocalInvocationID.x<<1) + 1) < min(32, uint32_t(quadCount) - (gl_WorkGroupID.x<<5))) {
         //TODO: optimize this shit alot
         //Todo make into a sorting network

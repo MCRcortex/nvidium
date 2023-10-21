@@ -49,13 +49,13 @@ void main() {
     // this is almost 100% guarenteed not needed afaik
     //barrier();
 
-    uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
+    ivec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
     //If the section header was empty or the hide section bit is set, return
 
     //NOTE: technically this has the infinitly small probability of not rendering a block if the block is located at
     // 0,0,0 the only block in the chunk and the first thing in the buffer
     // to fix, also check that the ranges are null
-    if (header == uvec4(0) || (header.y&(1<<17)) != 0) {
+    if (sectionEmpty(header) || (header.y&(1<<17)) != 0) {
         if (gl_LocalInvocationID.x == 0) {
             sectionVisibility[visibilityIndex] = uint8_t(0);
             gl_PrimitiveCountNV = 0;
