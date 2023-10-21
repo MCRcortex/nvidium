@@ -1,0 +1,22 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.region_keep_distance.name" : "区域保持距离",
+  "nvidium.options.region_keep_distance.tooltip" : "保持加载区域的距离",
+  "nvidium.options.automatic_memory_limit.name" : "自动内存限制",
+  "nvidium.options.automatic_memory_limit.tooltip" : "根据系统可用的内存量，自动确定要设置的内存上限",
+  "nvidium.options.max_gpu_memory.name" : "最大 GPU 内存",
+  "nvidium.options.max_gpu_memory.tooltip" : "允许的最大 GPU 内存，如果达到此限制，将开始剔除区块",
+  "nvidium.options.enable_temporal_coherence.name" : "实现时间一致性",
+  "nvidium.options.enable_temporal_coherence.tooltip" : "消除转动视角时的出现的伪影",
+  "nvidium.options.mb" : "%s 兆字节",
+  "nvidium.options.statistics_level.name" : "调试级别",
+  "nvidium.options.statistics_level.tooltip" : "统计记录级别，跟踪删减图层的可见度计数",
+  "nvidium.options.statistics_level.none" : "无",
+  "nvidium.options.statistics_level.frustum" : "截头锥体",
+  "nvidium.options.statistics_level.regions" : "区域",
+  "nvidium.options.statistics_level.sections" : "部分",
+  "nvidium.options.statistics_level.quads" : "四边形",
+  "nvidium.options.async_bfs.name" : "启用异步 bfs",
+  "nvidium.options.async_bfs.tooltip" : "启用异步 bfs 块段加载，大大减小移动时的帧时间，在渲染距离较远时效果更明显",
+  "modmenu.descriptionTranslation.nvidium": "钠的替代渲染引擎"
+}
