@@ -1,49 +1,11 @@
 #version 460 core
 #extension GL_NV_gpu_shader5 : require
+#define SORTING_NETWORK_SIZE 256
+layout(local_size_x = (SORTING_NETWORK_SIZE>>1), local_size_y = 1 , local_size_z = 1) in;
 
-layout(local_size_x = 128, local_size_y = 1 , local_size_z = 1) in;
 #import <nvidium:occlusion/scene.glsl>
+#import <nvidium:sorting/sorting_network.glsl>
 
-shared float threadBufferFloat[256];
-shared uint8_t threadBufferIndex[256];
-
-void localSortA(const uint scaleBits) {
-    uint base = (gl_LocalInvocationID.x>>scaleBits)*(1<<(scaleBits+1));
-    uint offsetA = (gl_LocalInvocationID.x&((1<<scaleBits)-1));
-    uint offsetB = (1<<(scaleBits+1))-1-offsetA;
-    float a = threadBufferFloat[base + offsetA];
-    float b = threadBufferFloat[base + offsetB];
-    if (a < b) {
-        threadBufferFloat[base + offsetA] = b;
-        threadBufferFloat[base + offsetB] = a;
-
-        uint8_t tmp = threadBufferIndex[base + offsetA];
-        threadBufferIndex[base + offsetA] = threadBufferIndex[base + offsetB];
-        threadBufferIndex[base + offsetB] = tmp;
-    }
-
-    barrier();
-    memoryBarrierShared();
-}
-
-void localSortB(const uint scaleBits) {
-    uint base = (gl_LocalInvocationID.x>>scaleBits)*(1<<(scaleBits+1));
-    base += (gl_LocalInvocationID.x&((1<<scaleBits)-1));
-    uint offset = 1<<scaleBits;
-    float a = threadBufferFloat[base];
-    float b = threadBufferFloat[base + offset];
-    if (a < b) {
-        threadBufferFloat[base] = b;
-        threadBufferFloat[base + offset] = a;
-
-        uint8_t tmp = threadBufferIndex[base];
-        threadBufferIndex[base] = threadBufferIndex[base + offset];
-        threadBufferIndex[base + offset] = tmp;
-    }
-
-    barrier();
-    memoryBarrierShared();
-}
 
 
 void populateSection(uint regionId, uint8_t sectionId) {

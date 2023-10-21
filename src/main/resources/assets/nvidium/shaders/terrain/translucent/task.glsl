@@ -36,11 +36,7 @@ void main() {
     //Compute indirection for translucency sorting
     {
         ivec4 header = sectionData[sectionId].header;
-        if (sectionEmpty(header)) {
-            //Early exit cause the section doesnt exist
-            gl_TaskCountNV = 0;
-            return;
-        }
+
         //Compute the redirected section index
         sectionId &= ~0xFF;
         sectionId |= uint((header.y>>18)&0xFF);
@@ -49,6 +45,7 @@ void main() {
 
     if (!shouldRender(sectionId)) {
         //Early exit if the section isnt visible
+        //TODO: also early exit if there are no translucents to render
         gl_TaskCountNV = 0;
         return;
     }
