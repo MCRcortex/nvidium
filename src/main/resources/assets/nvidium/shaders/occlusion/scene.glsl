@@ -56,6 +56,7 @@ layout(std140, binding=0) uniform SceneData {
     restrict uint8_t *sectionVisibility;
     //Terrain command buffer, the first 4 bytes are actually the count
     writeonly restrict uvec2 *terrainCommandBuffer;
+    writeonly restrict uvec2 *translucencyCommandBuffer;
 
     readonly restrict uint16_t *sortingRegionList;
 

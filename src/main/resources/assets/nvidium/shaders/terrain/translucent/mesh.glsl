@@ -15,6 +15,13 @@
 #import <nvidium:terrain/fog.glsl>
 #import <nvidium:terrain/vertex_format.glsl>
 
+
+#ifdef TRANSLUCENCY_SORTING
+vec3 depthPos = vec3(0);
+#define SORTING_NETWORK_SIZE 32
+#import <nvidium:sorting/sorting_network.glsl>
+#endif
+
 layout(local_size_x = 32) in;
 layout(triangles, max_vertices=128, max_primitives=64) out;
 
@@ -48,11 +55,6 @@ void emitQuadIndicies() {
     gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
 }
 
-#ifdef TRANSLUCENCY_SORTING
-vec3 depthPos = vec3(0);
-shared float depthArray[32];
-#endif
-
 void emitVertex(uint vertexBaseId, uint innerId) {
     Vertex V = terrainData[vertexBaseId + innerId];
     uint outId = (gl_LocalInvocationID.x<<2)+innerId;
@@ -76,10 +78,98 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     #endif
 }
 
+#ifdef TRANSLUCENCY_SORTING
+void swapQuads(uint idxA, uint idxB) {
+    if (idxA == idxB) {
+        return;
+    }
+
+    Vertex A0 = terrainData[(idxA<<2)+0];
+    Vertex A1 = terrainData[(idxA<<2)+1];
+    Vertex A2 = terrainData[(idxA<<2)+2];
+    Vertex A3 = terrainData[(idxA<<2)+3];
+    terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
+    terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
+    terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
+    terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
+    terrainData[(idxB<<2)+0] = A0;
+    terrainData[(idxB<<2)+1] = A1;
+    terrainData[(idxB<<2)+2] = A2;
+    terrainData[(idxB<<2)+3] = A3;
+}
+
+shared Vertex vertexStore[32];
+void exchangeVertex2x(uint baseOffset, uint vertex, bool swapA, bool swapB) {
+    uint idA = (gl_LocalInvocationID.x<<1);
+    uint idB = (gl_LocalInvocationID.x<<1)+1;
+    vertexStore[idA] = terrainData[((baseOffset+idA)<<2)+vertex];
+    vertexStore[idB] = terrainData[((baseOffset+idB)<<2)+vertex];
+    barrier();
+    memoryBarrierShared();
+    if (swapA) {terrainData[((baseOffset+idA)<<2)+vertex] = vertexStore[uint(threadBufferIndex[idA])];}
+    if (swapB) {terrainData[((baseOffset+idB)<<2)+vertex] = vertexStore[uint(threadBufferIndex[idB])];}
+}
+
+void executeNetwork() {
+    //Net 0
+    localSortA(0);
+    //Net 1
+    localSortA(1);
+    localSortB(0);
+    //Net 2
+    localSortA(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 3
+    localSortA(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 4
+    localSortA(4);
+    localSortB(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+}
+
+
+void performTranslucencySort() {
+    uint basePtr = floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
+
+    float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
+    putSortingData(uint8_t(gl_LocalInvocationID.x), depth);
+
+    barrier();
+    memoryBarrierShared();
+    //TODO: use subgroup ballot to check if all the quads are already sorted, if they are dont perform sort op
+
+    //Only use 16 threads to sort all 32 data
+    if (gl_LocalInvocationID.x < 16) {
+        uint idA = (gl_LocalInvocationID.x<<1);
+        uint idB = (gl_LocalInvocationID.x<<1)+1;
+        bool swapA = threadBufferFloat[idA] > 0.001f;
+        bool swapB = threadBufferFloat[idB] > 0.001f;
+        executeNetwork();
+        swapA = swapA && (threadBufferFloat[idA] > 0.001f);
+        swapB = swapB && (threadBufferFloat[idB] > 0.001f);
+
+        //Perform the swapping of quads
+        // THIS IS INCORRECT!, we musnt swap the quads
+
+        exchangeVertex2x(basePtr, 0, swapA, swapB);
+        exchangeVertex2x(basePtr, 1, swapA, swapB);
+        exchangeVertex2x(basePtr, 2, swapA, swapB);
+        exchangeVertex2x(basePtr, 3, swapA, swapB);
+    }
+}
+#endif
+
 //TODO: extra per quad culling
 void main() {
 
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
+        putSortingData(uint8_t(gl_LocalInvocationID.x), -9999999999f);
         return;
     }
     //TODO:FIXME: the jiggling needs to be accounted for when emitting quads since otherwise it renders garbage data
@@ -92,75 +182,29 @@ void main() {
     //Each pair of meshlet invokations emits 4 vertices each and 2 primative each
     uint id = (floatBitsToUint(originAndBaseData.w) + offsetFromBase)<<2;
 
-    emitVertex(id, 0);
-    emitVertex(id, 1);
-    emitVertex(id, 2);
-    emitVertex(id, 3);
-
+    #ifdef TRANSLUCENCY_SORTING
     //TODO: fixme: make faster and less hacky and not just do this
     if (gl_GlobalInvocationID.x < jiggle) {
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+0].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+1].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+2].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+3].gl_Position = vec4(1,1,1,-1);
+    } else {
+        emitVertex(id, 0);
+        emitVertex(id, 1);
+        emitVertex(id, 2);
+        emitVertex(id, 3);
     }
-
-    #ifdef TRANSLUCENCY_SORTING
-    float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
-
-    depthArray[gl_LocalInvocationID.x] = depth;
     barrier();
-    memoryBarrierShared();
+
+    performTranslucencySort();
     int meta = 2;
-
-
-    if (
-    ((gl_GlobalInvocationID.x<<1) >= uint(jiggle))&&
-    ((gl_LocalInvocationID.x<<1) + 1) < min(32, uint32_t(quadCount) - (gl_WorkGroupID.x<<5))) {
-        //TODO: optimize this shit alot
-        //Todo make into a sorting network
-        //THIS LOOP DOES JACK SHIT AS ITS JUST CHECKING THE DEPTH OF THE INDICIES IT JUST ORDERED
-        for (int i = 0; i < 1; i++) {
-            uint idxB = (gl_LocalInvocationID.x<<1)+1;
-            uint idxA = (gl_LocalInvocationID.x<<1);
-            bool shouldSwap = depthArray[idxA]<depthArray[idxB];
-            if (shouldSwap) {
-                //Swap the depth
-                float tmp = depthArray[idxA];
-                depthArray[idxA] = depthArray[idxB];
-                depthArray[idxB] = tmp;
-
-                //Convert to global indexing
-                idxA = uint(idxA) + floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
-                idxB = uint(idxB) + floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
-
-                //TODO: do a sorting network (configurable) of up to the full 16 quads at once and add jiggle for 16 quads
-                //TODO: make it sort more fast the closer the chunk section is to the player
-                // with really far away chunks only getting the normal 1 sort per frame treatment
-                //TODO: ^^^^
-                //TODO: can do a ballot vote to check if the quads are already sorted and if so, just skip the sorting
-                Vertex A0 = terrainData[(idxA<<2)+0];
-                Vertex A1 = terrainData[(idxA<<2)+1];
-                Vertex A2 = terrainData[(idxA<<2)+2];
-                Vertex A3 = terrainData[(idxA<<2)+3];
-                terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
-                terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
-                terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
-                terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
-                terrainData[(idxB<<2)+0] = A0;
-                terrainData[(idxB<<2)+1] = A1;
-                terrainData[(idxB<<2)+2] = A2;
-                terrainData[(idxB<<2)+3] = A3;
-
-            }
-            meta = int(shouldSwap);
-
-            barrier();
-            memoryBarrierShared();
-        }
-    }
-
     #else
+    emitVertex(id, 0);
+    emitVertex(id, 1);
+    emitVertex(id, 2);
+    emitVertex(id, 3);
+
     int meta = int(gl_GlobalInvocationID.x);
     #endif
 

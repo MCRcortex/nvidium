@@ -42,3 +42,8 @@ void localSortB(const uint scaleBits) {
     barrier();
     memoryBarrierShared();
 }
+
+void putSortingData(SORTING_INDEX_TYPE index, float data) {
+    threadBufferIndex[uint(index)] = index;
+    threadBufferFloat[uint(index)] = data;
+}

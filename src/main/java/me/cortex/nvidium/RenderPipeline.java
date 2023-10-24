@@ -61,6 +61,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
     private final IDeviceMappedBuffer terrainCommandBuffer;
+    private final IDeviceMappedBuffer translucencyCommandBuffer;
     private final IDeviceMappedBuffer regionSortingList;
     private final IDeviceMappedBuffer statisticsBuffer;
 
@@ -97,6 +98,7 @@ public class RenderPipeline {
         regionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions);
         sectionVisibility = device.createDeviceOnlyMappedBuffer(maxRegions * 256L);
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
+        translucencyCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
         regionSortingList = device.createDeviceOnlyMappedBuffer(maxRegions*2L);
 
         regionVisibilityTracker = new BitSet(maxRegions);
@@ -141,7 +143,9 @@ public class RenderPipeline {
 
 
                 if (rm.isRegionVisible(frustum, i)) {
-                    regions.add(((-rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z))<<16)|i);
+                    //Note, its sorted like this because of overdraw, also the translucency command buffer is written to
+                    // in a reverse order to this in the section_raster/task.glsl shader
+                    regions.add(((rm.distance(i, chunkPos.x, chunkPos.y, chunkPos.z))<<16)|i);
                     visibleRegions++;
                     regionVisibilityTracker.set(i);
 
@@ -204,6 +208,8 @@ public class RenderPipeline {
             MemoryUtil.memPutLong(addr, sectionVisibility.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, terrainCommandBuffer.getDeviceAddress());
+            addr += 8;
+            MemoryUtil.memPutLong(addr, translucencyCommandBuffer.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, regionSortingList.getDeviceAddress());
             addr += 8;
@@ -371,7 +377,7 @@ public class RenderPipeline {
             glEnable(GL_DEPTH_TEST);
             RenderSystem.enableBlend();
             RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
-            translucencyTerrainRasterizer.raster(prevRegionCount, terrainCommandBuffer.getDeviceAddress());
+            translucencyTerrainRasterizer.raster(prevRegionCount, translucencyCommandBuffer.getDeviceAddress());
             RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();
             glDisable(GL_DEPTH_TEST);
@@ -390,6 +396,7 @@ public class RenderPipeline {
         regionVisibility.delete();
         sectionVisibility.delete();
         terrainCommandBuffer.delete();
+        translucencyCommandBuffer.delete();
         regionSortingList.delete();
 
         terrainRasterizer.delete();
