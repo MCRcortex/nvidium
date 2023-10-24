@@ -104,7 +104,8 @@ public class ConfigGuiBuilder {
                         .setBinding((opts, value) -> opts.translucency_sorting_level = value, opts -> opts.translucency_sorting_level)
                         .setEnabled(Nvidium.IS_ENABLED)
                         .setImpact(OptionImpact.MEDIUM)
-                        .setFlags(NvidiumOptionFlags.REQUIRES_SHADER_RELOAD)
+                        //Technically, only need to reload when going from NONE->SECTIONS
+                        .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
                 ).add(OptionImpl.createBuilder(StatisticsLoggingLevel.class, store)
                         .setName(Text.translatable("nvidium.options.statistics_level.name"))

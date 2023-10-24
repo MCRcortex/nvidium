@@ -16,7 +16,7 @@
 #import <nvidium:terrain/vertex_format.glsl>
 
 
-#ifdef TRANSLUCENCY_SORTING
+#ifdef TRANSLUCENCY_SORTING_QUADS
 vec3 depthPos = vec3(0);
 #define SORTING_NETWORK_SIZE 32
 #import <nvidium:sorting/sorting_network.glsl>
@@ -29,7 +29,9 @@ layout(triangles, max_vertices=128, max_primitives=64) out;
 taskNV in Task {
     vec4 originAndBaseData;
     uint quadCount;
+    #ifdef TRANSLUCENCY_SORTING_QUADS
     uint8_t jiggle;
+    #endif
 };
 
 layout(location=1) out Interpolants {
@@ -73,12 +75,12 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     OUT[outId].tint = f16vec3(tintO);
     OUT[outId].addin = f16vec3(addiO);
 
-    #ifdef TRANSLUCENCY_SORTING
+    #ifdef TRANSLUCENCY_SORTING_QUADS
     depthPos += exactPos;
     #endif
 }
 
-#ifdef TRANSLUCENCY_SORTING
+#ifdef TRANSLUCENCY_SORTING_QUADS
 void swapQuads(uint idxA, uint idxB) {
     if (idxA == idxB) {
         return;
@@ -174,20 +176,25 @@ void performTranslucencySort() {
 void main() {
 
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
+        #ifdef TRANSLUCENCY_SORTING_QUADS
         putSortingData(uint8_t(gl_LocalInvocationID.x), -9999999999f);
+        #endif
         return;
     }
     //TODO:FIXME: the jiggling needs to be accounted for when emitting quads since otherwise it renders garbage data
 
     emitQuadIndicies();
 
-    //Jiggle by offsetting the index by 1
-    uint offsetFromBase = gl_GlobalInvocationID.x - uint(jiggle);
+    uint offsetFromBase = gl_GlobalInvocationID.x;
+
+    #ifdef TRANSLUCENCY_SORTING_QUADS
+    offsetFromBase -= uint(jiggle);
+    #endif
 
     //Each pair of meshlet invokations emits 4 vertices each and 2 primative each
     uint id = (floatBitsToUint(originAndBaseData.w) + offsetFromBase)<<2;
 
-    #ifdef TRANSLUCENCY_SORTING
+    #ifdef TRANSLUCENCY_SORTING_QUADS
     //TODO: fixme: make faster and less hacky and not just do this
     if (gl_GlobalInvocationID.x < jiggle) {
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+0].gl_Position = vec4(1,1,1,-1);

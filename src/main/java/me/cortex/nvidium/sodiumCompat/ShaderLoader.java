@@ -18,8 +18,9 @@ public class ShaderLoader {
             builder.add("STATISTICS_"+StatisticsLoggingLevel.values()[i].name());
         }
 
-        if (Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.QUADS) {
-            builder.add("TRANSLUCENCY_SORTING");
+
+        for (int i = 1; i <= Nvidium.config.translucency_sorting_level.ordinal(); i++) {
+            builder.add("TRANSLUCENCY_SORTING_"+TranslucencySortingLevel.values()[i].name());
         }
 
         return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());

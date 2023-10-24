@@ -22,7 +22,9 @@ layout(local_size_x=1) in;
 taskNV out Task {
     vec4 originAndBaseData;
     uint quadCount;
+    #ifdef TRANSLUCENCY_SORTING_QUADS
     uint8_t jiggle;
+    #endif
 };
 
 bool shouldRender(uint sectionId) {
@@ -32,7 +34,7 @@ bool shouldRender(uint sectionId) {
 
 void main() {
     uint sectionId = gl_WorkGroupID.x;
-    #ifdef TRANSLUCENCY_SORTING
+    #ifdef TRANSLUCENCY_SORTING_SECTIONS
     //Compute indirection for translucency sorting
     {
         ivec4 header = sectionData[sectionId].header;
@@ -61,7 +63,7 @@ void main() {
 
     quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);
     originAndBaseData.w = uintBitsToFloat(baseDataOffset);
-    #ifdef TRANSLUCENCY_SORTING
+    #ifdef TRANSLUCENCY_SORTING_QUADS
     jiggle = uint8_t(min(quadCount>>1,(uint(frameId)&1)*15));//Jiggle by 15 quads (either 0 or 15)
     //jiggle = uint8_t(0);
     quadCount += jiggle;
