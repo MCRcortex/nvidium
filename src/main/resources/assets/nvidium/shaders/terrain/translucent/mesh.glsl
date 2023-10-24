@@ -97,7 +97,7 @@ void swapQuads(uint idxA, uint idxB) {
     terrainData[(idxB<<2)+2] = A2;
     terrainData[(idxB<<2)+3] = A3;
 }
-
+/*
 shared Vertex vertexStore[32];
 void exchangeVertex2x(uint baseOffset, uint vertex, bool swapA, bool swapB) {
     uint idA = (gl_LocalInvocationID.x<<1);
@@ -131,7 +131,7 @@ void executeNetwork() {
     localSortB(2);
     localSortB(1);
     localSortB(0);
-}
+}*/
 
 
 void performTranslucencySort() {
@@ -148,6 +148,7 @@ void performTranslucencySort() {
     if (gl_LocalInvocationID.x < 16) {
         uint idA = (gl_LocalInvocationID.x<<1);
         uint idB = (gl_LocalInvocationID.x<<1)+1;
+        /*
         bool swapA = threadBufferFloat[idA] > 0.001f;
         bool swapB = threadBufferFloat[idB] > 0.001f;
         executeNetwork();
@@ -161,6 +162,10 @@ void performTranslucencySort() {
         exchangeVertex2x(basePtr, 1, swapA, swapB);
         exchangeVertex2x(basePtr, 2, swapA, swapB);
         exchangeVertex2x(basePtr, 3, swapA, swapB);
+        */
+        if (threadBufferFloat[idA] < threadBufferFloat[idB] && threadBufferFloat[idA] > 0.0001f && threadBufferFloat[idB] > 0.0001f) {
+            swapQuads(idA + basePtr, idB + basePtr);
+        }
     }
 }
 #endif
