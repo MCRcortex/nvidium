@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.*;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
+import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.managers.RegionVisibilityTracker;
@@ -228,10 +229,14 @@ public class RenderPipeline {
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
         }
 
+        if (Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.NONE) {
+            regionsToSort.clear();
+        }
+
         int regionSortSize = this.regionsToSort.size();
 
         if (regionSortSize != 0){
-            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionSortSize*2);
+            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionSortSize * 2);
             for (int region : regionsToSort) {
                 MemoryUtil.memPutShort(regionSortUpload, (short) region);
                 regionSortUpload += 2;
@@ -314,7 +319,7 @@ public class RenderPipeline {
 
 
 
-        {
+        if (regionSortSize != 0) {
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             regionSectionSorter.dispatch(regionSortSize);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);

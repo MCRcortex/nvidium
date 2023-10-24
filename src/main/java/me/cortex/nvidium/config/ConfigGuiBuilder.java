@@ -87,6 +87,25 @@ public class ConfigGuiBuilder {
                         .setBinding((opts, value) -> opts.max_geometry_memory = value, opts -> opts.max_geometry_memory)
                         .setFlags(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?new OptionFlag[0]:new OptionFlag[]{OptionFlag.REQUIRES_RENDERER_RELOAD})
                         .build()
+                ).add(OptionImpl.createBuilder(TranslucencySortingLevel.class, store)
+                        .setName(Text.translatable("nvidium.options.translucency_sorting.name"))
+                        .setTooltip(Text.translatable("nvidium.options.translucency_sorting.tooltip"))
+                        .setControl(
+                                opts -> new CyclingControl<>(
+                                        opts,
+                                        TranslucencySortingLevel.class,
+                                        new Text[]{
+                                                Text.translatable("nvidium.options.translucency_sorting.none"),
+                                                Text.translatable("nvidium.options.translucency_sorting.sections"),
+                                                Text.translatable("nvidium.options.translucency_sorting.quads")
+                                        }
+                                )
+                        )
+                        .setBinding((opts, value) -> opts.translucency_sorting_level = value, opts -> opts.translucency_sorting_level)
+                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setImpact(OptionImpact.MEDIUM)
+                        .setFlags(NvidiumOptionFlags.REQUIRES_SHADER_RELOAD)
+                        .build()
                 ).add(OptionImpl.createBuilder(StatisticsLoggingLevel.class, store)
                         .setName(Text.translatable("nvidium.options.statistics_level.name"))
                         .setTooltip(Text.translatable("nvidium.options.statistics_level.tooltip"))

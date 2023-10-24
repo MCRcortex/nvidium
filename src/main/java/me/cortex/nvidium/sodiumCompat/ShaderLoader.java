@@ -2,6 +2,7 @@ package me.cortex.nvidium.sodiumCompat;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
+import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
 import net.minecraft.util.Identifier;
@@ -17,7 +18,9 @@ public class ShaderLoader {
             builder.add("STATISTICS_"+StatisticsLoggingLevel.values()[i].name());
         }
 
-        builder.add("TRANSLUCENCY_SORTING");
+        if (Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.QUADS) {
+            builder.add("TRANSLUCENCY_SORTING");
+        }
 
         return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());
     }
