@@ -9,11 +9,13 @@ import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.Vec3d;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.function.Consumer;
 
 //8x4x8
 public class RegionManager {
@@ -33,13 +35,16 @@ public class RegionManager {
 
     private final ArrayDeque<Region> dirtyRegions = new ArrayDeque<>();
 
-    public RegionManager(RenderDevice device, int maxRegions, int maxSections, UploadingBufferStream uploadStream) {
+    private final Consumer<Integer> regionUploadCallback;
+
+    public RegionManager(RenderDevice device, int maxRegions, int maxSections, UploadingBufferStream uploadStream, Consumer<Integer> regionUploaded) {
         this.regionMap.defaultReturnValue(-1);
         this.device = device;
         this.regionBuffer = device.createDeviceOnlyMappedBuffer((long) maxRegions * META_SIZE);
         this.sectionBuffer = device.createDeviceOnlyMappedBuffer((long) maxSections * SectionManager.SECTION_SIZE);
         this.uploadStream = uploadStream;
         this.regions = new Region[maxRegions];
+        this.regionUploadCallback = regionUploaded;
     }
 
     public void delete() {
@@ -79,6 +84,8 @@ public class RegionManager {
                         (long) region.id * TOTAL_SECTION_META_SIZE,
                         TOTAL_SECTION_META_SIZE);
                 MemoryUtil.memCopy(region.sectionData, sectionUpload, TOTAL_SECTION_META_SIZE);
+
+                this.regionUploadCallback.accept(region.id);
             }
         }
     }
@@ -256,6 +263,15 @@ public class RegionManager {
                 Math.abs((region.rz<<3)+4-camChunkZ)<=dist;
     }
 
+    public boolean isRegionInACameraAxis(int regionId, double camX, double camY, double camZ) {
+        var region = this.regions[regionId];
+        //TODO: also account for region area instead of entire region
+        return (region.rx<<7 <= camX && camX <= ((region.rx+1)<<7))||
+               (region.ry<<6 <= camY && camY <= ((region.ry+1)<<6))||
+               (region.rz<<7 <= camZ && camZ <= ((region.rz+1)<<7))
+                ;
+    }
+
     public long getRegionBufferAddress() {
         return this.regionBuffer.getDeviceAddress();
     }
@@ -270,6 +286,7 @@ public class RegionManager {
         }
         return this.regions[regionId].key;
     }
+
 
     private static class Region {
         private final int rx;

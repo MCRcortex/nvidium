@@ -3,6 +3,7 @@ package me.cortex.nvidium.managers;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
+import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.sodiumCompat.IRepackagedResult;
 import me.cortex.nvidium.util.BufferArena;
@@ -30,14 +31,14 @@ public class SectionManager {
 
     private final LongSet hiddenSectionKeys = new LongOpenHashSet();
 
-    public SectionManager(RenderDevice device, long fallbackMemorySize, UploadingBufferStream uploadStream, int quadVertexSize) {
+    public SectionManager(RenderDevice device, long fallbackMemorySize, UploadingBufferStream uploadStream, int quadVertexSize, NvidiumWorldRenderer worldRenderer) {
         int maxRegions = 50_000;
 
         this.device = device;
         this.uploadStream = uploadStream;
 
         this.terrainAreana = new BufferArena(device, fallbackMemorySize, quadVertexSize);
-        this.regionManager = new RegionManager(device, maxRegions, maxRegions * 200, uploadStream);
+        this.regionManager = new RegionManager(device, maxRegions, maxRegions * 200, uploadStream, worldRenderer::enqueueRegionSort);
 
         this.section2id.defaultReturnValue(-1);
         this.section2terrain.defaultReturnValue(-1);

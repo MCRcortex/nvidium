@@ -2,10 +2,7 @@ package me.cortex.nvidium;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import it.unimi.dsi.fastutil.ints.IntAVLTreeSet;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntSortedSet;
+import it.unimi.dsi.fastutil.ints.*;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
@@ -69,6 +66,9 @@ public class RenderPipeline {
 
     private final BitSet regionVisibilityTracker;
 
+    //Set of regions that need to be sorted
+    private final IntSet regionsToSort = new IntOpenHashSet();
+
     private static final class Statistics {
         public int frustumCount;
         public int regionCount;
@@ -126,8 +126,6 @@ public class RenderPipeline {
         long queryAddr = 0;
         var rm = sectionManager.getRegionManager();
         short[] regionMap;
-        //List of regions that need to be sorted
-        IntList regionsToSort = new IntArrayList(rm.regionCount());
         //Enqueue all the visible regions
         {
 
@@ -147,9 +145,10 @@ public class RenderPipeline {
                     visibleRegions++;
                     regionVisibilityTracker.set(i);
 
-                    //TODO: make it only enqueue to be sorted if its within the range of the camera (specifically)
-                    // if the axis are all within range
-                    regionsToSort.add(i);
+                    if (rm.isRegionInACameraAxis(i, px, py, pz)) {
+                        regionsToSort.add(i);
+                    }
+
                 } else {
                     if (regionVisibilityTracker.get(i)) {//Going from visible to non visible
                         //Clear the visibility bits
@@ -223,12 +222,15 @@ public class RenderPipeline {
             MemoryUtil.memPutByte(addr, (byte) (frameId++));
         }
 
-        if (!regionsToSort.isEmpty()){
-            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionsToSort.size()*2);
+        int regionSortSize = this.regionsToSort.size();
+
+        if (regionSortSize != 0){
+            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionSortSize*2);
             for (int region : regionsToSort) {
                 MemoryUtil.memPutShort(regionSortUpload, (short) region);
                 regionSortUpload += 2;
             }
+            regionsToSort.clear();
         }
 
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
@@ -308,7 +310,7 @@ public class RenderPipeline {
 
         {
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            regionSectionSorter.dispatch(regionsToSort.size());
+            regionSectionSorter.dispatch(regionSortSize);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
         }
 
@@ -331,6 +333,10 @@ public class RenderPipeline {
             MemoryUtil.memSet(upload, 0, 4*4);
             //glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
+    }
+
+    void enqueueRegionSort(int regionId) {
+        this.regionsToSort.add(regionId);
     }
 
     //TODO: refactor to different location
