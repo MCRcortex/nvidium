@@ -18,8 +18,7 @@
 
 #ifdef TRANSLUCENCY_SORTING_QUADS
 vec3 depthPos = vec3(0);
-#define SORTING_NETWORK_SIZE 32
-#import <nvidium:sorting/sorting_network.glsl>
+shared float depthBuffers[32];
 #endif
 
 layout(local_size_x = 32) in;
@@ -99,48 +98,12 @@ void swapQuads(uint idxA, uint idxB) {
     terrainData[(idxB<<2)+2] = A2;
     terrainData[(idxB<<2)+3] = A3;
 }
-/*
-shared Vertex vertexStore[32];
-void exchangeVertex2x(uint baseOffset, uint vertex, bool swapA, bool swapB) {
-    uint idA = (gl_LocalInvocationID.x<<1);
-    uint idB = (gl_LocalInvocationID.x<<1)+1;
-    vertexStore[idA] = terrainData[((baseOffset+idA)<<2)+vertex];
-    vertexStore[idB] = terrainData[((baseOffset+idB)<<2)+vertex];
-    barrier();
-    memoryBarrierShared();
-    if (swapA) {terrainData[((baseOffset+idA)<<2)+vertex] = vertexStore[uint(threadBufferIndex[idA])];}
-    if (swapB) {terrainData[((baseOffset+idB)<<2)+vertex] = vertexStore[uint(threadBufferIndex[idB])];}
-}
-
-void executeNetwork() {
-    //Net 0
-    localSortA(0);
-    //Net 1
-    localSortA(1);
-    localSortB(0);
-    //Net 2
-    localSortA(2);
-    localSortB(1);
-    localSortB(0);
-    //Net 3
-    localSortA(3);
-    localSortB(2);
-    localSortB(1);
-    localSortB(0);
-    //Net 4
-    localSortA(4);
-    localSortB(3);
-    localSortB(2);
-    localSortB(1);
-    localSortB(0);
-}*/
-
 
 void performTranslucencySort() {
     uint basePtr = floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
 
     float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
-    putSortingData(uint8_t(gl_LocalInvocationID.x), depth);
+    depthBuffers[gl_LocalInvocationID.x] = depth;
 
     barrier();
     memoryBarrierShared();
@@ -150,22 +113,10 @@ void performTranslucencySort() {
     if (gl_LocalInvocationID.x < 16) {
         uint idA = (gl_LocalInvocationID.x<<1);
         uint idB = (gl_LocalInvocationID.x<<1)+1;
-        /*
-        bool swapA = threadBufferFloat[idA] > 0.001f;
-        bool swapB = threadBufferFloat[idB] > 0.001f;
-        executeNetwork();
-        swapA = swapA && (threadBufferFloat[idA] > 0.001f);
-        swapB = swapB && (threadBufferFloat[idB] > 0.001f);
+        float a = depthBuffers[idA];
+        float b = depthBuffers[idB];
 
-        //Perform the swapping of quads
-        // THIS IS INCORRECT!, we musnt swap the quads
-
-        exchangeVertex2x(basePtr, 0, swapA, swapB);
-        exchangeVertex2x(basePtr, 1, swapA, swapB);
-        exchangeVertex2x(basePtr, 2, swapA, swapB);
-        exchangeVertex2x(basePtr, 3, swapA, swapB);
-        */
-        if (threadBufferFloat[idA] < threadBufferFloat[idB] && threadBufferFloat[idA] > 0.0001f && threadBufferFloat[idB] > 0.0001f) {
+        if (a > 0.0001f &&  b > 0.0001f && a < b) {
             swapQuads(idA + basePtr, idB + basePtr);
         }
     }
@@ -177,7 +128,7 @@ void main() {
 
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
         #ifdef TRANSLUCENCY_SORTING_QUADS
-        putSortingData(uint8_t(gl_LocalInvocationID.x), -9999999999f);
+        depthBuffers[gl_LocalInvocationID.x] = -999999999f;
         #endif
         return;
     }
