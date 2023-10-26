@@ -102,7 +102,8 @@ void swapQuads(uint idxA, uint idxB) {
 void performTranslucencySort() {
     uint basePtr = floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
 
-    float depth = (abs(depthPos.x) + abs(depthPos.y) + abs(depthPos.z)) * (1/4f);
+
+    float depth = dot(depthPos, depthPos) * ((1/4f)*(1/4f));
     depthBuffers[gl_LocalInvocationID.x] = depth;
 
     barrier();
