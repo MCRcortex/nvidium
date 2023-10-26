@@ -317,9 +317,9 @@ public class RenderPipeline {
 
 
         if (regionSortSize != 0) {
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             regionSectionSorter.dispatch(regionSortSize);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         }
 
         glDisableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
@@ -366,7 +366,6 @@ public class RenderPipeline {
     //Translucency is rendered in a very cursed and incorrect way
     // it hijacks the unassigned indirect command dispatch and uses that to dispatch the translucent chunks as well
     public void renderTranslucent() {
-
         glEnableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
         glEnableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
         glEnableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);

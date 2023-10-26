@@ -38,6 +38,7 @@ public class AsyncOcclusionTracker {
     private final Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue;
 
     private final float renderDistance;
+    private volatile long iterationTimeMillis;
 
     public AsyncOcclusionTracker(int renderDistance, Long2ReferenceMap<RenderSection> sections, World world, Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue) {
         this.occlusionCuller = new OcclusionCuller(sections, world);
@@ -55,7 +56,7 @@ public class AsyncOcclusionTracker {
         while (running) {
             framesAhead.acquireUninterruptibly();
             if (!running) break;
-            //long startTime = System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
 
             final boolean animateVisibleSpritesOnly = SodiumClientMod.options().performance.animateOnlyVisibleTextures;
             //The reason for batching is so that ordering is strongly defined
@@ -107,7 +108,7 @@ public class AsyncOcclusionTracker {
             }
             blockEntitySectionsRef.set(blockEntitySections);
             visibleAnimatedSpritesRef.set(animatedSpriteSet==null?null:animatedSpriteSet.toArray(new Sprite[0]));
-            //System.err.println(System.currentTimeMillis()-startTime);
+            iterationTimeMillis = System.currentTimeMillis() - startTime;
         }
     }
 
@@ -185,5 +186,9 @@ public class AsyncOcclusionTracker {
     @Nullable
     public Sprite[] getVisibleAnimatedSprites() {
         return visibleAnimatedSpritesRef.get();
+    }
+
+    public long getIterationTime() {
+        return this.iterationTimeMillis;
     }
 }

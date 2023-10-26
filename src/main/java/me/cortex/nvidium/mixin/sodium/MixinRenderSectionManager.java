@@ -54,7 +54,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
-            renderer = new NvidiumWorldRenderer(new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, rebuildLists));
+            renderer = new NvidiumWorldRenderer(Nvidium.config.async_bfs?new AsyncOcclusionTracker(renderDistance, sectionByPosition, world, rebuildLists):null);
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
