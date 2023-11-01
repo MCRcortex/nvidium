@@ -106,6 +106,11 @@ void performTranslucencySort() {
     float depth = dot(depthPos, depthPos) * ((1/4f)*(1/4f));
     depthBuffers[gl_LocalInvocationID.x] = depth;
 
+    if (gl_GlobalInvocationID.x < jiggle) {
+        //If we are in the jiggle index dont attempt to swap else we start rendering garbage data
+        depthBuffers[gl_LocalInvocationID.x] = -9999f;
+    }
+
     barrier();
     memoryBarrierShared();
     //TODO: use subgroup ballot to check if all the quads are already sorted, if they are dont perform sort op
@@ -153,6 +158,7 @@ void main() {
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+1].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+2].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+3].gl_Position = vec4(1,1,1,-1);
+
     } else {
         emitVertex(id, 0);
         emitVertex(id, 1);
