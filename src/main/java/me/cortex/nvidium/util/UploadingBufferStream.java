@@ -40,6 +40,15 @@ public class UploadingBufferStream {
         segments.setLimit(size);
         buffer = device.createClientMappedBuffer(size);//Fixes an off by one in the limit testing of the segment buffer
         TickableManager.register(this);
+
+        //FIXME: this is a rediculous hack cause i cannot find the root issue
+        // it seems like the first time something is uploaded it borks completely
+        // or something, maybe its just some vertex data overruning or something
+        // cause if i dont do this the first 16 bytes are set to 0 when the stream gets uploaded
+        var dummy = device.createDeviceOnlyMappedBuffer(256);
+        this.getUpload(dummy, 0, 256);
+        this.commit();
+        dummy.delete();
     }
 
     private long caddr = -1;

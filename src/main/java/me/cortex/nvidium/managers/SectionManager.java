@@ -63,12 +63,17 @@ public class SectionManager {
 
         int terrainAddress;
         {
-            //If the section had terrain data associated with it, free it
-            if ((terrainAddress = this.section2terrain.remove(sectionKey)) != -1) {
+            //Attempt to reuse the same memory
+            terrainAddress = this.section2terrain.get(sectionKey);
+            if (terrainAddress != -1 && !this.terrainAreana.canReuse(terrainAddress, output.quads())) {
+                this.section2terrain.remove(sectionKey);
                 this.terrainAreana.free(terrainAddress);
+                terrainAddress = -1;
+            }
+            if (terrainAddress == -1) {
+                terrainAddress = this.terrainAreana.allocQuads(output.quads());
             }
 
-            terrainAddress = this.terrainAreana.allocQuads(output.quads());
             this.section2terrain.put(sectionKey, terrainAddress);
 
             long geometryUpload = terrainAreana.upload(uploadStream, terrainAddress);

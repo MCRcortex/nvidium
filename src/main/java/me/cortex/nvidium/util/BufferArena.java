@@ -79,4 +79,8 @@ public class BufferArena {
         long expected = totalQuads * vertexFormatSize * 4;
         return (float) ((double)expected/getMemoryUsed());
     }
+
+    public boolean canReuse(int addr, int quads) {
+        return this.segments.getSize(addr) == quads;
+    }
 }
