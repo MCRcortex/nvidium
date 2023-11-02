@@ -133,10 +133,10 @@ public class SodiumResultCompatibility {
 
                             float dist = dx*dx + dy*dy + dz*dz;
 
-                            int sortDistance = (int) (dist*(1<<12));
+                            int sortDistance = 0;//(int) (dist*(1<<12));
 
                             //We pack the sorting data
-                            long packedSortingData = (((long)sortDistance)<<32)|(((j>>2)<<3)|i);
+                            long packedSortingData = (((long)sortDistance)<<32)|((((long) j>>2)<<3)|i);
                             sortingData[quadId++] = packedSortingData;
 
                             cx = 0;
@@ -147,12 +147,17 @@ public class SodiumResultCompatibility {
                 }
             }
 
+            if (quadId != sortingData.length) {
+                throw new IllegalStateException();
+            }
+
             LongArrays.radixSort(sortingData);
 
             for (int i = 0; i < sortingData.length; i++) {
                 long data = sortingData[i];
-                copyQuad(srcs[(int) (data&7)] + ((data>>3)&((1L<<29)-1))*4*formatSize, outPtr + (sortingData.length-i-1) * 4L * formatSize);
+                copyQuad(srcs[(int) (data&7)] + ((data>>3)&((1L<<29)-1))*4*formatSize, outPtr + ((sortingData.length-1)-i) * 4L * formatSize);
             }
+
 
             offset += quadCount;
         }
@@ -211,6 +216,10 @@ public class SodiumResultCompatibility {
                 }
             }
             outOffsets[i] = (short) (offset - poff);
+        }
+
+        if (offset*4*formatSize != output.getLength()) {
+            throw new IllegalStateException();
         }
     }
 

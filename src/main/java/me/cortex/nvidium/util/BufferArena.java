@@ -26,6 +26,8 @@ public class BufferArena {
         } else {
             buffer = device.createDeviceOnlyMappedBuffer(memory);
         }
+        //Reserve index 0
+        this.allocQuads(1);
     }
 
     public int allocQuads(int quadCount) {

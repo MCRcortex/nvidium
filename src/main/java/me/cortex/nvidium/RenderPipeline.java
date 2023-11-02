@@ -247,6 +247,8 @@ public class RenderPipeline {
         sectionManager.commitChanges();//Commit all uploads done to the terrain and meta data
         uploadStream.commit();
 
+        TickableManager.TickAll();
+
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
         }
