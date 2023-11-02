@@ -22,7 +22,7 @@ loom {
 
 processResources {
     inputs.property "version", project.version
-
+    archivesBaseName = "nvidium"
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }

@@ -6,6 +6,7 @@
     "minecraft.LightMapAccessor",
     "minecraft.MixinBackgroundRenderer",
     "minecraft.MixinGameRenderer",
+    "minecraft.MixinMinecraftClient",
     "minecraft.MixinWindow",
     "minecraft.MixinWorldRenderer",
     "sodium.MixinChunkBuilder",

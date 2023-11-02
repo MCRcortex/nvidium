@@ -133,7 +133,7 @@ public class SodiumResultCompatibility {
 
                             float dist = dx*dx + dy*dy + dz*dz;
 
-                            int sortDistance = 0;//(int) (dist*(1<<12));
+                            int sortDistance = (int) (dist*(1<<12));
 
                             //We pack the sorting data
                             long packedSortingData = (((long)sortDistance)<<32)|((((long) j>>2)<<3)|i);
