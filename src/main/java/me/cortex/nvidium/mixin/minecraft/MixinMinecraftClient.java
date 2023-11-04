@@ -11,6 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinMinecraftClient {
     @Inject(method = "render", at = @At("TAIL"))
     private void tickUploadThread(boolean tick, CallbackInfo ci) {
-        TickableManager.TickAll();
+        //TickableManager.TickAll();
     }
 }
