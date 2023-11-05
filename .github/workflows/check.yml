@@ -14,7 +14,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-          distribution: adoptium
+          distribution: termurin
           
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -33,4 +33,4 @@ jobs:
         with:
           if-no-files-found: error
           path: build/libs/
-          name: Nvidium JAR
+          name: Nvidium .jar file
