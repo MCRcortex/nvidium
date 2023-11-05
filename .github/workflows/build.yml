@@ -1,4 +1,4 @@
-name: Gradlew Build
+name: Gradle Build
 on:
   pull_request:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
         
-      - name: Build
+      - name: Build .jar
         run: ./gradlew build
 
       - name: Publish Artifacts on GitHub Actions
