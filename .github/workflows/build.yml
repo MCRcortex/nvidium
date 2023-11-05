@@ -1,6 +1,7 @@
 name: Gradlew Build
 on:
   pull_request:
+  push:
 
 jobs:
   Build:
