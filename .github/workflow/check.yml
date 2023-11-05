@@ -1,0 +1,36 @@
+name: Check Build
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout repository
+      - uses: gradle/wrapper-validation-action@v1
+        name: Validate Gradle
+      - uses: actions/setup-java@v3
+        name: Setup Java 17
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: actions/cache@v3
+        name: Cache
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+      - run: ./gradlew build --stacktrace --no-daemon
+        name: Build
+
+      - uses: actions/upload-artifact@v3   
+        name: Publish Artifacts on GitHub Actions
+        with:
+          if-no-files-found: error
+          path: build/libs/
+          name: Nvidium JAR
