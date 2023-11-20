@@ -41,7 +41,7 @@ public class NvidiumWorldRenderer {
     public NvidiumWorldRenderer(AsyncOcclusionTracker asyncChunkTracker) {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
         //32 mb upload buffer
-        this.uploadStream = new UploadingBufferStream(device, frames, 32000000);
+        this.uploadStream = new UploadingBufferStream(device, 32000000);
         //8 mb download buffer
         this.downloadStream = new DownloadTaskStream(device, frames, 8000000);
 

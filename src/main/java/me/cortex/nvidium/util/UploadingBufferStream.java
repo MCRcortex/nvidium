@@ -3,124 +3,129 @@ package me.cortex.nvidium.util;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import me.cortex.nvidium.gl.GlFence;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.Buffer;
 import me.cortex.nvidium.gl.buffers.PersistentClientMappedBuffer;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
 import static me.cortex.nvidium.util.SegmentedManager.SIZE_LIMIT;
+import static org.lwjgl.opengl.ARBDirectStateAccess.glCopyNamedBufferSubData;
+import static org.lwjgl.opengl.ARBDirectStateAccess.glFlushMappedNamedBufferRange;
+import static org.lwjgl.opengl.ARBMapBufferRange.*;
 import static org.lwjgl.opengl.GL11.glFinish;
 import static org.lwjgl.opengl.GL11.glGetError;
+import static org.lwjgl.opengl.GL42.glMemoryBarrier;
 import static org.lwjgl.opengl.GL42C.GL_BUFFER_UPDATE_BARRIER_BIT;
 import static org.lwjgl.opengl.GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
 
-//TODO: need to add self resizing
 public class UploadingBufferStream {
-    private final SegmentedManager segments = new SegmentedManager();
+    private final SegmentedManager allocationArena = new SegmentedManager();
+    private final PersistentClientMappedBuffer uploadBuffer;
 
-    private final RenderDevice device;
-    private PersistentClientMappedBuffer buffer;//TODO: make it self resizing if full
+    private final Deque<UploadFrame> frames = new ArrayDeque<>();
+    private final LongArrayList thisFrameAllocations = new LongArrayList();
+    private final Deque<UploadData> uploadList = new ArrayDeque<>();
+    private final LongArrayList flushList = new LongArrayList();
 
-    private final List<Batch> batchedCopies = new ReferenceArrayList<>();
-    private final LongList batchedFlushes = new LongArrayList();
-    private record Batch(Buffer dest, long destOffset, long sourceOffset, long size) { }
-
-
-    private int cidx;
-    private final LongList[] allocations;
-    public UploadingBufferStream(RenderDevice device, int frames, long size) {
-        this.device = device;
-        allocations = new LongList[frames];
-        for (int i = 0; i < frames; i++) {
-            allocations[i] = new LongArrayList();
-        }
-        segments.setLimit(size);
-        buffer = device.createClientMappedBuffer(size);//Fixes an off by one in the limit testing of the segment buffer
+    public UploadingBufferStream(RenderDevice device, long size) {
+        this.allocationArena.setLimit(size);
+        this.uploadBuffer = device.createClientMappedBuffer(size);
         TickableManager.register(this);
-
-        //FIXME: this is a rediculous hack cause i cannot find the root issue
-        // it seems like the first time something is uploaded it borks completely
-        // or something, maybe its just some vertex data overruning or something
-        // cause if i dont do this the first 16 bytes are set to 0 when the stream gets uploaded
-        var dummy = device.createDeviceOnlyMappedBuffer(256);
-        this.getUpload(dummy, 0, 256);
-        this.commit();
-        dummy.delete();
     }
 
     private long caddr = -1;
     private long offset = 0;
-
-    //The returned value is valid for use until the next getUpload, commit, or internal tick invocation
-    public long getUpload(Buffer destBuffer, long destOffset, int size) {
-        long addr;
-        if (caddr == -1 || !segments.expand(caddr, size)) {
-            caddr = segments.alloc(size);//TODO: replace with allocFromLargest
-            if (caddr == SIZE_LIMIT) {
-                //This is quite a big hack but should fix the issue with overflowing upload sizes
-                //NOTE: This is dangerous as the application might not have finished with a previous buffer upload borking everything
-                //FIXME: so that everything up until the last commit values can be flushed and cleared
-                this.commit();
-                glFinish();
-                for (int i = 0; i < allocations.length; i++){
-                    this.tick();
-                }
-                caddr = segments.alloc(size);
-                if (caddr == SIZE_LIMIT) {
-                    throw new IllegalStateException("Could not allocate memory segment big enough for upload");
-                }
-            }
-            allocations[cidx].add(caddr);//Enqueue the allocation to be freed
-            offset = size;
-            addr = caddr;
-            batchedFlushes.add(caddr);
-        } else {//Could expand the allocation so just update it
-            addr = caddr + offset;
-            offset += size;
+    public long upload(Buffer buffer, long destOffset, long size) {
+        if (size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException();
         }
 
-        batchedCopies.add(new Batch(destBuffer, destOffset, addr, size));
+        long addr;
+        if (this.caddr == -1 || !this.allocationArena.expand(this.caddr, (int) size)) {
+            this.caddr = this.allocationArena.alloc((int) size);//TODO: replace with allocFromLargest
+            if (this.caddr == SIZE_LIMIT) {
+                this.commit();
+                int attempts = 10;
+                while (--attempts != 0 && this.caddr == SIZE_LIMIT) {
+                    glFinish();
+                    this.tick();
+                    this.caddr = this.allocationArena.alloc((int) size);
+                }
+                if (this.caddr == SIZE_LIMIT) {
+                    throw new IllegalStateException("Could not allocate memory segment big enough for upload even after force flush");
+                }
+            }
+            this.flushList.add(this.caddr);
+            this.offset = size;
+            addr = this.caddr;
+        } else {//Could expand the allocation so just update it
+            addr = this.caddr + this.offset;
+            this.offset += size;
+        }
 
-        return buffer.clientAddress() + addr;
+        if (this.caddr + size > this.uploadBuffer.size) {
+            throw new IllegalStateException();
+        }
+
+        this.uploadList.add(new UploadData(buffer, addr, destOffset, size));
+
+        return this.uploadBuffer.addr + addr;
     }
 
 
     public void commit() {
-        for (long offset : batchedFlushes) {
-            device.flush(buffer, offset, (int)segments.getSize(offset));
+        //First flush all the allocations and enqueue them to be freed
+        {
+            for (long alloc : flushList) {
+                glFlushMappedNamedBufferRange(this.uploadBuffer.getId(), alloc, this.allocationArena.getSize(alloc));
+                this.thisFrameAllocations.add(alloc);
+            }
+            this.flushList.clear();
+        }
+        glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+        //Execute all the copies
+        for (var entry : this.uploadList) {
+            glCopyNamedBufferSubData(this.uploadBuffer.getId(), entry.target.getId(), entry.uploadOffset, entry.targetOffset, entry.size);
+        }
+        this.uploadList.clear();
+
+        glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+
+        this.caddr = -1;
+        this.offset = 0;
+    }
+
+    public void tick() {
+        this.commit();
+        if (!this.thisFrameAllocations.isEmpty()) {
+            this.frames.add(new UploadFrame(new GlFence(), new LongArrayList(this.thisFrameAllocations)));
+            this.thisFrameAllocations.clear();
         }
 
-        batchedFlushes.clear();
-        device.barrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
-        for (var batch : batchedCopies) {
-            device.copyBuffer(buffer, batch.dest, batch.sourceOffset, batch.destOffset, batch.size);
+        while (!this.frames.isEmpty()) {
+            //Since the ordering of frames is the ordering of the gl commands if we encounter an unsignaled fence
+            // all the other fences should also be unsignaled
+            if (!this.frames.peek().fence.signaled()) {
+                break;
+            }
+            //Release all the allocations from the frame
+            var frame = this.frames.pop();
+            frame.allocations.forEach(allocationArena::free);
+            frame.fence.free();
         }
-
-        batchedCopies.clear();
-        device.barrier(GL_BUFFER_UPDATE_BARRIER_BIT);
     }
 
     public void delete() {
-        buffer.delete();
+        this.uploadBuffer.delete();
     }
 
+    private record UploadFrame(GlFence fence, LongArrayList allocations) {}
+    private record UploadData(Buffer target, long uploadOffset, long targetOffset, long size) {}
 
-
-    void tick() {
-        //if (batchedCopies.size() != 0) {
-        //    //throw new IllegalStateException("Upload buffer has uncommitted batches before tick");
-        //    System.err.println("Upload buffer has uncommitted batches before tick");
-        //    commit();
-        //}
-        //Need to free all of the next allocations
-        cidx = (cidx+1)%allocations.length;
-        for (long addr : allocations[cidx]) {
-            segments.free(addr);
-        }
-        allocations[cidx].clear();
-        caddr = -1;
-    }
 }

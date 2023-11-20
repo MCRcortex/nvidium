@@ -131,11 +131,10 @@ void performTranslucencySort() {
 
 //TODO: extra per quad culling
 void main() {
-
+    #ifdef TRANSLUCENCY_SORTING_QUADS
+    depthBuffers[gl_LocalInvocationID.x] = -99999999f;
+    #endif
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
-        #ifdef TRANSLUCENCY_SORTING_QUADS
-        depthBuffers[gl_LocalInvocationID.x] = -999999999f;
-        #endif
         return;
     }
     //TODO:FIXME: the jiggling needs to be accounted for when emitting quads since otherwise it renders garbage data

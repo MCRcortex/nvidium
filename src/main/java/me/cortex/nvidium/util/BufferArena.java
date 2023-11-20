@@ -48,7 +48,7 @@ public class BufferArena {
     }
 
     public long upload(UploadingBufferStream stream, int addr) {
-        return stream.getUpload(buffer, Integer.toUnsignedLong(addr)*4L*vertexFormatSize, (int) segments.getSize(addr)*4*vertexFormatSize);
+        return stream.upload(buffer, Integer.toUnsignedLong(addr)*4L*vertexFormatSize, (int) segments.getSize(addr)*4*vertexFormatSize);
     }
 
     public void delete() {

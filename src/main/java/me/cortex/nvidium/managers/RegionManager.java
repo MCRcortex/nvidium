@@ -67,20 +67,20 @@ public class RegionManager {
                 if (this.regions[region.id] == null) {
                     //There is no region that has replaced the old one at the id so we need to clear the region metadata
                     // to prevent the gpu from rendering arbitary data
-                    long regionUpload = this.uploadStream.getUpload(this.regionBuffer, (long) region.id * META_SIZE, META_SIZE);
+                    long regionUpload = this.uploadStream.upload(this.regionBuffer, (long) region.id * META_SIZE, META_SIZE);
                     MemoryUtil.memSet(regionUpload, -1, META_SIZE);
 
-                    long sectionUpload = this.uploadStream.getUpload(this.sectionBuffer,
+                    long sectionUpload = this.uploadStream.upload(this.sectionBuffer,
                             (long) region.id * TOTAL_SECTION_META_SIZE,
                             TOTAL_SECTION_META_SIZE);
                     MemoryUtil.memSet(sectionUpload, 0, TOTAL_SECTION_META_SIZE);
                 }
             } else {
                 //It is just a normal region update
-                long regionUpload = this.uploadStream.getUpload(this.regionBuffer, (long) region.id * META_SIZE, META_SIZE);
+                long regionUpload = this.uploadStream.upload(this.regionBuffer, (long) region.id * META_SIZE, META_SIZE);
                 this.setRegionMetadata(regionUpload, region);
 
-                long sectionUpload = this.uploadStream.getUpload(this.sectionBuffer,
+                long sectionUpload = this.uploadStream.upload(this.sectionBuffer,
                         (long) region.id * TOTAL_SECTION_META_SIZE,
                         TOTAL_SECTION_META_SIZE);
                 MemoryUtil.memCopy(region.sectionData, sectionUpload, TOTAL_SECTION_META_SIZE);

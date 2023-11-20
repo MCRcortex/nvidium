@@ -168,7 +168,7 @@ public class RenderPipeline {
 
             regionMap = new short[regions.size()];
             if (visibleRegions == 0) return;
-            long addr = uploadStream.getUpload(sceneUniform, SCENE_SIZE, visibleRegions*2);
+            long addr = uploadStream.upload(sceneUniform, SCENE_SIZE, visibleRegions*2);
             queryAddr = addr;//This is ungodly hacky
             int j = 0;
             for (int i : regions) {
@@ -186,7 +186,7 @@ public class RenderPipeline {
             //TODO: maybe segment the uniform buffer into 2 parts, always updating and static where static holds pointers
             Vector3f delta = new Vector3f((float) (px-(chunkPos.x<<4)), (float) (py-(chunkPos.y<<4)), (float) (pz-(chunkPos.z<<4)));
             delta.negate();
-            long addr = uploadStream.getUpload(sceneUniform, 0, SCENE_SIZE);
+            long addr = uploadStream.upload(sceneUniform, 0, SCENE_SIZE);
             var mvp =new Matrix4f(crm.projection())
                     .mul(crm.modelView())
                     .translate(delta)//Translate the subchunk position
@@ -236,7 +236,7 @@ public class RenderPipeline {
         int regionSortSize = this.regionsToSort.size();
 
         if (regionSortSize != 0){
-            long regionSortUpload = uploadStream.getUpload(regionSortingList, 0, regionSortSize * 2);
+            long regionSortUpload = uploadStream.upload(regionSortingList, 0, regionSortSize * 2);
             for (int region : regionsToSort) {
                 MemoryUtil.memPutShort(regionSortUpload, (short) region);
                 regionSortUpload += 2;
@@ -271,7 +271,7 @@ public class RenderPipeline {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(false);
-        glColorMask(false, false, false, false);
+        //glColorMask(false, false, false, false);
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
 
@@ -339,7 +339,7 @@ public class RenderPipeline {
         if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
             //glMemoryBarrier(GL_ALL_BARRIER_BITS);
             //Stupid bloody nvidia not following spec forcing me to use a upload stream
-            long upload = this.uploadStream.getUpload(statisticsBuffer, 0, 4*4);
+            long upload = this.uploadStream.upload(statisticsBuffer, 0, 4*4);
             MemoryUtil.memSet(upload, 0, 4*4);
             //glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
