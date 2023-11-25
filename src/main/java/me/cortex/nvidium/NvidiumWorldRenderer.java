@@ -124,7 +124,7 @@ public class NvidiumWorldRenderer {
 
     public void update(Camera camera, Viewport viewport, int frame, boolean spectator) {
         if (asyncChunkTracker != null) {
-            asyncChunkTracker.update(viewport);
+            asyncChunkTracker.update(viewport, camera, spectator);
         }
     }
 
