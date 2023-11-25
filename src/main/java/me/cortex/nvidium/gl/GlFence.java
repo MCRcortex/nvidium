@@ -11,12 +11,13 @@ public class GlFence extends TrackedObject {
     }
 
     public boolean signaled() {
+        this.assertNotFreed();
         if (!this.signaled) {
             int ret = glClientWaitSync(this.fence, 0, 0);
             if (ret == GL_ALREADY_SIGNALED || ret == GL_CONDITION_SATISFIED) {
                 this.signaled = true;
             } else if (ret != GL_TIMEOUT_EXPIRED) {
-                throw new IllegalStateException("Poll for fence failed, glError: " + glGetError());
+                throw new IllegalStateException("Poll for fence failed, ret: " + ret + " glError: " + glGetError());
             }
         }
         return this.signaled;

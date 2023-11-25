@@ -122,7 +122,9 @@ public class UploadingBufferStream {
     }
 
     public void delete() {
+        TickableManager.remove(this);
         this.uploadBuffer.delete();
+        this.frames.forEach(frame->frame.fence.free());
     }
 
     private record UploadFrame(GlFence fence, LongArrayList allocations) {}

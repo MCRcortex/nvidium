@@ -26,7 +26,13 @@ public class PersistentClientMappedBuffer extends GlObject implements IClientMap
 
     @Override
     public void delete() {
+        super.free0();
         glUnmapNamedBuffer(id);
         glDeleteBuffers(id);
+    }
+
+    @Override
+    public void free() {
+        this.delete();
     }
 }

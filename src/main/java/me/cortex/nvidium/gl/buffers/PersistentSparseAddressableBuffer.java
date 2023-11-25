@@ -92,7 +92,13 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
     }
 
     public void delete() {
+        super.free0();
         glMakeNamedBufferNonResidentNV(id);
         glDeleteBuffers(id);
+    }
+
+    @Override
+    public void free() {
+        this.delete();
     }
 }

@@ -271,7 +271,7 @@ public class RenderPipeline {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(false);
-        //glColorMask(false, false, false, false);
+        glColorMask(false, false, false, false);
         glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         regionRasterizer.raster(visibleRegions);
 

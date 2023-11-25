@@ -27,11 +27,17 @@ public class DeviceOnlyMappedBuffer extends GlObject implements IDeviceMappedBuf
 
     @Override
     public void delete() {
+        super.free0();
         glDeleteBuffers(id);
     }
 
     @Override
     public long getDeviceAddress() {
         return addr;
+    }
+
+    @Override
+    public void free() {
+        this.delete();
     }
 }

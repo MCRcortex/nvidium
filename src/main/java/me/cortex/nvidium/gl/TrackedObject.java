@@ -1,5 +1,7 @@
 package me.cortex.nvidium.gl;
 
+import me.cortex.nvidium.Nvidium;
+
 import java.lang.ref.Cleaner;
 
 public abstract class TrackedObject {
@@ -33,12 +35,21 @@ public abstract class TrackedObject {
     private static final Cleaner cleaner = Cleaner.create();
     public static Ref register(Object obj) {
         String clazz = obj.getClass().getName();
-        Throwable trace = new Throwable();
-        trace.fillInStackTrace();
+        Throwable trace;
+        if (Nvidium.IS_DEBUG) {
+            trace = new Throwable();
+        } else {
+            trace = null;
+        }
         boolean[] freed = new boolean[1];
         var clean = cleaner.register(obj, ()->{
             if (!freed[0]) {
-                System.err.println("Object named: "+ clazz+" was not freed, location at:\n" + trace);
+                System.err.println("Object named: "+ clazz+" was not freed, location at:\n");
+                if (trace != null) {
+                    trace.printStackTrace();
+                } else {
+                    System.err.println("Unknown location, turn on debug mode");
+                }
                 System.err.flush();
             }
         });

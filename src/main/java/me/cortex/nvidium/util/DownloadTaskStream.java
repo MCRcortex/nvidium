@@ -53,6 +53,7 @@ public class DownloadTaskStream {
     }
 
     public void delete() {
+        TickableManager.remove(this);
         buffer.delete();
     }
 }
