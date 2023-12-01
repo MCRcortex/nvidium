@@ -22,6 +22,6 @@
   "nvidium.options.statistics_level.sections" : "Sections 模式",
   "nvidium.options.statistics_level.quads" : "Quads 模式",
   "nvidium.options.async_bfs.name" : "启用异步广度优先搜索算法(BFS)",
-  "nvidium.options.async_bfs.tooltip" : "如果启用异步 BFS，异步 BFS 将会大幅度稳定波动的 FPS，在渲染距离较远时效果尤为明显",
+  "nvidium.options.async_bfs.tooltip" : "启用异步 BFS，可降低移动时的帧生成时间，在渲染距离较远时效果尤为明显",
   "modmenu.descriptionTranslation.nvidium": "用更高效的渲染引擎染替代 Sodium 的默认渲染引擎"
 }
