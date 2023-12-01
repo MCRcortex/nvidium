@@ -6,7 +6,7 @@
   "nvidium.options.automatic_memory_limit.tooltip" : "根据目前可用显存大小，自动设置 NVIDIA OpenGL 网格着色器使用的显存大小",
   "nvidium.options.max_gpu_memory.name" : "最大显存大小",
   "nvidium.options.max_gpu_memory.tooltip" : "调整最大显存大小的限制，一旦达到设置值就将开始卸载已加载的区块",
-  "nvidium.options.enable_temporal_coherence.name" : "启用时间一致性",
+  "nvidium.options.enable_temporal_coherence.name" : "启用时间相干渲染",
   "nvidium.options.enable_temporal_coherence.tooltip" : "可以消除转动视角时的出现的伪影",
   "nvidium.options.mb" : "%s MB",
   "nvidium.options.translucency_sorting.name" : "半透明材质排序",
