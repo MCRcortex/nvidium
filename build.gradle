@@ -48,11 +48,13 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+    // Fabric API
     modImplementation(fabricApi.module("fabric-api-base", project.fabric_version))
+    modImplementation(fabricApi.module("fabric-block-view-api-v2", project.fabric_version))
     modImplementation(fabricApi.module("fabric-rendering-fluids-v1", project.fabric_version))
+
+    modImplementation("net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.40+73761d2e3b")
     modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
-    modImplementation("net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.38+73761d2e9a")
-    //modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
     modImplementation "maven.modrinth:sodium:mc1.20.3-0.5.4"
 
