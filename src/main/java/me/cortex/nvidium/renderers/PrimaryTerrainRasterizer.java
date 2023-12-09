@@ -1,8 +1,9 @@
 package me.cortex.nvidium.renderers;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import me.cortex.nvidium.gl.shader.Shader;
 import me.cortex.nvidium.sodiumCompat.ShaderLoader;
-import me.cortex.nvidium.sodiumCompat.mixin.LightMapAccessor;
+import me.cortex.nvidium.mixin.minecraft.LightMapAccessor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Identifier;
 import org.lwjgl.opengl.GL45;
@@ -30,17 +31,24 @@ public class PrimaryTerrainRasterizer extends Phase {
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MAX_LOD, 4);
     }
 
+    private static void setTexture(int textureId, int bindingPoint) {
+        GlStateManager._activeTexture(33984 + bindingPoint);
+        GlStateManager._bindTexture(textureId);
+    }
+
     public void raster(int regionCount, long commandAddr) {
         shader.bind();
 
         int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(new Identifier("minecraft", "textures/atlas/blocks.png")).getGlId();
         int lightId = ((LightMapAccessor)MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager()).getTexture().getGlId();
 
-        GL45C.glBindTextureUnit(0, blockId);
+        //GL45C.glBindTextureUnit(0, blockId);
         GL45C.glBindSampler(0, blockSampler);
 
-        GL45C.glBindTextureUnit(1, lightId);
+        //GL45C.glBindTextureUnit(1, lightId);
         GL45C.glBindSampler(1, lightSampler);
+        setTexture(blockId, 0);
+        setTexture(lightId, 1);
 
         glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
         glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);

@@ -13,7 +13,7 @@
 
 #import <nvidium:occlusion/scene.glsl>
 
-#define MESH_WORKLOAD_PER_INVOCATION 16
+#define MESH_WORKLOAD_PER_INVOCATION 32
 
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
 layout(local_size_x=1) in;
@@ -22,6 +22,9 @@ layout(local_size_x=1) in;
 taskNV out Task {
     vec4 originAndBaseData;
     uint quadCount;
+    #ifdef TRANSLUCENCY_SORTING_QUADS
+    uint8_t jiggle;
+    #endif
 };
 
 bool shouldRender(uint sectionId) {
@@ -31,9 +34,20 @@ bool shouldRender(uint sectionId) {
 
 void main() {
     uint sectionId = gl_WorkGroupID.x;
+    #ifdef TRANSLUCENCY_SORTING_SECTIONS
+    //Compute indirection for translucency sorting
+    {
+        ivec4 header = sectionData[sectionId].header;
+
+        //Compute the redirected section index
+        sectionId &= ~0xFF;
+        sectionId |= uint((header.y>>18)&0xFF);
+    }
+    #endif
 
     if (!shouldRender(sectionId)) {
         //Early exit if the section isnt visible
+        //TODO: also early exit if there are no translucents to render
         gl_TaskCountNV = 0;
         return;
     }
@@ -41,15 +55,24 @@ void main() {
     ivec4 header = sectionData[sectionId].header;
     uint baseDataOffset = (uint)header.w;
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
     originAndBaseData.xyz = vec3((chunk - chunkPosition.xyz)<<4);
 
-    int offsetData = sectionData[sectionId].renderRanges.w;
-    uint a = offsetData&0xFFFF;
-    quadCount = ((offsetData>>16)&0xFFFF)-a;
-    originAndBaseData.w = uintBitsToFloat(a+baseDataOffset);
 
+    quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);
+    originAndBaseData.w = uintBitsToFloat(baseDataOffset);
+    #ifdef TRANSLUCENCY_SORTING_QUADS
+    jiggle = uint8_t(min(quadCount>>1,(uint(frameId)&1)));//Jiggle by 1 quads (either 0 or 1)//*15
+    //jiggle = uint8_t(0);
+    quadCount += jiggle;
+    #endif
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
     gl_TaskCountNV = (quadCount+MESH_WORKLOAD_PER_INVOCATION-1)/MESH_WORKLOAD_PER_INVOCATION;
+
+    #ifdef STATISTICS_QUADS
+    atomicAdd(statistics_buffer+2, quadCount);
+    #endif
 }

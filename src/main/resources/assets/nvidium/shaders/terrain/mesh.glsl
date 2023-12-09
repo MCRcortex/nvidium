@@ -13,14 +13,17 @@
 
 #import <nvidium:occlusion/scene.glsl>
 #import <nvidium:terrain/fog.glsl>
+#import <nvidium:terrain/vertex_format.glsl>
 
-layout(local_size_x = 32) in;
+
+//It seems like for terrain at least, the sweat spot is ~16 quads per mesh invocation (even if the local size is not 32 )
+layout(local_size_x = 16) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
 layout(location=1) out Interpolants {
-    vec4 tint;
-    vec4 addin;
-    vec4 uv_bias_cutoff;
+    f16vec4 uv_bias_cutoff;
+    f16vec3 tint;
+    f16vec3 addin;
 } OUT[];
 
 taskNV in Task {
@@ -35,67 +38,53 @@ taskNV in Task {
     uvec4 binVb;
 };
 
-vec3 decodeVertex(Vertex v) {
-    return vec3(v.a,v.b,v.c)*(32.0f/65535)-8.0f;
-}
-
 layout(binding = 1) uniform sampler2D tex_light;
 
-vec4 sampleLight(vec2 uv) {
-    return texture(tex_light, clamp(uv / 256.0, vec2(0.5 / 16.0), vec2(15.5 / 16.0)));
+vec4 sampleLight(uvec2 uv) {
+    return vec4(texelFetch(tex_light, ivec2(uv), 0).rgb, 1);
 }
 
-void processVertPair(uint id) {
 
-    Vertex A = terrainData[id];
-    Vertex B = terrainData[id|1];
-
-    //TODO: OPTIMIZE
-    uint primId = gl_LocalInvocationID.x*3;
-    uint idxBase = (gl_LocalInvocationID.x>>1)<<2;
-    vec3 posA = decodeVertex(A)+origin;
-    vec3 posB = decodeVertex(B)+origin;
-    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)].gl_Position   = MVP*vec4(posA,1.0);
-    gl_MeshVerticesNV[(gl_LocalInvocationID.x<<1)|1].gl_Position = MVP*vec4(posB,1.0);
-
-    bool isA = (gl_LocalInvocationID.x&1)==0;
-    gl_PrimitiveIndicesNV[primId]   = (isA?0:2)+idxBase;
-    gl_PrimitiveIndicesNV[primId+1] = (isA?1:3)+idxBase;
-    gl_PrimitiveIndicesNV[primId+2] = (isA?2:0)+idxBase;
-
-    bool hasMipping = (A.d&int16_t(4))!=int16_t(0);
-    float alphaCutoff = (float[](0.0f, 0.1f,0.5f))[(A.d&int16_t(3))];
-
-    OUT[(gl_LocalInvocationID.x<<1)|0].uv_bias_cutoff = vec4(vec2(A.g,A.h)*(1f/65536), hasMipping?0.0f:-8.0f, alphaCutoff);
-    OUT[(gl_LocalInvocationID.x<<1)|1].uv_bias_cutoff = vec4(vec2(B.g,B.h)*(1f/65536), hasMipping?0.0f:-8.0f, alphaCutoff);
-
-
-    vec4 tintA = vec4(A.e&int16_t(0xFF),(A.e>>8)&int16_t(0xFF),A.f&int16_t(0xFF),(A.f>>8)&int16_t(0xFF))/255;
-    vec4 tintB = vec4(B.e&int16_t(0xFF),(B.e>>8)&int16_t(0xFF),B.f&int16_t(0xFF),(B.f>>8)&int16_t(0xFF))/255;
-    tintA *= sampleLight(vec2(int16_t(A.i),int16_t(A.j)));
-    tintA *= tintA.w;
-    tintB *= sampleLight(vec2(int16_t(B.i),int16_t(B.j)));
-    tintB *= tintB.w;
-    vec4 tintAO;
-    vec4 addiAO;
-    vec4 tintBO;
-    vec4 addiBO;
-    computeFog(isSphericalFog, posA+subchunkOffset.xyz, tintA, fogColour, fogStart, fogEnd, tintAO, addiAO);
-    computeFog(isSphericalFog, posB+subchunkOffset.xyz, tintB, fogColour, fogStart, fogEnd, tintBO, addiBO);
-    OUT[(gl_LocalInvocationID.x<<1)|0].tint = tintAO;
-    OUT[(gl_LocalInvocationID.x<<1)|0].addin = addiAO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].tint = tintBO;
-    OUT[(gl_LocalInvocationID.x<<1)|1].addin = addiBO;
-
-    gl_MeshPrimitivesNV[gl_LocalInvocationID.x].gl_PrimitiveID = int(gl_GlobalInvocationID.x>>1);
+void emitQuadIndicies() {
+    uint primBase = gl_LocalInvocationID.x * 6;
+    uint vertexBase = gl_LocalInvocationID.x<<2;
+    gl_PrimitiveIndicesNV[primBase+0] = vertexBase+0;
+    gl_PrimitiveIndicesNV[primBase+1] = vertexBase+1;
+    gl_PrimitiveIndicesNV[primBase+2] = vertexBase+2;
+    gl_PrimitiveIndicesNV[primBase+3] = vertexBase+2;
+    gl_PrimitiveIndicesNV[primBase+4] = vertexBase+3;
+    gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
 }
 
+void emitVertex(uint vertexBaseId, uint innerId) {
+    Vertex V = terrainData[vertexBaseId + innerId];
+    uint outId = (gl_LocalInvocationID.x<<2)+innerId;
+
+    vec3 pos = decodeVertexPosition(V)+origin;
+    gl_MeshVerticesNV[outId].gl_Position = MVP*vec4(pos,1.0);
+
+    //TODO: make this shared state between all the vertices?
+    float mippingBias = decodeVertexMippingBias(V);
+    float alphaCutoff = decodeVertexAlphaCutoff(V);
+
+    OUT[outId].uv_bias_cutoff = f16vec4(vec4(decodeVertexUV(V), mippingBias, alphaCutoff));
+
+    vec4 tint = decodeVertexColour(V);
+    tint *= sampleLight(decodeLightUV(V));
+    tint *= tint.w;
+
+    vec3 tintO;
+    vec3 addiO;
+    computeFog(isCylindricalFog, pos+subchunkOffset.xyz, tint, fogColour, fogStart, fogEnd, tintO, addiO);
+    OUT[outId].tint = f16vec3(tintO);
+    OUT[outId].addin = f16vec3(addiO);
+}
 
 
 //Do a binary search via global invocation index to determine the base offset
 // Note, all threads in the work group are probably going to take the same path
 uint getOffset() {
-    uint gii = gl_GlobalInvocationID.x>>1;
+    uint gii = gl_GlobalInvocationID.x;
 
     //TODO: replace this with binary search
     if (gii < binIa.x) {
@@ -126,8 +115,11 @@ void main() {
     if (id == uint(-1)) {
         return;
     }
-
-    processVertPair(((id << 1) | (gl_LocalInvocationID.x&1)) << 1);
+    emitQuadIndicies();
+    emitVertex(id<<2, 0);
+    emitVertex(id<<2, 1);
+    emitVertex(id<<2, 2);
+    emitVertex(id<<2, 3);
 
     if (gl_LocalInvocationID.x == 0) {
         //Remaining quads in workgroup

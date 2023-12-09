@@ -11,9 +11,18 @@ targetCompatibility = JavaVersion.VERSION_17
 
 apply plugin: "fabric-loom"
 
+loom {
+    mixin.defaultRefmapName = "nvidium.refmap.json"
+    runs {
+        it.configureEach {
+            vmArgs("-Xmx8G", "-XX:+UseZGC")
+        }
+    }
+}
+
 processResources {
     inputs.property "version", project.version
-
+    archivesBaseName = "nvidium"
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }
@@ -39,18 +48,19 @@ dependencies {
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+    // Fabric API
     modImplementation(fabricApi.module("fabric-api-base", project.fabric_version))
+    modImplementation(fabricApi.module("fabric-block-view-api-v2", project.fabric_version))
     modImplementation(fabricApi.module("fabric-rendering-fluids-v1", project.fabric_version))
-    modImplementation(fabricApi.module("fabric-rendering-data-attachment-v1", project.fabric_version))
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
-    //modImplementation("net.fabricmc.fabric-api:fabric-api:${project.fabric_version}")
 
-    modImplementation "maven.modrinth:sodium:mc1.20-0.4.10"
-    //modImplementation files(file("sodium-fabric-mc1.19.3-0.4.10+rev.916f46d-dirty.jar"))
+    modImplementation("net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.40+73761d2e3b")
+    modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
+
+    modImplementation "maven.modrinth:sodium:mc1.20.3-0.5.4"
 
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
-    modCompileOnly "maven.modrinth:iris:1.6.4+1.20"
+    modCompileOnly "maven.modrinth:iris:1.6.12+1.20.3"
 }
 

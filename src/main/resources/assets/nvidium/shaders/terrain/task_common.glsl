@@ -1,3 +1,5 @@
+#define MESH_WORKLOAD_PER_INVOCATION 16
+
 taskNV out Task {
     vec3 origin;
     uint baseOffset;
@@ -9,6 +11,7 @@ taskNV out Task {
     uvec4 binVa;
     uvec4 binVb;
 };
+
 void putBinData(inout uint idx, inout uint lastIndex, uint offset, uint nextOffset) {
     uint len = nextOffset - offset;
     uint id = idx++;
@@ -32,29 +35,39 @@ void populateTasks(ivec3 relChunkPos, uvec4 ranges) {
     binIa = uvec4(0);
     binIb = uvec4(0);
 
-    if (relChunkPos.y <= 0) {
-        putBinData(idx, lastIndex, 0, ranges.x&0xFFFF);
-    }
-    if (relChunkPos.y >= 0) {
-        putBinData(idx, lastIndex, ranges.x&0xFFFF, (ranges.x>>16)&0xFFFF);
-    }
+    uint fr = (ranges.w>>16)&0xFFFF;
 
     if (relChunkPos.x <= 0) {
-        putBinData(idx, lastIndex, (ranges.x>>16)&0xFFFF, ranges.y&0xFFFF);
+        putBinData(idx, lastIndex, fr, fr + (ranges.x&0xFFFF));
     }
-    if (relChunkPos.x >= 0) {
-        putBinData(idx, lastIndex, ranges.y&0xFFFF, (ranges.y>>16)&0xFFFF);
+    fr += ranges.x&0xFFFF;
+
+    if (relChunkPos.y <= 0) {
+        putBinData(idx, lastIndex, fr, fr + ((ranges.x>>16)&0xFFFF));
     }
+    fr += (ranges.x>>16)&0xFFFF;
 
     if (relChunkPos.z <= 0) {
-        putBinData(idx, lastIndex, (ranges.y>>16)&0xFFFF, ranges.z&0xFFFF);
+        putBinData(idx, lastIndex, fr, fr + (ranges.y&0xFFFF));
     }
+    fr += ranges.y&0xFFFF;
+
+    if (relChunkPos.x >= 0) {
+        putBinData(idx, lastIndex, fr, fr + ((ranges.y>>16)&0xFFFF));
+    }
+    fr += (ranges.y>>16)&0xFFFF;
+
+    if (relChunkPos.y >= 0) {
+        putBinData(idx, lastIndex, fr, fr + (ranges.z&0xFFFF));
+    }
+    fr += ranges.z&0xFFFF;
     if (relChunkPos.z >= 0) {
-        putBinData(idx, lastIndex, ranges.z&0xFFFF, (ranges.z>>16)&0xFFFF);
+        putBinData(idx, lastIndex, fr, fr + ((ranges.z>>16)&0xFFFF));
     }
+    fr += (ranges.z>>16)&0xFFFF;
 
     //TODO: Put unsigned quads at the begining? since it should be cheaper
-    putBinData(idx, lastIndex, (ranges.z>>16)&0xFFFF, ranges.w&0xFFFF);
+    putBinData(idx, lastIndex, fr, fr + (ranges.w&0xFFFF));
 
 
 

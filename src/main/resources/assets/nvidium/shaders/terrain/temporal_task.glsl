@@ -13,7 +13,6 @@
 
 #import <nvidium:occlusion/scene.glsl>
 
-#define MESH_WORKLOAD_PER_INVOCATION 16
 
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
 layout(local_size_x=1) in;
@@ -39,11 +38,17 @@ void main() {
 
     ivec4 header = sectionData[sectionId].header;
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
     chunk -= chunkPosition.xyz;
 
     origin = vec3(chunk<<4);
     baseOffset = (uint)header.w;
 
     populateTasks(chunk, (uvec4)sectionData[sectionId].renderRanges);
+
+    #ifdef STATISTICS_QUADS
+    atomicAdd(statistics_buffer+2, quadCount);
+    #endif
 }

@@ -20,7 +20,6 @@ layout(triangles, max_vertices=8, max_primitives=12) out;
 taskNV in Task {
     uint32_t _visOutBase;//Base output visibility index
     uint32_t _offset;
-    uint8_t _count;
 };
 
 const uint PILUTA[] = {0, 3, 6, 0, 1, 7, 4, 5};
@@ -42,6 +41,7 @@ void emitParital(int visIndex) {
     gl_MeshPrimitivesNV[gl_LocalInvocationID.x+8].gl_PrimitiveID = visIndex;
 }
 
+//TODO: Check if the section can be culled via fog
 void main() {
     int visibilityIndex = (int)(_visOutBase|gl_WorkGroupID.x);
 
@@ -49,13 +49,30 @@ void main() {
     // this is almost 100% guarenteed not needed afaik
     //barrier();
 
-    uvec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
+    ivec4 header = sectionData[_offset|gl_WorkGroupID.x].header;
+    //If the section header was empty or the hide section bit is set, return
+
+    //NOTE: technically this has the infinitly small probability of not rendering a block if the block is located at
+    // 0,0,0 the only block in the chunk and the first thing in the buffer
+    // to fix, also check that the ranges are null
+    if (sectionEmpty(header) || (header.y&(1<<17)) != 0) {
+        if (gl_LocalInvocationID.x == 0) {
+            sectionVisibility[visibilityIndex] = uint8_t(0);
+            gl_PrimitiveCountNV = 0;
+        }
+        return;
+    }
+
     vec3 mins = (header.xyz&0xF)-ADD_SIZE;
     vec3 maxs = mins+((header.xyz>>4)&0xF)+1+(ADD_SIZE*2);
     ivec3 chunk = ivec3(header.xyz)>>8;
-    chunk.y >>= 16;
+    chunk.y &= 0x1ff;
+    chunk.y <<= 32-9;
+    chunk.y >>= 32-9;
+
     ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
     vec3 corner = vec3(relativeChunkPos<<4);
+    vec3 cornerCopy = corner;
 
     //TODO: try mix instead or something other than just ternaries, i think they get compiled to a cmov type instruction but not sure
     corner += vec3(((gl_LocalInvocationID.x&1)==0)?mins.x:maxs.x, ((gl_LocalInvocationID.x&4)==0)?mins.y:maxs.y, ((gl_LocalInvocationID.x&2)==0)?mins.z:maxs.z);
@@ -68,9 +85,15 @@ void main() {
         emitParital(prim_payload);
     }
     if (gl_LocalInvocationID.x == 0) {
-        //Shift and set, this gives us a bonus of having the last 8 frames as visibility history
-        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1);
+        cornerCopy += subchunkOffset.xyz;
+        vec3 minPos = mins + cornerCopy;
+        vec3 maxPos = maxs + cornerCopy;
+        bool isInSection = all(lessThan(minPos, vec3(ADD_SIZE))) && all(lessThan(vec3(-ADD_SIZE), maxPos));
 
-        gl_PrimitiveCountNV = 16;
+        //Shift and set, this gives us a bonus of having the last 8 frames as visibility history
+        sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(isInSection?1:0);//Inject visibility aswell
+        //sectionVisibility[visibilityIndex] = uint8_t(lastData<<1) | uint8_t(0);
+
+        gl_PrimitiveCountNV = 12;
     }
 }

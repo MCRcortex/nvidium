@@ -4,6 +4,7 @@ import me.cortex.nvidium.gl.buffers.*;
 
 import static org.lwjgl.opengl.ARBDirectStateAccess.glCopyNamedBufferSubData;
 import static org.lwjgl.opengl.ARBDirectStateAccess.glFlushMappedNamedBufferRange;
+import static org.lwjgl.opengl.GL15C.glIsBuffer;
 import static org.lwjgl.opengl.GL42C.glMemoryBarrier;
 
 public class RenderDevice {

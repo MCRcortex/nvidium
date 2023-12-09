@@ -1,0 +1,111 @@
+#version 460 core
+#extension GL_NV_gpu_shader5 : require
+#define SORTING_NETWORK_SIZE 256
+layout(local_size_x = (SORTING_NETWORK_SIZE>>1), local_size_y = 1 , local_size_z = 1) in;
+
+#import <nvidium:occlusion/scene.glsl>
+#import <nvidium:sorting/sorting_network.glsl>
+
+
+
+void populateSection(uint regionId, uint8_t sectionId) {
+    ivec4 sectionHeader = sectionData[(regionId<<8)|uint(sectionId)].header;
+    if (sectionEmpty(sectionHeader)) {
+        //The section doesnt exist so nuke it from existance
+        putSortingData(sectionId, -999999999f);
+    } else {
+        ivec3 chunk = ivec3(sectionHeader.xyz)>>8;
+        chunk.y &= 0x1ff;
+        chunk.y <<= 32-9;
+        chunk.y >>= 32-9;
+        chunk -= chunkPosition.xyz;
+        putSortingData(sectionId, abs(chunk.x) + abs(chunk.y) + abs(chunk.z));
+    }
+}
+
+uint regionId = 0;
+
+//Note: dont actually need to access the region header since everything is in the section header
+bool populate() {
+    regionId = sortingRegionList[gl_WorkGroupID.x];
+
+    //TODO: FIXME: the reason this doesnt work is cause the regionId != the location of visibility
+    //if (regionVisibility[regionId] == uint8_t(0)) {
+    //    return true;
+    //}
+    populateSection(regionId, uint8_t(gl_LocalInvocationID.x<<1));
+    populateSection(regionId, uint8_t((gl_LocalInvocationID.x<<1)|1));
+    barrier();
+    memoryBarrierShared();
+    return false;
+}
+
+void updateSection(uint regionId, uint8_t id) {
+    uint8_t from = id;
+    uint8_t too = threadBufferIndex[id];
+    ivec4 header = sectionData[(regionId<<8)|uint(from)].header;
+    header.y &= ~(0xFF<<18);
+    header.y |= int(uint(too))<<18;
+    sectionData[(regionId<<8)|uint(from)].header = header;
+}
+
+void update() {
+    updateSection(regionId, uint8_t(gl_LocalInvocationID.x<<1));
+    updateSection(regionId, uint8_t((gl_LocalInvocationID.x<<1)|1));
+}
+
+
+
+void main() {
+    if (populate()) {
+        return;
+    }
+    //TODO: add early exits for when the section count in a region is < 1<<netnumber
+
+    //Net 0
+    localSortA(0);
+    //Net 1
+    localSortA(1);
+    localSortB(0);
+    //Net 2
+    localSortA(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 3
+    localSortA(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 4
+    localSortA(4);
+    localSortB(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 5
+    localSortA(5);
+    localSortB(4);
+    localSortB(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 6
+    localSortA(6);
+    localSortB(5);
+    localSortB(4);
+    localSortB(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+    //Net 7
+    localSortA(7);
+    localSortB(6);
+    localSortB(5);
+    localSortB(4);
+    localSortB(3);
+    localSortB(2);
+    localSortB(1);
+    localSortB(0);
+
+    update();
+}

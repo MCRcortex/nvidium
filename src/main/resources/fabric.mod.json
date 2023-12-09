@@ -3,12 +3,12 @@
   "id": "nvidium",
   "version": "${version}",
   "name": "Nvidium",
-  "description": "",
+  "description": "Replacement rendering engine for sodium",
   "authors": [
     "Cortex"
   ],
   "contact": {},
-  "license": "ARR",
+  "license": "LGPL-3.0",
   "icon": "assets/nvidium/nvidium.png",
   "environment": "client",
   "entrypoints": {},
@@ -17,6 +17,6 @@
   ],
   "depends": {
     "fabricloader": ">=0.14",
-    "sodium": "=0.4.10"
+    "sodium": "=0.5.4"
   }
 }

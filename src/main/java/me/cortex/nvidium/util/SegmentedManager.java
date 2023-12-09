@@ -13,6 +13,8 @@ import java.util.Random;
 //TODO: replace the LongAVLTreeSet with a custom implementation that doesnt cause allocations when searching
 // and see if something like a RBTree is any better
 public class SegmentedManager {
+    public static final long SIZE_LIMIT = -1;
+
     private final int ADDR_BITS = 34;//This gives max size per allocation of 2^30 and max address of 2^39
     private final int SIZE_BITS = 64 - ADDR_BITS;
     private final long SIZE_MSK = (1L<<SIZE_BITS)-1;
@@ -41,8 +43,9 @@ public class SegmentedManager {
             //Create new allocation
             resized = true;
             long addr = totalSize;
-            if (totalSize+size>sizeLimit)
-                throw new IllegalStateException("More memory than limit allows was attempted to be allocated");
+            if (totalSize+size>sizeLimit) {
+                return SIZE_LIMIT;
+            }
             totalSize += size;
             TAKEN.add((addr<<SIZE_BITS)|((long) size));
             return addr;
@@ -121,7 +124,6 @@ public class SegmentedManager {
         addr &= ADDR_MSK;//encase addr stores shit in its upper bits
         var iter = TAKEN.iterator(addr<<SIZE_BITS);
         if (!iter.hasNext()) {
-            System.out.println("WAA");
             return false;
         }
         long slot = iter.nextLong();

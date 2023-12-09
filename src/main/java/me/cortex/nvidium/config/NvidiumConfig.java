@@ -1,9 +1,8 @@
-package me.cortex.nvidium.sodiumCompat;
+package me.cortex.nvidium.config;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.annotations.Expose;
 import me.cortex.nvidium.Nvidium;
 import net.fabricmc.loader.api.FabricLoader;
 
@@ -20,10 +19,13 @@ public class NvidiumConfig {
     public int max_geometry_memory = 2048;
     public boolean automatic_memory = true;
 
+    public boolean async_bfs = true;
+
     public int region_keep_distance = 32;
 
-    @Expose(serialize = false, deserialize = false)
-    public transient boolean disable_graph_update = false;
+    public TranslucencySortingLevel translucency_sorting_level = TranslucencySortingLevel.QUADS;
+
+    public StatisticsLoggingLevel statistics_level = StatisticsLoggingLevel.NONE;
 
 
     private static final Gson GSON = new GsonBuilder()
