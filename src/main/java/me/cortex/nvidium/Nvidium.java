@@ -8,8 +8,6 @@ import org.lwjgl.opengl.GL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-//NOTE: with sodium async bfs, just reimplement the bfs dont try to convert sodiums bfs into async
 public class Nvidium {
     public static final String MOD_VERSION;
     public static final Logger LOGGER = LoggerFactory.getLogger("Nvidium");

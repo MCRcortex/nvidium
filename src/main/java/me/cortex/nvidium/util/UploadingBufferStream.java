@@ -49,6 +49,7 @@ public class UploadingBufferStream {
         long addr;
         if (this.caddr == -1 || !this.allocationArena.expand(this.caddr, (int) size)) {
             this.caddr = this.allocationArena.alloc((int) size);//TODO: replace with allocFromLargest
+            //If the upload stream is full, flush it and empty it
             if (this.caddr == SIZE_LIMIT) {
                 this.commit();
                 int attempts = 10;
