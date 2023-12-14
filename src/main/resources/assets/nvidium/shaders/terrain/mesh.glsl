@@ -17,19 +17,14 @@
 
 
 //It seems like for terrain at least, the sweat spot is ~16 quads per mesh invocation (even if the local size is not 32 )
-layout(local_size_x = 32) in;
+layout(local_size_x = 16) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
 layout(location=1) out Interpolants {
-    f16vec2 uv;
+    f16vec4 uv_bias_cutoff;
     f16vec3 tint;
     f16vec3 addin;
 } OUT[];
-
-layout(location=5) perprimitiveNV out PerPrimData {
-    int8_t lodBias;
-    uint8_t alphaCutoff;
-} per_prim_out[];
 
 taskNV in Task {
     vec3 origin;
@@ -50,17 +45,21 @@ vec4 sampleLight(uvec2 uv) {
 }
 
 
-void emitQuadIndicies(uint outVertexBase, uint sideOffset) {
-    uint primBase = gl_LocalInvocationID.x * 3;
-    gl_PrimitiveIndicesNV[primBase + 0] = outVertexBase + ((0 + sideOffset) & 3);
-    gl_PrimitiveIndicesNV[primBase + 1] = outVertexBase + ((1 + sideOffset) & 3);
-    gl_PrimitiveIndicesNV[primBase + 2] = outVertexBase + ((2 + sideOffset) & 3);
+void emitQuadIndicies() {
+    uint primBase = gl_LocalInvocationID.x * 6;
+    uint vertexBase = gl_LocalInvocationID.x<<2;
+    gl_PrimitiveIndicesNV[primBase+0] = vertexBase+0;
+    gl_PrimitiveIndicesNV[primBase+1] = vertexBase+1;
+    gl_PrimitiveIndicesNV[primBase+2] = vertexBase+2;
+    gl_PrimitiveIndicesNV[primBase+3] = vertexBase+2;
+    gl_PrimitiveIndicesNV[primBase+4] = vertexBase+3;
+    gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
 }
 
-void emitVertex(uint quadVertexBase, uint outVertexBase, uint innerId) {
-    Vertex V = terrainData[quadVertexBase + innerId];
+void emitVertex(uint vertexBaseId, uint innerId) {
+    Vertex V = terrainData[vertexBaseId + innerId];
+    uint outId = (gl_LocalInvocationID.x<<2)+innerId;
 
-    uint outId = outVertexBase + innerId;
     vec3 pos = decodeVertexPosition(V)+origin;
     gl_MeshVerticesNV[outId].gl_Position = MVP*vec4(pos,1.0);
 
@@ -68,7 +67,7 @@ void emitVertex(uint quadVertexBase, uint outVertexBase, uint innerId) {
     float mippingBias = decodeVertexMippingBias(V);
     float alphaCutoff = decodeVertexAlphaCutoff(V);
 
-    OUT[outId].uv = f16vec2(decodeVertexUV(V));
+    OUT[outId].uv_bias_cutoff = f16vec4(vec4(decodeVertexUV(V), mippingBias, alphaCutoff));
 
     vec4 tint = decodeVertexColour(V);
     tint *= sampleLight(decodeLightUV(V));
@@ -81,19 +80,11 @@ void emitVertex(uint quadVertexBase, uint outVertexBase, uint innerId) {
     OUT[outId].addin = f16vec3(addiO);
 }
 
-void emitPerPrimativeData(uint vertexBaseId) {
-    Vertex V = terrainData[vertexBaseId];
-    int8_t lodBias = int8_t(clamp(decodeVertexMippingBias(V) * 16, -128, 127));
-    uint8_t alphaCutoff = uint8_t(decodeVertexAlphaCutoff(V) * 255);
-    per_prim_out[gl_LocalInvocationID.x].lodBias = lodBias;
-    per_prim_out[gl_LocalInvocationID.x].alphaCutoff = alphaCutoff;
-}
-
 
 //Do a binary search via global invocation index to determine the base offset
 // Note, all threads in the work group are probably going to take the same path
 uint getOffset() {
-    uint gii = gl_GlobalInvocationID.x >> 1;
+    uint gii = gl_GlobalInvocationID.x;
 
     //TODO: replace this with binary search
     if (gii < binIa.x) {
@@ -124,13 +115,11 @@ void main() {
     if (id == uint(-1)) {
         return;
     }
-    uint quadVertexBase = id << 2;
-    uint outVertexBase = (gl_LocalInvocationID.x & uint(-2)) << 1;
-    uint sideOffset = (gl_LocalInvocationID.x & 1) * 2;
-    emitQuadIndicies(outVertexBase, sideOffset);
-    emitVertex(quadVertexBase, outVertexBase, sideOffset);
-    emitVertex(quadVertexBase, outVertexBase, sideOffset + 1);
-    emitPerPrimativeData(quadVertexBase);
+    emitQuadIndicies();
+    emitVertex(id<<2, 0);
+    emitVertex(id<<2, 1);
+    emitVertex(id<<2, 2);
+    emitVertex(id<<2, 3);
 
     if (gl_LocalInvocationID.x == 0) {
         //Remaining quads in workgroup
