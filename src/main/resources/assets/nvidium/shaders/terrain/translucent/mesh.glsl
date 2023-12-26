@@ -89,14 +89,23 @@ void swapQuads(uint idxA, uint idxB) {
     Vertex A1 = terrainData[(idxA<<2)+1];
     Vertex A2 = terrainData[(idxA<<2)+2];
     Vertex A3 = terrainData[(idxA<<2)+3];
+    groupMemoryBarrier();
+    memoryBarrier();
+    barrier();
     terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
     terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
     terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
     terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
+    groupMemoryBarrier();
+    memoryBarrier();
+    barrier();
     terrainData[(idxB<<2)+0] = A0;
     terrainData[(idxB<<2)+1] = A1;
     terrainData[(idxB<<2)+2] = A2;
     terrainData[(idxB<<2)+3] = A3;
+    groupMemoryBarrier();
+    memoryBarrier();
+    barrier();
 }
 
 void performTranslucencySort() {
@@ -165,6 +174,7 @@ void main() {
         emitVertex(id, 3);
     }
     barrier();
+    memoryBarrierShared();
 
     performTranslucencySort();
     int meta = 2;

@@ -320,7 +320,7 @@ public class RenderPipeline {
 
 
         if (regionSortSize != 0) {
-            glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
+            glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
             regionSectionSorter.dispatch(regionSortSize);
             glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         }

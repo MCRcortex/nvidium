@@ -211,4 +211,12 @@ public class AsyncOcclusionTracker {
     public long getIterationTime() {
         return this.iterationTimeMillis;
     }
+
+    public int[] getBuildQueueSizes() {
+        var ret = new int[this.outputRebuildQueue.size()];
+        for (var type : ChunkUpdateType.values()) {
+            ret[type.ordinal()] = this.outputRebuildQueue.get(type).size();
+        }
+        return ret;
+    }
 }

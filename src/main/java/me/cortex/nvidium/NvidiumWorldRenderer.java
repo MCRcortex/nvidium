@@ -16,6 +16,7 @@ import net.minecraft.client.texture.Sprite;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.glGetInteger;
@@ -107,6 +108,7 @@ public class NvidiumWorldRenderer {
         debugInfo.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
         if (asyncChunkTracker != null) {
             debugInfo.add("Async BFS iteration time: " + asyncChunkTracker.getIterationTime());
+            debugInfo.add("Build queue sizes: " + Arrays.toString(this.asyncChunkTracker.getBuildQueueSizes()));
         }
         renderPipeline.addDebugInfo(debugInfo);
     }

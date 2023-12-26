@@ -46,8 +46,9 @@ public class SodiumResultCompatibility {
             size.y = Math.min(15, Math.max(size.y, 0));
             size.z = Math.min(15, Math.max(size.z, 0));
         }
-
-        return new RepackagedSectionOutput((geometryBytes/formatSize)/4, output, offsets, min, size);
+        var repackagedGeometry = new RepackagedSectionOutput((geometryBytes/formatSize)/4, output, offsets, min, size);
+        //NvidiumGeometryReencoder.transpileGeometry(repackagedGeometry);
+        return repackagedGeometry;
     }
 
 
