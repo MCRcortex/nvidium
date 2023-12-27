@@ -89,28 +89,28 @@ void swapQuads(uint idxA, uint idxB) {
     Vertex A1 = terrainData[(idxA<<2)+1];
     Vertex A2 = terrainData[(idxA<<2)+2];
     Vertex A3 = terrainData[(idxA<<2)+3];
-    groupMemoryBarrier();
-    memoryBarrier();
-    barrier();
-    terrainData[(idxA<<2)+0] = terrainData[(idxB<<2)+0];
-    terrainData[(idxA<<2)+1] = terrainData[(idxB<<2)+1];
-    terrainData[(idxA<<2)+2] = terrainData[(idxB<<2)+2];
-    terrainData[(idxA<<2)+3] = terrainData[(idxB<<2)+3];
-    groupMemoryBarrier();
-    memoryBarrier();
-    barrier();
+    Vertex B0 = terrainData[(idxB<<2)+0];
+    Vertex B1 = terrainData[(idxB<<2)+1];
+    Vertex B2 = terrainData[(idxB<<2)+2];
+    Vertex B3 = terrainData[(idxB<<2)+3];
+    //groupMemoryBarrier();
+    //memoryBarrier();
+    //barrier();
+    terrainData[(idxA<<2)+0] = B0;
+    terrainData[(idxA<<2)+1] = B1;
+    terrainData[(idxA<<2)+2] = B2;
+    terrainData[(idxA<<2)+3] = B3;
     terrainData[(idxB<<2)+0] = A0;
     terrainData[(idxB<<2)+1] = A1;
     terrainData[(idxB<<2)+2] = A2;
     terrainData[(idxB<<2)+3] = A3;
-    groupMemoryBarrier();
-    memoryBarrier();
-    barrier();
+    //groupMemoryBarrier();
+    //memoryBarrier();
+    //barrier();
 }
 
 void performTranslucencySort() {
-    uint basePtr = floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5) - uint(jiggle);
-
+    uint baseQuadPtr = floatBitsToUint(originAndBaseData.w) + (gl_WorkGroupID.x<<5);
 
     float depth = dot(depthPos, depthPos) * ((1/4f)*(1/4f));
     depthBuffers[gl_LocalInvocationID.x] = depth;
@@ -120,8 +120,9 @@ void performTranslucencySort() {
         depthBuffers[gl_LocalInvocationID.x] = -9999f;
     }
 
+    groupMemoryBarrier();
+    memoryBarrier();
     barrier();
-    memoryBarrierShared();
     //TODO: use subgroup ballot to check if all the quads are already sorted, if they are dont perform sort op
 
     //Only use 16 threads to sort all 32 data
@@ -132,7 +133,7 @@ void performTranslucencySort() {
         float b = depthBuffers[idB];
 
         if (a > 0.0001f &&  b > 0.0001f && a < b) {
-            swapQuads(idA + basePtr, idB + basePtr);
+            swapQuads(idA + baseQuadPtr, idB + baseQuadPtr);
         }
     }
 }
@@ -146,21 +147,14 @@ void main() {
     if ((gl_GlobalInvocationID.x)>=quadCount) { //If its over the quad count, dont render
         return;
     }
-    //TODO:FIXME: the jiggling needs to be accounted for when emitting quads since otherwise it renders garbage data
 
     emitQuadIndicies();
 
-    uint offsetFromBase = gl_GlobalInvocationID.x;
-
-    #ifdef TRANSLUCENCY_SORTING_QUADS
-    offsetFromBase -= uint(jiggle);
-    #endif
-
     //Each pair of meshlet invokations emits 4 vertices each and 2 primative each
-    uint id = (floatBitsToUint(originAndBaseData.w) + offsetFromBase)<<2;
+    uint id = (floatBitsToUint(originAndBaseData.w) + gl_GlobalInvocationID.x)<<2;
 
     #ifdef TRANSLUCENCY_SORTING_QUADS
-    //TODO: fixme: make faster and less hacky and not just do this
+    //If we are at the start, dont want to render as it contains garbled data (out of bounds)
     if (gl_GlobalInvocationID.x < jiggle) {
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+0].gl_Position = vec4(1,1,1,-1);
         gl_MeshVerticesNV[(gl_LocalInvocationID.x<<2)+1].gl_Position = vec4(1,1,1,-1);

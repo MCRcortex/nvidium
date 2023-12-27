@@ -62,11 +62,13 @@ void main() {
 
 
     quadCount = ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF);
-    originAndBaseData.w = uintBitsToFloat(baseDataOffset);
     #ifdef TRANSLUCENCY_SORTING_QUADS
     jiggle = uint8_t(min(quadCount>>1,(uint(frameId)&1)));//Jiggle by 1 quads (either 0 or 1)//*15
     //jiggle = uint8_t(0);
     quadCount += jiggle;
+    originAndBaseData.w = uintBitsToFloat(baseDataOffset - uint(jiggle));
+    #else
+    originAndBaseData.w = uintBitsToFloat(baseDataOffset);
     #endif
 
     //Emit enough mesh shaders such that max(gl_GlobalInvocationID.x)>=quadCount
