@@ -20,7 +20,8 @@
     "sodium.MixinSodiumOptionsGUI",
     "sodium.MixinSodiumWorldRenderer",
     "sodium.MixinViewport",
-    "sodium.SodiumWorldRendererAccessor"
+    "sodium.SodiumWorldRendererAccessor",
+    "sodium.CompactChunkVertexAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
