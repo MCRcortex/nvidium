@@ -21,10 +21,15 @@ layout(local_size_x = 16) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
 layout(location=1) out Interpolants {
-    f16vec4 uv_bias_cutoff;
+    f16vec2 uv;
     f16vec3 tint;
     f16vec3 addin;
 } OUT[];
+
+layout(location=5) perprimitiveNV out PerPrimData {
+    int8_t lodBias;
+    uint8_t alphaCutoff;
+} per_prim_out[];
 
 taskNV in Task {
     vec3 origin;
@@ -56,7 +61,7 @@ void emitQuadIndicies() {
     gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
 }
 
-void emitVertex(uint vertexBaseId, uint innerId) {
+Vertex emitVertex(uint vertexBaseId, uint innerId) {
     Vertex V = terrainData[vertexBaseId + innerId];
     uint outId = (gl_LocalInvocationID.x<<2)+innerId;
 
@@ -67,7 +72,7 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     float mippingBias = decodeVertexMippingBias(V);
     float alphaCutoff = decodeVertexAlphaCutoff(V);
 
-    OUT[outId].uv_bias_cutoff = f16vec4(vec4(decodeVertexUV(V), mippingBias, alphaCutoff));
+    OUT[outId].uv = f16vec2(decodeVertexUV(V));
 
     vec4 tint = decodeVertexColour(V);
     tint *= sampleLight(decodeLightUV(V));
@@ -78,8 +83,18 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     computeFog(isCylindricalFog, pos+subchunkOffset.xyz, tint, fogColour, fogStart, fogEnd, tintO, addiO);
     OUT[outId].tint = f16vec3(tintO);
     OUT[outId].addin = f16vec3(addiO);
+
+    return V;
 }
 
+void emitPerPrimativeData(Vertex V) {
+    int8_t lodBias = int8_t(clamp(decodeVertexMippingBias(V) * 16, -128, 127));
+    uint8_t alphaCutoff = uint8_t(decodeVertexAlphaCutoff(V) * 255);
+    per_prim_out[gl_LocalInvocationID.x<<1].lodBias = lodBias;
+    per_prim_out[(gl_LocalInvocationID.x<<1)|1].lodBias = lodBias;
+    per_prim_out[gl_LocalInvocationID.x<<1].alphaCutoff = alphaCutoff;
+    per_prim_out[(gl_LocalInvocationID.x<<1)|1].alphaCutoff = alphaCutoff;
+}
 
 //Do a binary search via global invocation index to determine the base offset
 // Note, all threads in the work group are probably going to take the same path
@@ -116,7 +131,7 @@ void main() {
         return;
     }
     emitQuadIndicies();
-    emitVertex(id<<2, 0);
+    emitPerPrimativeData(emitVertex(id<<2, 0));
     emitVertex(id<<2, 1);
     emitVertex(id<<2, 2);
     emitVertex(id<<2, 3);
