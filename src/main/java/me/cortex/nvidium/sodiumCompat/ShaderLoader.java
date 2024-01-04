@@ -3,6 +3,7 @@ package me.cortex.nvidium.sodiumCompat;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
+import me.cortex.nvidium.mixin.sodium.CompactChunkVertexAccessor;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
 import net.minecraft.util.Identifier;
@@ -22,6 +23,8 @@ public class ShaderLoader {
         for (int i = 1; i <= Nvidium.config.translucency_sorting_level.ordinal(); i++) {
             builder.add("TRANSLUCENCY_SORTING_"+TranslucencySortingLevel.values()[i].name());
         }
+
+        builder.add("TEXTURE_MAX_SCALE", String.valueOf(CompactChunkVertexAccessor.getTEXTURE_MAX_VALUE()));
 
         return ShaderParser.parseShader("#import <"+path.getNamespace()+":"+path.getPath()+">", builder.build());
     }

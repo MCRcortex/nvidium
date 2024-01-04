@@ -47,3 +47,7 @@ void putSortingData(SORTING_INDEX_TYPE index, float data) {
     threadBufferIndex[uint(index)] = index;
     threadBufferFloat[uint(index)] = data;
 }
+
+float getSortingData(SORTING_INDEX_TYPE index) {
+    return threadBufferFloat[uint(index)];
+}

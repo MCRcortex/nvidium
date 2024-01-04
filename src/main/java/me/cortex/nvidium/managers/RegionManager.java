@@ -2,6 +2,7 @@ package me.cortex.nvidium.managers;
 
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.sodiumCompat.IViewportTest;
@@ -9,17 +10,15 @@ import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.util.math.Vec3d;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.function.Consumer;
 
 //8x4x8
 public class RegionManager {
-    private static final boolean SAFETY_CHECKS = true;
+    private static final boolean SAFETY_CHECKS = Nvidium.IS_DEBUG;
     public static final int META_SIZE = 16;
 
     private static final int TOTAL_SECTION_META_SIZE = SectionManager.SECTION_SIZE * 256;
@@ -99,10 +98,10 @@ public class RegionManager {
         int maxZ = Integer.MIN_VALUE;
         int lastIdx = 0;
         for (int i = 0; i < 256; i++) {
-            if (region.freeIndices.get(i)) continue;//Skip over non set indicies
-            int x = region.id2pos[i]&7;
-            int y = region.id2pos[i]>>>6;
-            int z = (region.id2pos[i]>>>3)&7;
+            if (region.pos2id[i] == -1) continue;//Skip over empty sections
+            int x = i&7;
+            int y = i>>>6;
+            int z = (i>>>3)&7;
             minX = Math.min(minX, x);
             minY = Math.min(minY, y);
             minZ = Math.min(minZ, z);
@@ -122,24 +121,25 @@ public class RegionManager {
         MemoryUtil.memPutLong(upload+8, z);
     }
 
+    public int getSectionRefId(int section) {
+        var region = this.regions[section >>> 8];
+        int id = region.pos2id[section&0xFF];
+        if (id<0 || id>=256) {
+            throw new IllegalStateException();
+        }
+        return id;
+    }
+
     //Returns a pointer to where the section data can be read or updated
     // it has a lifetime of until any other function call to this class instance
     // will mark the region as dirty and needing an update
     public long setSectionData(int sectionId) {
         var region = this.regions[sectionId >>> 8];
         sectionId &= 0xFF;
-        if (region == null) {
-            throw new IllegalStateException("Region is null");
+        sectionId = region.pos2id[sectionId];
+        if (sectionId<0 || sectionId>=256) {
+            throw new IllegalStateException();
         }
-
-        if (SAFETY_CHECKS && ((!this.regionMap.containsKey(region.key)) || this.regionMap.get(region.key) != region.id)) {
-            throw new IllegalStateException("Region verification failed");
-        }
-
-        if (SAFETY_CHECKS && (region.id2pos[sectionId] == -1 || region.freeIndices.get(sectionId))) {
-            throw new IllegalStateException("Section hasnt been allocated");
-        }
-
         this.markDirty(region);
         return region.sectionData + (sectionId * SectionManager.SECTION_SIZE);
     }
@@ -150,21 +150,53 @@ public class RegionManager {
         if (region == null) {
             throw new IllegalStateException("Region is null");
         }
-
-        if (SAFETY_CHECKS && ((!this.regionMap.containsKey(region.key)) || this.regionMap.get(region.key) != region.id)) {
-            throw new IllegalStateException("Region verification failed");
-        }
-
-        if (SAFETY_CHECKS && (region.freeIndices.get(sectionId) || region.id2pos[sectionId] == -1)) {
-            throw new IllegalStateException("Section already freed");
-        }
-
-        region.count--;
-        region.freeIndices.set(sectionId);
-        region.id2pos[sectionId] = -1;
+        int sectionPos = sectionId;
+        sectionId = region.pos2id[sectionId];
 
         //Set the metadata of the section to empty
-        MemoryUtil.memSet(region.sectionData + sectionId * SectionManager.SECTION_SIZE, 0, SectionManager.SECTION_SIZE);
+        MemoryUtil.memSet(region.sectionData + (long) sectionId * SectionManager.SECTION_SIZE, 0, SectionManager.SECTION_SIZE);
+        region.pos2id[sectionPos] = -1;
+        region.id2pos[sectionId] = -1;
+        region.verifyIntegrity();
+
+        //TODO: need to act like a heap and move the last index to the removed index slot so that
+        // we have a contiguous allocation
+
+        int endId = --region.count;
+        //If the endId is not the sectionId we need to move whatever was at the end to the new position
+        if (endId != sectionId) {
+            int oldPos = region.id2pos[endId];
+            if (oldPos == -1) {
+                throw new IllegalStateException();
+            }
+            //Copy the data from the last element to the now vacant slot
+            MemoryUtil.memCopy(region.sectionData + (long) endId * SectionManager.SECTION_SIZE, region.sectionData + (long) sectionId * SectionManager.SECTION_SIZE, SectionManager.SECTION_SIZE);
+            MemoryUtil.memSet(region.sectionData + (long) endId * SectionManager.SECTION_SIZE, 0, SectionManager.SECTION_SIZE);
+
+            if (region.id2pos[endId] == -1 || region.pos2id[oldPos] == -1) {
+                throw new IllegalStateException();
+            }
+
+            region.id2pos[endId] = -1;
+            region.pos2id[oldPos] = -1;
+            region.id2pos[sectionId] = oldPos;
+            region.pos2id[oldPos] = sectionId;
+
+
+            //TODO:FIXME! the issue is that the internal tracking id needs to be updated, that is the id to the section
+            // needs to change
+            // to the region needs to change
+
+            long ptr = region.sectionData + (long) sectionId * SectionManager.SECTION_SIZE + 4;
+            int data = MemoryUtil.memGetInt(ptr);
+            data &= ~(0xFF<<18);
+            data |= sectionId<<18;
+            MemoryUtil.memPutInt(ptr, data);
+
+            region.verifyIntegrity();
+        }
+
+
 
         if (region.count == 0) {
             //Remove the region and mark it as removed
@@ -175,7 +207,9 @@ public class RegionManager {
             this.regionMap.remove(region.key);
         }
 
+
         this.markDirty(region);
+        region.verifyIntegrity();
     }
 
     public int allocateSection(int sectionX, int sectionY, int sectionZ) {
@@ -188,28 +222,20 @@ public class RegionManager {
         }
         var region = this.regions[regionId];
 
-        if (SAFETY_CHECKS && ((!this.regionMap.containsKey(region.key)) || this.regionMap.get(region.key) != region.id)) {
-            throw new IllegalStateException("Region verification failed");
-        }
-
         int sectionKey = ((sectionY & 3) << 6 | sectionX & 7 | (sectionZ & 7) << 3);
-
-        //TODO THIS!
-        //if (SAFETY_CHECKS) {// && region.id2pos[sectionKey] != -1 (this is wrong since it goes from id2pos, need something to go from pos2id)
-        //    throw new IllegalStateException("Section is already allocated");
-        //}
-
-        //Find and allocate a new minimum index to the region
-        int sectionId = region.freeIndices.nextSetBit(0);
-        if (SAFETY_CHECKS && sectionId == -1) {
-            throw new IllegalStateException("No free indices, this should not be possible");
+        int sectionId = region.count++;
+        if (region.pos2id[sectionKey] != -1 || region.id2pos[sectionId] != -1) {
+            throw new IllegalStateException("Section id not free!");
         }
-        region.freeIndices.clear(sectionId);
+
+        region.pos2id[sectionKey] = sectionId;
         region.id2pos[sectionId] = sectionKey;
-        region.count++;
+
 
         this.markDirty(region);
-        return sectionId | (regionId << 8);
+
+        region.verifyIntegrity();
+        return sectionKey | (regionId << 8);
     }
 
     //Adds the region to the dirty list if it wasnt already in it
@@ -295,8 +321,8 @@ public class RegionManager {
         private final long key;
         private final int id;
 
-        private final BitSet freeIndices = new BitSet(256);
         private int count;
+        private final int[] pos2id = new int[256];//Can be a short in all honesty
         private final int[] id2pos = new int[256];//Can be a short in all honesty
 
         private boolean isDirty;
@@ -307,11 +333,13 @@ public class RegionManager {
         private final long sectionData = MemoryUtil.nmemAlloc(8*4*8*SectionManager.SECTION_SIZE);
 
         private Region(int id, int rx, int ry, int rz) {
+            Arrays.fill(this.pos2id, -1);
             Arrays.fill(this.id2pos, -1);
-            MemoryUtil.memSet(sectionData, 0, 256*SectionManager.SECTION_SIZE);
+
+            MemoryUtil.memSet(sectionData, 0, 256 * SectionManager.SECTION_SIZE);
             this.key = ChunkSectionPos.asLong(rx, ry, rz);
             this.id = id;
-            this.freeIndices.set(0,256);
+
             this.rx = rx;
             this.ry = ry;
             this.rz = rz;
@@ -319,6 +347,18 @@ public class RegionManager {
 
         public void delete() {
             MemoryUtil.nmemFree(this.sectionData);
+        }
+
+        public void verifyIntegrity() {
+            if (!SAFETY_CHECKS) return;
+            for (int i = 0; i < 256; i++) {
+                if (this.id2pos[i] != -1 && this.pos2id[this.id2pos[i]] != i) {
+                    throw new IllegalStateException();
+                }
+                if (this.pos2id[i] != -1 && this.id2pos[this.pos2id[i]] != i) {
+                    throw new IllegalStateException();
+                }
+            }
         }
     }
 

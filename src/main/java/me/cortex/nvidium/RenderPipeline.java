@@ -296,14 +296,6 @@ public class RenderPipeline {
             temporalRasterizer.raster(visibleRegions, terrainCommandBuffer.getDeviceAddress());
         }
 
-        //Download statistics
-        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()){
-            downloadStream.download(statisticsBuffer, 0, 4*4, (addr)-> {
-                stats.regionCount = MemoryUtil.memGetInt(addr);
-                stats.sectionCount = MemoryUtil.memGetInt(addr+4);
-                stats.quadCount = MemoryUtil.memGetInt(addr+8);
-            });
-        }
 
         {//Do proper visibility tracking
             glDepthMask(false);
@@ -335,14 +327,6 @@ public class RenderPipeline {
 
         if ((err = glGetError()) != 0) {
             throw new IllegalStateException("GLERROR: "+err);
-        }
-
-        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
-            //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            //Stupid bloody nvidia not following spec forcing me to use a upload stream
-            long upload = this.uploadStream.upload(statisticsBuffer, 0, 4*4);
-            MemoryUtil.memSet(upload, 0, 4*4);
-            //glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
         }
     }
 
@@ -391,6 +375,27 @@ public class RenderPipeline {
         glDisableClientState(GL_VERTEX_ATTRIB_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_ELEMENT_ARRAY_UNIFIED_NV);
         glDisableClientState(GL_DRAW_INDIRECT_UNIFIED_NV);
+
+
+
+
+        //Download statistics
+        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()){
+            downloadStream.download(statisticsBuffer, 0, 4*4, (addr)-> {
+                stats.regionCount = MemoryUtil.memGetInt(addr);
+                stats.sectionCount = MemoryUtil.memGetInt(addr+4);
+                stats.quadCount = MemoryUtil.memGetInt(addr+8);
+            });
+        }
+
+
+        if (Nvidium.config.statistics_level.ordinal() > StatisticsLoggingLevel.FRUSTUM.ordinal()) {
+            //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            //Stupid bloody nvidia not following spec forcing me to use a upload stream
+            long upload = this.uploadStream.upload(statisticsBuffer, 0, 4*4);
+            MemoryUtil.memSet(upload, 0, 4*4);
+            //glClearNamedBufferSubData(statisticsBuffer.getId(), GL_R32UI, 0, 4 * 4, GL_RED_INTEGER, GL_UNSIGNED_INT, new int[]{0});
+        }
     }
 
     public void delete() {

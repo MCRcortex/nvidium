@@ -38,7 +38,10 @@ void main() {
     //Compute indirection for translucency sorting
     {
         ivec4 header = sectionData[sectionId].header;
-
+        //If the section is empty, we dont care about it at all, so ignore it and return
+        if (sectionEmpty(header)) {
+            return;
+        }
         //Compute the redirected section index
         sectionId &= ~0xFF;
         sectionId |= uint((header.y>>18)&0xFF);
@@ -76,5 +79,9 @@ void main() {
 
     #ifdef STATISTICS_QUADS
     atomicAdd(statistics_buffer+2, quadCount);
+    #endif
+
+    #ifdef STATISTICS_SECTIONS
+    atomicAdd(statistics_buffer+1, 1);
     #endif
 }
