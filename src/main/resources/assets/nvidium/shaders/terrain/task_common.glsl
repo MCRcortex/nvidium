@@ -4,6 +4,7 @@ taskNV out Task {
     vec3 origin;
     uint baseOffset;
     uint quadCount;
+    uint transformationId;
 
     //Binary search indexs and data
     uvec4 binIa;

@@ -20,6 +20,7 @@ taskNV out Task {
     uint32_t _visOutBase;// The base offset for the visibility output of the shader
     uint32_t _offset;//start offset for regions (can/should probably be a uint16 since this is just the region id << 8)
     //uint64_t bitcheck[4];//TODO: MAYBE DO THIS, each bit is whether there a section at that index, doing so is faster than pulling metadata to check if a section is valid or not
+    mat4 regionTransform;
 };
 
 void main() {
@@ -52,6 +53,7 @@ void main() {
     //Write in order
     _visOutBase = offset<<8;//This makes checking visibility very fast and quick in the compute shader
     _offset = offset<<8;
+    regionTransform = getRegionTransformation(data);
 
     gl_TaskCountNV = count;
 

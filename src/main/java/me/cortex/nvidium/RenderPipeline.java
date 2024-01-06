@@ -3,10 +3,12 @@ package me.cortex.nvidium;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.*;
+import me.cortex.nvidium.api0.NvidiumAPI;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
+import me.cortex.nvidium.managers.RegionManager;
 import me.cortex.nvidium.managers.RegionVisibilityTracker;
 import me.cortex.nvidium.managers.SectionManager;
 import me.cortex.nvidium.renderers.*;
@@ -58,7 +60,7 @@ public class RenderPipeline {
     private SortRegionSectionPhase regionSectionSorter;
 
     private final IDeviceMappedBuffer sceneUniform;
-    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*7+3*4+3+4, 2);
+    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*8+3*4+3+4, 2);
 
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
@@ -66,6 +68,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer translucencyCommandBuffer;
     private final IDeviceMappedBuffer regionSortingList;
     private final IDeviceMappedBuffer statisticsBuffer;
+    private final IDeviceMappedBuffer transformationArray;
 
     private final BitSet regionVisibilityTracker;
 
@@ -102,12 +105,35 @@ public class RenderPipeline {
         terrainCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
         translucencyCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
         regionSortingList = device.createDeviceOnlyMappedBuffer(maxRegions*2L);
+        this.transformationArray = device.createDeviceOnlyMappedBuffer(RegionManager.MAX_TRANSFORMATION_COUNT * (4*4*4));
 
         regionVisibilityTracker = new BitSet(maxRegions);
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
 
         statisticsBuffer = device.createDeviceOnlyMappedBuffer(4*4);
         stats = new Statistics();
+
+
+        //Initialize the transformationArray buffer to the identity affine transform
+        {
+            long ptr = this.uploadStream.upload(this.transformationArray, 0, RegionManager.MAX_TRANSFORMATION_COUNT * (4*4*4));
+            var transform = new Matrix4f().identity();
+            for (int i = 0; i < RegionManager.MAX_TRANSFORMATION_COUNT; i++) {
+                transform.getToAddress(ptr);
+                ptr += 4*4*4;
+            }
+        }
+
+    }
+
+    //TODO: FIXME: optimize this so that multiple uploads just upload a single time per frame!!!
+    // THIS IS CRITICAL
+    public void setTransformation(int id, Matrix4fc transform) {
+        if (id < 0 || id >= RegionManager.MAX_TRANSFORMATION_COUNT) {
+            throw new IllegalArgumentException("Id out of bounds: " + id);
+        }
+        long ptr = this.uploadStream.upload(this.transformationArray, id * (4*4*4), 4*4*4);
+        transform.getToAddress(ptr);
     }
 
     private int prevRegionCount;
@@ -118,6 +144,12 @@ public class RenderPipeline {
     public void renderFrame(Viewport frustum, ChunkRenderMatrices crm, double px, double py, double pz) {//NOTE: can use any of the command list rendering commands to basicly draw X indirects using the same shader, thus allowing for terrain to be rendered very efficently
 
         if (sectionManager.getRegionManager().regionCount() == 0) return;//Dont render anything if there is nothing to render
+
+        final int DEBUG_RENDER_LEVEL = 0;//0: no debug, 1: region debug, 2: section debug
+        final boolean WRITE_DEPTH = false;
+        new NvidiumAPI("nvidium").setRegionTransformId(1, 0, 2, 0);
+        new NvidiumAPI("nvidium").setTransformation(1, new Matrix4f().identity().scale(1f,1,2));
+
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
         Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
         //  /tp @p 0.0 -1.62 0.0 0 0
@@ -217,6 +249,8 @@ public class RenderPipeline {
             addr += 8;
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
+            MemoryUtil.memPutLong(addr, this.transformationArray.getDeviceAddress());
+            addr += 8;
             MemoryUtil.memPutLong(addr, statisticsBuffer == null?0:statisticsBuffer.getDeviceAddress());//Logging buffer
             addr += 8;
             MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogStart());//FogStart
@@ -272,14 +306,34 @@ public class RenderPipeline {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
         glDepthMask(false);
-        glColorMask(false, false, false, false);
-        glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
+        if (DEBUG_RENDER_LEVEL == 1 && WRITE_DEPTH) {
+            glDepthMask(true);
+        }
+        if (DEBUG_RENDER_LEVEL != 1) {
+            glColorMask(false, false, false, false);
+        }
+        if (DEBUG_RENDER_LEVEL == 0) {
+            glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
+        }
+
         regionRasterizer.raster(visibleRegions);
+
+        if (DEBUG_RENDER_LEVEL == 1) {
+            glColorMask(false, false, false, false);
+        }
 
         //glMemoryBarrier(GL_SHADER_GLOBAL_ACCESS_BARRIER_BIT_NV);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
         //glColorMask(true, true, true, true);
+
+        if (DEBUG_RENDER_LEVEL == 2) {
+            glColorMask(true, true, true, true);
+        }
+        if (DEBUG_RENDER_LEVEL == 2 && WRITE_DEPTH) {
+            glDepthMask(true);
+        }
+
         sectionRasterizer.raster(visibleRegions);
         glDisable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         glDepthMask(true);
@@ -414,6 +468,7 @@ public class RenderPipeline {
         temporalRasterizer.delete();
         translucencyTerrainRasterizer.delete();
         regionSectionSorter.delete();
+        this.transformationArray.delete();
 
         if (statisticsBuffer != null) {
             statisticsBuffer.delete();

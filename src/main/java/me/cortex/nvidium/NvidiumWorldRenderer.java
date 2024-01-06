@@ -14,6 +14,8 @@ import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.texture.Sprite;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4fc;
+import org.joml.Matrix4x3fc;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -157,5 +159,9 @@ public class NvidiumWorldRenderer {
         } else {
             return new Sprite[0];
         }
+    }
+
+    public void setTransformation(int id, Matrix4fc transform) {
+        this.renderPipeline.setTransformation(id, transform);
     }
 }

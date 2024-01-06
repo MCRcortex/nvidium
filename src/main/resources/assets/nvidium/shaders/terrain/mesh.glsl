@@ -35,6 +35,7 @@ taskNV in Task {
     vec3 origin;
     uint baseOffset;
     uint quadCount;
+    uint transformationId;
 
     //Binary search indexs and data
     uvec4 binIa;
@@ -61,12 +62,13 @@ void emitQuadIndicies() {
     gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
 }
 
+mat4 transformMat;
 Vertex emitVertex(uint vertexBaseId, uint innerId) {
     Vertex V = terrainData[vertexBaseId + innerId];
     uint outId = (gl_LocalInvocationID.x<<2)+innerId;
 
     vec3 pos = decodeVertexPosition(V)+origin;
-    gl_MeshVerticesNV[outId].gl_Position = MVP*vec4(pos,1.0);
+    gl_MeshVerticesNV[outId].gl_Position = MVP*(transformMat * vec4(pos,1.0));
 
     //TODO: make this shared state between all the vertices?
     float mippingBias = decodeVertexMippingBias(V);
@@ -130,6 +132,9 @@ void main() {
     if (id == uint(-1)) {
         return;
     }
+
+    transformMat = transformationArray[transformationId];
+
     emitQuadIndicies();
     emitPerPrimativeData(emitVertex(id<<2, 0));
     emitVertex(id<<2, 1);

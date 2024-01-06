@@ -20,6 +20,12 @@ ivec3 unpackRegionSize(Region region) {
     return ivec3((region.a>>59)&7, region.a>>62, (region.a>>56)&7);
 }
 
+uint unpackRegionTransformId(Region region) {
+    return uint((region.b>>(64-24-10))&((1<<10)-1));
+}
+
+
+
 ivec3 unpackRegionPosition(Region region) {
     //TODO: optimize
     int x = int(int64_t(region.a<<(64-24-24))>>(64-24));
@@ -63,6 +69,8 @@ layout(std140, binding=0) uniform SceneData {
     //TODO:FIXME: only apply non readonly to translucency mesh
     restrict Vertex *terrainData;//readonly
 
+    //TODO: possibly make this a uniform instead of a buffer, but it might get quite large is the issue
+    readonly restrict mat4 *transformationArray;
 
     //readonly restrict u64vec4 *terrainData;
     //uvec4 *terrainData;
@@ -78,3 +86,7 @@ layout(std140, binding=0) uniform SceneData {
     //align(1)
     uint8_t frameId;
 };
+
+mat4 getRegionTransformation(Region region) {
+    return transformationArray[unpackRegionTransformId(region)];
+}

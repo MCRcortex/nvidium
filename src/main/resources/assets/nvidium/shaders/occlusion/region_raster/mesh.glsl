@@ -61,7 +61,7 @@ void main() {
 
     vec3 corner = vec3(((gl_LocalInvocationID.x&1)==0)?start.x:end.x, ((gl_LocalInvocationID.x&4)==0)?start.y:end.y, ((gl_LocalInvocationID.x&2)==0)?start.z:end.z);
     corner *= 16.0f;
-    gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = MVP*vec4(corner, 1.0);
+    gl_MeshVerticesNV[gl_LocalInvocationID.x].gl_Position = MVP*(getRegionTransformation(data)*vec4(corner, 1.0));
 
 
     emitIndicies(visibilityIndex);

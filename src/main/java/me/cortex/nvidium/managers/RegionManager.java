@@ -18,6 +18,9 @@ import java.util.function.Consumer;
 
 //8x4x8
 public class RegionManager {
+    public static final int MAX_TRANSFORMATION_SIZE_BITS = 10;
+    public static final int MAX_TRANSFORMATION_COUNT = (1<<MAX_TRANSFORMATION_SIZE_BITS);
+
     private static final boolean SAFETY_CHECKS = Nvidium.IS_DEBUG;
     public static final int META_SIZE = 16;
 
@@ -28,6 +31,7 @@ public class RegionManager {
     private final RenderDevice device;
     private final UploadingBufferStream uploadStream;
 
+    private final Long2IntOpenHashMap regionTransformationIdMapping = new Long2IntOpenHashMap();
     private final Long2IntOpenHashMap regionMap = new Long2IntOpenHashMap();
     private final IdProvider idProvider = new IdProvider();
     private final Region[] regions;
@@ -117,8 +121,9 @@ public class RegionManager {
         long x = ((((long) region.rx <<3)+minX)&((1<<24)-1))<<24;
         long y = ((((long) region.ry <<2)+minY)&((1<<24)-1))<<0;//TODO:FIXME! y height does _not_ need to be 24 bits big
         long z = ((((long) region.rz <<3)+minZ)&((1<<24)-1))<<(64-24);
+        long transformationId = (((long)region.transformationId)<<(64-24-MAX_TRANSFORMATION_SIZE_BITS));
         MemoryUtil.memPutLong(upload, size|count|x|y);
-        MemoryUtil.memPutLong(upload+8, z);
+        MemoryUtil.memPutLong(upload+8, z | transformationId);
     }
 
     public int getSectionRefId(int section) {
@@ -219,6 +224,7 @@ public class RegionManager {
         //The region doesnt exist so we must create a new one
         if (this.regions[regionId] == null) {
             this.regions[regionId] = new Region(regionId, sectionX>>3, sectionY>>2, sectionZ>>3);
+            this.regions[regionId].transformationId = this.regionTransformationIdMapping.get(regionKey);
         }
         var region = this.regions[regionId];
 
@@ -313,6 +319,24 @@ public class RegionManager {
         return this.regions[regionId].key;
     }
 
+    public void setRegionTransformId(int x, int y, int z, int id) {
+        if (id < 0 || id >= MAX_TRANSFORMATION_COUNT) {
+            throw new IllegalArgumentException("Transformation id out of bounds");
+        }
+        long regionKey = ChunkSectionPos.asLong(x, y, z);
+        int oldId = this.regionTransformationIdMapping.put(regionKey, id);
+        if (oldId != id) {
+            //The region has a new id so need to set and propagate the data
+            int regionId = this.regionMap.get(regionKey);
+            if (regionId == -1) {
+                //Region doesnt exist in memory so ignore it
+                return;
+            }
+            var region = this.regions[regionId];
+            region.transformationId = id;
+            this.markDirty(region);
+        }
+    }
 
     private static class Region {
         private final int rx;
@@ -320,6 +344,8 @@ public class RegionManager {
         private final int rz;
         private final long key;
         private final int id;
+
+        public int transformationId = 0;
 
         private int count;
         private final int[] pos2id = new int[256];//Can be a short in all honesty
