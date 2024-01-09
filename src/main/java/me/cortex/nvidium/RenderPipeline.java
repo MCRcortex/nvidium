@@ -147,15 +147,14 @@ public class RenderPipeline {
 
         final int DEBUG_RENDER_LEVEL = 0;//0: no debug, 1: region debug, 2: section debug
         final boolean WRITE_DEPTH = false;
-        new NvidiumAPI("nvidium").setRegionTransformId(1, 0, 2, 0);
-        new NvidiumAPI("nvidium").setTransformation(1, new Matrix4f().identity().scale(1f,1,2));
+        //new NvidiumAPI("nvidium").setRegionTransformId(0, 0, 2, 0);
+        //new NvidiumAPI("nvidium").setTransformation(0, new Matrix4f().identity().scale(1f,1,1));
 
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
         Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
         //  /tp @p 0.0 -1.62 0.0 0 0
         //Clear the first gl error, not our fault
-        glGetError();
-        int err;
+        //glGetError();
 
         int visibleRegions = 0;
 
@@ -284,9 +283,9 @@ public class RenderPipeline {
 
         TickableManager.TickAll();
 
-        if ((err = glGetError()) != 0) {
-            throw new IllegalStateException("GLERROR: "+err);
-        }
+        //if ((err = glGetError()) != 0) {
+        //    throw new IllegalStateException("GLERROR: "+err);
+        //}
 
 
         glEnableClientState(GL_UNIFORM_BUFFER_UNIFIED_NV);
@@ -312,7 +311,8 @@ public class RenderPipeline {
         if (DEBUG_RENDER_LEVEL != 1) {
             glColorMask(false, false, false, false);
         }
-        if (DEBUG_RENDER_LEVEL == 0) {
+        if (DEBUG_RENDER_LEVEL == 0)
+        {
             glEnable(GL_REPRESENTATIVE_FRAGMENT_TEST_NV);
         }
 
@@ -379,9 +379,9 @@ public class RenderPipeline {
         glDisable(GL_DEPTH_TEST);
 
 
-        if ((err = glGetError()) != 0) {
-            throw new IllegalStateException("GLERROR: "+err);
-        }
+        //if ((err = glGetError()) != 0) {
+        //    throw new IllegalStateException("GLERROR: "+err);
+        //}
     }
 
     void enqueueRegionSort(int regionId) {
