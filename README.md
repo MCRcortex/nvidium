@@ -1,8 +1,21 @@
-# Nvidium
+# nvidium
 
 [![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
 
-Nvidium is an alternate rendering backing for sodium, it uses cutting edge nvidia features to render huge amounts of
-terrain geometry at very playable framerates.
+nvidium is an alternative rendering backend designed for [Sodium](https://github.com/CaffeineMC/sodium-fabric). It utilizes exclusive NVIDIA OpenGL extensions and cutting-edge features to efficiently render vast amounts of terrain geometry, resulting in highly playable experiences with consistently high framerates.
 
-### Requires sodium and an nvidia gtx 1600 series or newer to run (turing+ architecture)
+## Requirements
+- [Sodium](https://github.com/CaffeineMC/sodium-fabric)
+- An NVIDIA GPU that supports mesh shaders (GTX 1600 series/Turing architecture or newer)
+
+## FAQ
+> Will this mod work even if dont have an NVIDIA graphics card?
+> 
+No, nvidium will automatically disable itself
+
+> Can I use this mod with Iris?
+> 
+See [this](https://github.com/MCRcortex/nvidium/issues/3#issuecomment-1512757604) issue
+
+## How does it work?
+With mesh shaders, a near fully gpu driven rendering pipeline is used, enabling very fast and performant geometry culling of terrain meaning your gpu can work much more efficiently.
