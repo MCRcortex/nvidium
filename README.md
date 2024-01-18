@@ -18,4 +18,4 @@ No, nvidium will automatically disable itself
 See [this](https://github.com/MCRcortex/nvidium/issues/3#issuecomment-1512757604) issue
 
 ## How does it work?
-With mesh shaders, a near fully gpu driven rendering pipeline is used, enabling very fast and performant geometry culling of terrain meaning your gpu can work much more efficiently.
+With mesh shaders, a nearly fully GPU-driven rendering pipeline is used, enabling very fast and performant geometry culling of terrain meaning your GPU can work much more efficiently.
