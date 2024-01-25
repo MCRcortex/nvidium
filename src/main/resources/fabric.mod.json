@@ -12,6 +12,7 @@
   "icon": "assets/nvidium/nvidium.png",
   "environment": "client",
   "entrypoints": {},
+  "accessWidener": "nvidium.accesswidener",
   "mixins": [
     "nvidium.mixins.json"
   ],

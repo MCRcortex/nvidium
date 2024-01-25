@@ -13,6 +13,7 @@ apply plugin: "fabric-loom"
 
 loom {
     mixin.defaultRefmapName = "nvidium.refmap.json"
+    accessWidenerPath = file("src/main/resources/nvidium.accesswidener")
     runs {
         it.configureEach {
             vmArgs("-Xmx8G", "-XX:+UseZGC")
@@ -62,5 +63,7 @@ dependencies {
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
     modCompileOnly "maven.modrinth:iris:1.6.12+1.20.3"
+
+    implementation 'io.github.douira:glsl-transformer:2.0.0-pre14'
 }
 

@@ -3,6 +3,7 @@
   "package": "me.cortex.nvidium.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
+    "MixinWorldRenderer",
     "minecraft.LightMapAccessor",
     "minecraft.MixinBackgroundRenderer",
     "minecraft.MixinGameRenderer",
@@ -25,5 +26,8 @@
   ],
   "injectors": {
     "defaultRequire": 1
-  }
+  },
+  "mixins": [
+    "minecraft.MixinEntity"
+  ]
 }

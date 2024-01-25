@@ -1,0 +1,11 @@
+accessWidener v1 named
+
+accessible class net/minecraft/client/render/RenderLayer$MultiPhase
+accessible class net/minecraft/client/render/RenderLayer$MultiPhaseParameters
+
+accessible field net/minecraft/client/render/RenderPhase$ShaderProgram supplier Ljava/util/Optional;
+accessible field net/minecraft/client/render/RenderLayer$MultiPhaseParameters program Lnet/minecraft/client/render/RenderPhase$ShaderProgram;
+accessible field net/minecraft/client/render/RenderLayer$MultiPhase phases Lnet/minecraft/client/render/RenderLayer$MultiPhaseParameters;
+accessible field net/minecraft/client/render/RenderLayer$MultiPhaseParameters phases Lcom/google/common/collect/ImmutableList;
+accessible class net/minecraft/client/render/RenderPhase$ShaderProgram
+accessible class net/minecraft/client/render/RenderPhase$TextureBase
