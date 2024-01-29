@@ -23,9 +23,9 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
     public final long addr;
     public final long size;
 
-    //The reason the page size is now 1mb is cause the nv driver doesnt defrag the sparse allocations easily
+    //The reason the page size is now 1 MB is cause the nv driver doesnt defrag the sparse allocations easily
     // meaning smaller pages result in more fragmented memory and not happy for the driver
-    // 1mb seems to work well
+    // 1 MB seems to work well
     public static final long PAGE_SIZE = 1<<20;//16
 
     public PersistentSparseAddressableBuffer(long size) {
