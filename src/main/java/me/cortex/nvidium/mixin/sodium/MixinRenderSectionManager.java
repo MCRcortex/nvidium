@@ -55,7 +55,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         }
     }
 
-    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/executor/ChunkBuilder;<init>(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkVertexType;)V"), index = 1)
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/executor/ChunkBuilder;<init>(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkVertexType;)V", remap = true), index = 1)
     private ChunkVertexType modifyVertexType(ChunkVertexType vertexType) {
         if (Nvidium.IS_ENABLED) {
             return NvidiumCompactChunkVertex.INSTANCE;
