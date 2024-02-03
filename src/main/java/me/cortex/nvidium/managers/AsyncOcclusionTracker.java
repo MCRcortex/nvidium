@@ -70,9 +70,16 @@ public class AsyncOcclusionTracker {
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
             final OcclusionCuller.Visitor visitor = (section, visible) -> {
-                //if (!visible) {
-                //    return;
-                //}
+                if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
+                    if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
+                        //Set that the section has been seen
+                        ((IRenderSectionExtension)section).isSeen(true);
+                        chunkUpdates.add(section);
+                    }
+                }
+                if (!visible) {
+                    return;
+                }
                 if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_ENTITIES))!=0 &&
                         section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance
                     blockEntitySections.add(section);
@@ -82,13 +89,6 @@ public class AsyncOcclusionTracker {
                     var animatedSprites = section.getAnimatedSprites();
                     if (animatedSprites != null) {
                         animatedSpriteSet.addAll(List.of(animatedSprites));
-                    }
-                }
-                if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
-                    if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
-                        //Set that the section has been seen
-                        ((IRenderSectionExtension)section).isSeen(true);
-                        chunkUpdates.add(section);
                     }
                 }
             };
