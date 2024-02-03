@@ -43,10 +43,14 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Unique private NvidiumWorldRenderer renderer;
     @Unique private Viewport viewport;
 
+    @Unique
+    private static void updateNvidiumIsEnabled() {
+        Nvidium.IS_ENABLED = (!Nvidium.FORCE_DISABLE) && Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
+    }
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void init(ClientWorld world, int renderDistance, CommandList commandList, CallbackInfo ci) {
-        Nvidium.IS_ENABLED = (!Nvidium.FORCE_DISABLE) && Nvidium.IS_COMPATIBLE && IrisCheck.checkIrisShouldDisable();
+        updateNvidiumIsEnabled();
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
@@ -57,6 +61,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
 
     @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/executor/ChunkBuilder;<init>(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkVertexType;)V", remap = true), index = 1)
     private ChunkVertexType modifyVertexType(ChunkVertexType vertexType) {
+        updateNvidiumIsEnabled();
         if (Nvidium.IS_ENABLED) {
             return NvidiumCompactChunkVertex.INSTANCE;
         }
