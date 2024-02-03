@@ -4,10 +4,7 @@ import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.managers.AsyncOcclusionTracker;
-import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
-import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererSetter;
-import me.cortex.nvidium.sodiumCompat.IRenderSectionExtension;
-import me.cortex.nvidium.sodiumCompat.IrisCheck;
+import me.cortex.nvidium.sodiumCompat.*;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
@@ -17,6 +14,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.DefaultTerrainRenderPasses;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
+import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
 import me.jellysquid.mods.sodium.client.render.texture.SpriteUtil;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.client.render.Camera;
@@ -26,9 +24,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
@@ -58,6 +54,15 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
+
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/compile/executor/ChunkBuilder;<init>(Lnet/minecraft/client/world/ClientWorld;Lme/jellysquid/mods/sodium/client/render/chunk/vertex/format/ChunkVertexType;)V"), index = 1)
+    private ChunkVertexType modifyVertexType(ChunkVertexType vertexType) {
+        if (Nvidium.IS_ENABLED) {
+            return NvidiumCompactChunkVertex.INSTANCE;
+        }
+        return vertexType;
+    }
+
 
     @Inject(method = "destroy", at = @At("TAIL"))
     private void destroy(CallbackInfo ci) {

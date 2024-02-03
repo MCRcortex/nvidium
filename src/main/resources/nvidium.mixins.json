@@ -9,7 +9,6 @@
     "minecraft.MixinMinecraftClient",
     "minecraft.MixinWindow",
     "minecraft.MixinWorldRenderer",
-    "sodium.CompactChunkVertexAccessor",
     "sodium.MixinChunkBuilder",
     "sodium.MixinChunkBuilderMeshingTask",
     "sodium.MixinChunkBuildOutput",
