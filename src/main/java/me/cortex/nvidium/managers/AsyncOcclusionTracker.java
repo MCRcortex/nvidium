@@ -69,7 +69,10 @@ public class AsyncOcclusionTracker {
             List<RenderSection> chunkUpdates = new ArrayList<>();
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
-            final Consumer<RenderSection> visitor = section -> {
+            final OcclusionCuller.Visitor visitor = (section, visible) -> {
+                //if (!visible) {
+                //    return;
+                //}
                 if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_ENTITIES))!=0 &&
                         section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance
                     blockEntitySections.add(section);
