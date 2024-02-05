@@ -8,7 +8,7 @@
   "nvidium.options.max_gpu_memory.tooltip" : "Max gpu memory allowed, will start to cull chunks if this limit is hit",
   "nvidium.options.enable_temporal_coherence.name" : "Enables temporal coherence",
   "nvidium.options.enable_temporal_coherence.tooltip" : "Removes artifacting when turning around",
-  "nvidium.options.mb" : "%s Mbs",
+  "nvidium.options.mb" : "%s MB",
   "nvidium.options.translucency_sorting.name" : "Translucency Sorting",
   "nvidium.options.translucency_sorting.tooltip" : "Translucency sorting level, each level has different performance impact and visual quality. \nNone:No translucency sorting, no impact, can look quite bad\nSections: Section level translucency sorting, brings translucency to the same level as sodium, minimal impact\nQuads: Incremental sorting, sorts geometry correctly over multiple frames, can cause visual weirdness while sorting",
   "nvidium.options.translucency_sorting.none" : "None",

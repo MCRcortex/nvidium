@@ -37,16 +37,16 @@ public class NvidiumWorldRenderer {
 
     private final AsyncOcclusionTracker asyncChunkTracker;
 
-    //Max memory that the gpu can use to store geometry in mb
+    //Max memory that the gpu can use to store geometry in MB
     private long max_geometry_memory;
     private long last_sample_time;
 
     //Note: the reason that asyncChunkTracker is passed in as an already constructed object is cause of the amount of argmuents it takes to construct it
     public NvidiumWorldRenderer(AsyncOcclusionTracker asyncChunkTracker) {
         int frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit+1;
-        //32 mb upload buffer
+        //32 MB upload buffer
         this.uploadStream = new UploadingBufferStream(device, 32000000);
-        //8 mb download buffer
+        //8 MB download buffer
         this.downloadStream = new DownloadTaskStream(device, frames, 8000000);
 
         update_allowed_memory();
@@ -105,7 +105,7 @@ public class NvidiumWorldRenderer {
 
     public void addDebugInfo(ArrayList<String> debugInfo) {
         debugInfo.add("Using nvidium renderer: "+ Nvidium.MOD_VERSION);
-        debugInfo.add("Memory limit: " + max_geometry_memory + " mb");
+        debugInfo.add("Memory limit: " + max_geometry_memory + " MB");
         debugInfo.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
         debugInfo.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
         debugInfo.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
@@ -120,8 +120,8 @@ public class NvidiumWorldRenderer {
     private void update_allowed_memory() {
         if (Nvidium.config.automatic_memory) {
             max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getMemoryUsed()/(1024*1024));
-            max_geometry_memory -= 1024;//Minus 1gb of vram
-            max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 gb of vram
+            max_geometry_memory -= 1024;//Minus 1 GB of vram
+            max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 GB of vram
         } else {
             max_geometry_memory = Nvidium.config.max_geometry_memory;
         }
