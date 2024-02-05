@@ -1,4 +1,5 @@
 plugins {
+    id 'base'
     id 'fabric-loom' version '1.1-SNAPSHOT'
     id 'maven-publish'
 }
@@ -6,8 +7,10 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
 apply plugin: "fabric-loom"
 
@@ -20,9 +23,12 @@ loom {
     }
 }
 
+base {
+    archivesName = "nvidium"
+}
+
 processResources {
     inputs.property "version", project.version
-    archivesBaseName = "nvidium"
     filesMatching("fabric.mod.json") {
         expand "version": project.version
     }
@@ -58,9 +64,9 @@ dependencies {
 
     modImplementation "maven.modrinth:sodium:mc1.20.4-0.5.8"
 
+    // Uncomment if needed
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
     modCompileOnly "maven.modrinth:iris:1.6.12+1.20.3"
 }
-
