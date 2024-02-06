@@ -30,8 +30,8 @@ jobs:
         run: ./gradlew build
 
       - name: Upload all artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: jars
-          path: |
-            **/build/libs/nvidium-*.*.*-*.jar
+          name: nvidium
+          path: dist/build/libs/nvidium*.jar
+          if-no-files-found: error
