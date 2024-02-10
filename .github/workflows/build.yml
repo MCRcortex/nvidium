@@ -21,9 +21,9 @@ jobs:
       - name: Setup Temurin JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
+          distribution: "temurin"
+          java-version: "17"
+          cache: "gradle"
 
       - name: Configure Git User Details
         run: git config --global user.email "actions@github.com" && git config --global user.name "Github Actions"
@@ -32,7 +32,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Execute Gradle build
-        run: ./gradlew build
+        run: ./gradlew build --no-daemon --stacktrace
 
       - name: Upload nvidium JAR
         uses: actions/upload-artifact@v4
