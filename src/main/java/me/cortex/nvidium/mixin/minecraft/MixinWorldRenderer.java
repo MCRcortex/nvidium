@@ -31,6 +31,6 @@ public class MixinWorldRenderer {
 
     @ModifyArg(method = "method_37365", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/BackgroundRenderer;applyFog(Lnet/minecraft/client/render/Camera;Lnet/minecraft/client/render/BackgroundRenderer$FogType;FZF)V"), index = 2)
     private static float clampViewDistance(float viewDistance) {
-        return MathHelper.clamp(viewDistance, 2 * 16, 16 * 16);
+        return MathHelper.clamp(viewDistance, 2 * 16, 32 * 16);
     }
 }
