@@ -9,7 +9,7 @@ nvidium is an alternative rendering backend designed for [Sodium](https://github
 - An NVIDIA GPU that supports mesh shaders (GTX 1600 series/Turing architecture or newer)
 
 ## FAQ
-> Will this mod work even if dont have an NVIDIA graphics card?
+> Will this mod work if I don't have an NVIDIA graphics card?
 > 
 No, nvidium will automatically disable itself
 
