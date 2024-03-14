@@ -28,6 +28,7 @@ public class DeviceOnlyMappedBuffer extends GlObject implements IDeviceMappedBuf
     @Override
     public void delete() {
         super.free0();
+        glMakeNamedBufferNonResidentNV(id);
         glDeleteBuffers(id);
     }
 
