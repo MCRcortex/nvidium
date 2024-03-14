@@ -7,6 +7,7 @@ import static org.lwjgl.opengl.ARBDirectStateAccess.*;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL44.GL_CLIENT_STORAGE_BIT;
 import static org.lwjgl.opengl.GL44.GL_MAP_PERSISTENT_BIT;
+import static org.lwjgl.opengl.NVShaderBufferLoad.*;
 
 public class PersistentClientMappedBuffer extends GlObject implements IClientMappedBuffer {
     public final long addr;
@@ -28,6 +29,7 @@ public class PersistentClientMappedBuffer extends GlObject implements IClientMap
     public void delete() {
         super.free0();
         glUnmapNamedBuffer(id);
+        glMakeNamedBufferNonResidentNV(id);
         glDeleteBuffers(id);
     }
 
