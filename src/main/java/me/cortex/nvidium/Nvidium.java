@@ -23,13 +23,13 @@ public class Nvidium {
         ModContainer mod = (ModContainer) FabricLoader.getInstance().getModContainer("nvidium").orElseThrow(NullPointerException::new);
         MOD_VERSION = mod.getMetadata().getVersion().getFriendlyString();
     }
-    //TODO: basicly have the terrain be a virtual geometry buffer
+    // TODO: basicly have the terrain be a virtual geometry buffer
     // once it gets too full, start culling via a callback task system
     // which executes a task on the gpu and calls back once its done
     // use this to then do a rasterizing check on the terrain and remove
     // the oldest regions and sections
 
-    //TODO: ADD LODS
+    // TODO: ADD LODS
 
     public static void checkSystemIsCapable() {
         var cap = GL.getCapabilities();
@@ -43,10 +43,10 @@ public class Nvidium {
         if (IS_COMPATIBLE) {
             LOGGER.info("All capabilities met");
         } else {
-            LOGGER.warn("Not all requirements met, disabling nvidium");
+            LOGGER.warn("Not all requirements met, disabling Nvidium");
         }
         if (IS_COMPATIBLE && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
-            LOGGER.warn("Linux currently uses fallback terrain buffer due to driver inconsistencies, expect increase vram usage");
+            LOGGER.warn("Linux currently uses fallback terrain buffer due to driver inconsistencies, expect increased VRAM usage");
             SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER = false;
         }
 
