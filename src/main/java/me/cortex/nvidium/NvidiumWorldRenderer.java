@@ -104,13 +104,13 @@ public class NvidiumWorldRenderer {
     }
 
     public void addDebugInfo(ArrayList<String> debugInfo) {
-        debugInfo.add("Using nvidium renderer: "+ Nvidium.MOD_VERSION);
-        debugInfo.add("Memory limit: " + max_geometry_memory + " mb");
+        debugInfo.add("Using Nvidium renderer: "+ Nvidium.MOD_VERSION);
+        debugInfo.add("Memory limit: " + max_geometry_memory + " MB");
         debugInfo.add("Terrain Memory MB: " + sectionManager.terrainAreana.getAllocatedMB()+(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?"":" (fallback mode)"));
         debugInfo.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
         debugInfo.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
         if (asyncChunkTracker != null) {
-            debugInfo.add("Async BFS iteration time: " + asyncChunkTracker.getIterationTime());
+            debugInfo.add("ASync BFS iteration time: " + asyncChunkTracker.getIterationTime());
             debugInfo.add("Build queue sizes: " + Arrays.toString(this.asyncChunkTracker.getBuildQueueSizes()));
         }
         renderPipeline.addDebugInfo(debugInfo);
@@ -120,8 +120,8 @@ public class NvidiumWorldRenderer {
     private void update_allowed_memory() {
         if (Nvidium.config.automatic_memory) {
             max_geometry_memory = (glGetInteger(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX) / 1024) + (sectionManager==null?0:sectionManager.terrainAreana.getMemoryUsed()/(1024*1024));
-            max_geometry_memory -= 1024;//Minus 1gb of vram
-            max_geometry_memory = Math.max(2048, max_geometry_memory);//Minimum 2 gb of vram
+            max_geometry_memory -= 1024; // Minus 1gb of vram
+            max_geometry_memory = Math.max(2048, max_geometry_memory); // Minimum 2 gb of vram
         } else {
             max_geometry_memory = Nvidium.config.max_geometry_memory;
         }
