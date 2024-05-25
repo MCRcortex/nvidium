@@ -20,8 +20,8 @@ public class ConfigGuiBuilder {
 
         groups.add(OptionGroup.createBuilder()
                 .add(OptionImpl.createBuilder(boolean.class, store)
-                        .setName(Text.literal("Disable nvidium"))
-                        .setTooltip(Text.literal("Used to disable nvidium (DOES NOT SAVE, WILL RE-ENABLE AFTER A RE-LAUNCH)"))
+                        .setName(Text.literal("Disable Nvidium"))
+                        .setTooltip(Text.literal("Used to disable Nvidium (DOES NOT SAVE, WILL RE-ENABLE AFTER A RE-LAUNCH)"))
                         .setControl(TickBoxControl::new)
                         .setImpact(OptionImpact.HIGH)
                         .setBinding((opts, value) -> Nvidium.FORCE_DISABLE = value, opts -> Nvidium.FORCE_DISABLE)
