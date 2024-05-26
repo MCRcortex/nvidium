@@ -13,7 +13,6 @@ This mod explicitly requires an NVIDIA graphics card that supports mesh shaders.
 ### Q: Will this mod work on my non-NVIDIA system?
 ### A: No, the mod is not functional on non-NVIDIA systems, but Nvidium will automatically disable itself. Your gameplay will not be affected.
 [!CAUTION]
-
 This mod uses uncommon technology (mesh shaders). This may result in Minecraft terminating unexpectedly.
 
 ## How does it work
