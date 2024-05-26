@@ -21,6 +21,6 @@
   "nvidium.options.statistics_level.regions": "Regions",
   "nvidium.options.statistics_level.sections": "Sections",
   "nvidium.options.statistics_level.quads": "Quads",
-  "nvidium.options.async_bfs.name": "Enable ASync BFS",
+  "nvidium.options.async_bfs.name": "Enable Async BFS",
   "nvidium.options.async_bfs.tooltip": "Enables asynchronous BFS chunk section loading, greatly reduces the frame time when moving, more noticeable with higher render distances"
 }
