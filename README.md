@@ -4,22 +4,24 @@
 
 [![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
 
-Nvidium is a replacement rendering backend for Sodium that uses NVIDIA-exclusive OpenGL extensions to increase FPS by a significant amount, and to render huge amounts of terrain geometry at very playable framerates.
+Nvidium is a Minecraft mod that replaces the rendering backend for Sodium. It uses NVIDIA-exclusive OpenGL extensions to increase FPS by a significant amount, and to render huge amounts of terrain geometry at very playable framerates.
 
 ## Compatibility
 
-This mod explicitly requires an NVIDIA graphics card that supports mesh shaders. This feature was introduced in the Turing architecture, anything that is a 16xx series or newer (20xx series also works) that supports mesh shaders.
+Nvidium requires an NVIDIA graphics card that supports mesh shaders. This feature is available in the Turing architecture and newer (16xx series or newer, 20xx series also works).
+
+## FAQs
 
 ### Q: Will this mod work on my non-NVIDIA system?
 ### A: No, the mod is not functional on non-NVIDIA systems, but Nvidium will automatically disable itself. Your gameplay will not be affected.
 
 ## Warning
 
-This mod uses uncommon technology (mesh shaders). This may result in Minecraft terminating unexpectedly.
+Nvidium uses mesh shaders, an uncommon technology. This may cause Minecraft to crash unexpectedly. If this happens, please report the issue on our GitHub issue tracker.
 
-## How does it work
+## How it works
 
-With mesh shaders, a near fully GPU-driven rendering pipeline is used, enabling very fast and performant geometry culling of terrain, meaning your GPU can work much more efficiently.
+Nvidium uses a GPU-driven rendering pipeline with mesh shaders. This allows for fast and efficient geometry culling of terrain, making your GPU work more efficiently.
 
 # Requires Sodium to run
 
