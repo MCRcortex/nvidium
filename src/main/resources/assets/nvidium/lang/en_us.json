@@ -15,7 +15,7 @@
   "nvidium.options.translucency_sorting.sections": "Sections",
   "nvidium.options.translucency_sorting.quads": "Quads",
   "nvidium.options.statistics_level.name": "Statistics Level",
-  "nvidium.options.statistics_level.tooltip" : "Statistics logging level, tracks the visibility count of cull layers",
+  "nvidium.options.statistics_level.tooltip": "Statistics logging level, tracks the visibility count of cull layers",
   "nvidium.options.statistics_level.none": "None",
   "nvidium.options.statistics_level.frustum": "Frustum",
   "nvidium.options.statistics_level.regions": "Regions",
