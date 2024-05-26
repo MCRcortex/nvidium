@@ -4,7 +4,7 @@
 
 [![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
 
-Nvidium is a replacement rendering backend for Sodium that uses NVIDIA-exclusive OpenGL extensions to increase FPS by a significant amount, and to render huge amounts of terrain at very playable framerates.
+Nvidium is a replacement rendering backend for Sodium that uses NVIDIA-exclusive OpenGL extensions to increase FPS by a significant amount, and to render huge amounts of terrain geometry at very playable framerates.
 
 ## Compatibility
 
