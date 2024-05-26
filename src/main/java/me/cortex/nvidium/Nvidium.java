@@ -41,9 +41,9 @@ public class Nvidium {
                 cap.GL_NV_bindless_multi_draw_indirect;
         IS_COMPATIBLE = supported;
         if (IS_COMPATIBLE) {
-            LOGGER.info("All capabilities met");
+            LOGGER.info("All requirements met for Nvidium");
         } else {
-            LOGGER.warn("Not all requirements met, disabling Nvidium");
+            LOGGER.warn("Not all requirements met, Nvidium will not be enabled");
         }
         if (IS_COMPATIBLE && Util.getOperatingSystem() == Util.OperatingSystem.LINUX) {
             LOGGER.warn("Linux currently uses fallback terrain buffer due to driver inconsistencies, expect increased VRAM usage");
