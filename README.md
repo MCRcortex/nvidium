@@ -1,4 +1,4 @@
-<img src="src/main/resources/assets/nvidium/icon.png" width="128">
+<img src="src/main/resources/assets/nvidium/nvidium.png" width="128">
 
 # Nvidium
 
