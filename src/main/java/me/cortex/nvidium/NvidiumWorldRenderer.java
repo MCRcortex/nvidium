@@ -110,7 +110,7 @@ public class NvidiumWorldRenderer {
         debugInfo.add(String.format("Fragmentation: %.2f", sectionManager.terrainAreana.getFragmentation()*100));
         debugInfo.add("Regions: " + sectionManager.getRegionManager().regionCount() + "/" + sectionManager.getRegionManager().maxRegions());
         if (asyncChunkTracker != null) {
-            debugInfo.add("ASync BFS iteration time: " + asyncChunkTracker.getIterationTime());
+            debugInfo.add("Async BFS iteration time: " + asyncChunkTracker.getIterationTime());
             debugInfo.add("Build queue sizes: " + Arrays.toString(this.asyncChunkTracker.getBuildQueueSizes()));
         }
         renderPipeline.addDebugInfo(debugInfo);
