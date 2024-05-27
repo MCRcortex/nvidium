@@ -8,12 +8,7 @@ Nvidium is a Minecraft mod that replaces the rendering backend for Sodium. It us
 
 ## Compatibility
 
-Nvidium requires an NVIDIA graphics card that supports mesh shaders. This feature is available in the Turing architecture and newer (16xx series or newer, 20xx series also works).
-
-## FAQs
-
-### Q: Will this mod work on my non-NVIDIA system?
-### A: No, the mod is not functional on non-NVIDIA systems, but Nvidium will automatically disable itself. Your gameplay will not be affected.
+Nvidium requires an NVIDIA graphics card that supports mesh shaders. This feature is available in the Turing architecture and newer (16xx series or newer, 20xx series also works). The Nvidium renderer will only be enabled on systems that meet its requirements. However, the mod will remain active regardless. This design prevents game crashes and potential issues. Even if a system with Nvidium installed doesn’t meet these requirements, it won’t cause any problems because of this design.
 
 ## Warning
 
