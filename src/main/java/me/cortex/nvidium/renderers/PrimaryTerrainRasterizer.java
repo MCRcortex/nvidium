@@ -20,9 +20,9 @@ public class PrimaryTerrainRasterizer extends Phase {
     private final int blockSampler = glGenSamplers();
     private final int lightSampler = glGenSamplers();
     private final Shader shader = Shader.make()
-            .addSource(TASK, ShaderLoader.parse(new Identifier("nvidium", "terrain/task.glsl")))
-            .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "terrain/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/frag.frag"))).compile();
+            .addSource(TASK, ShaderLoader.parse(Identifier.of("nvidium", "terrain/task.glsl")))
+            .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "terrain/mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "terrain/frag.frag"))).compile();
 
     public PrimaryTerrainRasterizer() {
         GL45C.glSamplerParameteri(blockSampler,     GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
@@ -39,7 +39,7 @@ public class PrimaryTerrainRasterizer extends Phase {
     public void raster(int regionCount, long commandAddr) {
         shader.bind();
 
-        int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(new Identifier("minecraft", "textures/atlas/blocks.png")).getGlId();
+        int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(Identifier.of("minecraft", "textures/atlas/blocks.png")).getGlId();
         int lightId = ((LightMapAccessor)MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager()).getTexture().getGlId();
 
         //GL45C.glBindTextureUnit(0, blockId);

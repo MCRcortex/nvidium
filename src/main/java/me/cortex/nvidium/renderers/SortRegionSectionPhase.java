@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.glBufferAddressRangeN
 
 public class SortRegionSectionPhase extends Phase {
     private final Shader shader = Shader.make()
-            .addSource(COMPUTE, ShaderLoader.parse(new Identifier("nvidium", "sorting/region_section_sorter.comp")))
+            .addSource(COMPUTE, ShaderLoader.parse(Identifier.of("nvidium", "sorting/region_section_sorter.comp")))
             .compile();
 
     public SortRegionSectionPhase() {

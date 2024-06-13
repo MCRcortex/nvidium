@@ -8,7 +8,7 @@ import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.render.BlockBreakingInfo;
+import net.minecraft.entity.player.BlockBreakingInfo;
 import net.minecraft.client.render.BufferBuilderStorage;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumerProvider;
