@@ -50,8 +50,11 @@ void main() {
     }
 
     ivec3 pos = unpackRegionPosition(data);
+    pos -= chunkPosition.xyz;
+    pos -= unpackOriginOffsetId(unpackRegionTransformId(data));
     ivec3 size = unpackRegionSize(data);
-    vec3 start = pos - chunkPosition.xyz - ADD_SIZE;
+
+    vec3 start = pos - ADD_SIZE;
     vec3 end = start + 1 + size + (ADD_SIZE*2);
 
     //TODO: Look into only doing 4 locals, for 2 reasons, its more effective for reducing duplicate computation and bandwidth

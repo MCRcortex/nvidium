@@ -165,4 +165,8 @@ public class NvidiumWorldRenderer {
     public void setTransformation(int id, Matrix4fc transform) {
         this.renderPipeline.setTransformation(id, transform);
     }
+
+    public void setOrigin(int id, int x, int y, int z) {
+        this.renderPipeline.setOrigin(id, x, y, z);
+    }
 }

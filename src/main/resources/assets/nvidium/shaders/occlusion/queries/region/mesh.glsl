@@ -41,7 +41,11 @@ void main() {
     // this remove an entire level of indirection and also puts region data in the very fast path
     Region data = regionData[regionIndicies[gl_WorkGroupID.x]];//fetch the region data
 
-    vec3 start = unpackRegionPosition(data) - chunkPosition.xyz - ADD_SIZE;
+    ivec3 pos = unpackRegionPosition(data);
+    pos -= chunkPosition.xyz;
+    pos -= unpackOriginOffsetId(unpackRegionTransformId(data));
+
+    vec3 start = pos - ADD_SIZE;
     vec3 end = start + 1 + unpackRegionSize(data) + (ADD_SIZE*2);
 
     //TODO: Look into only doing 4 locals, for 2 reasons, its more effective for reducing duplicate computation and bandwidth

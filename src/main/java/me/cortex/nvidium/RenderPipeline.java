@@ -17,6 +17,7 @@ import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
 import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.util.math.BlockPos;
 import org.joml.*;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
@@ -26,7 +27,7 @@ import java.util.BitSet;
 import java.util.List;
 
 import static me.cortex.nvidium.gl.buffers.PersistentSparseAddressableBuffer.alignUp;
-import static org.lwjgl.opengl.ARBDirectStateAccess.glClearNamedBufferSubData;
+import static org.lwjgl.opengl.ARBDirectStateAccess.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30C.GL_R8UI;
 import static org.lwjgl.opengl.GL30C.GL_RED_INTEGER;
@@ -60,7 +61,7 @@ public class RenderPipeline {
     private SortRegionSectionPhase regionSectionSorter;
 
     private final IDeviceMappedBuffer sceneUniform;
-    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*8+3*4+3+4, 2);
+    private static final int SCENE_SIZE = (int) alignUp(4*4*4+4*4+4*4+4+4*4+4*4+8*8+3*4+3+4+8, 2);
 
     private final IDeviceMappedBuffer regionVisibility;
     private final IDeviceMappedBuffer sectionVisibility;
@@ -69,6 +70,7 @@ public class RenderPipeline {
     private final IDeviceMappedBuffer regionSortingList;
     private final IDeviceMappedBuffer statisticsBuffer;
     private final IDeviceMappedBuffer transformationArray;
+    private final IDeviceMappedBuffer originOffsetArray;
 
     private final BitSet regionVisibilityTracker;
 
@@ -106,6 +108,7 @@ public class RenderPipeline {
         translucencyCommandBuffer = device.createDeviceOnlyMappedBuffer(maxRegions*8L);
         regionSortingList = device.createDeviceOnlyMappedBuffer(maxRegions*2L);
         this.transformationArray = device.createDeviceOnlyMappedBuffer(RegionManager.MAX_TRANSFORMATION_COUNT * (4*4*4));
+        this.originOffsetArray = device.createDeviceOnlyMappedBuffer(RegionManager.MAX_TRANSFORMATION_COUNT * 8);
 
         regionVisibilityTracker = new BitSet(maxRegions);
         regionVisibilityTracking = new RegionVisibilityTracker(downloadStream, maxRegions);
@@ -123,6 +126,9 @@ public class RenderPipeline {
                 ptr += 4*4*4;
             }
         }
+        //Clear the origin offset
+        nglClearNamedBufferData(this.originOffsetArray.getId(), GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 0);
+
 
     }
 
@@ -136,6 +142,21 @@ public class RenderPipeline {
         transform.getToAddress(ptr);
     }
 
+    //TODO: FIXME: optimize this so that multiple uploads just upload a single time per frame!!!
+    // THIS IS CRITICAL
+    public void setOrigin(int id, int x, int y, int z) {
+        if (id < 0 || id >= RegionManager.MAX_TRANSFORMATION_COUNT) {
+            throw new IllegalArgumentException("Id out of bounds: " + id);
+        }
+        long ptr = this.uploadStream.upload(this.originOffsetArray, id * 8, 8);
+        long pos = 0;
+        pos |= x&0x1ffffff;
+        pos |= ((long)(z&0x1ffffff))<<25;
+        pos |= ((long)(y&0x3fff))<<50;
+
+        MemoryUtil.memPutLong(ptr, pos);
+    }
+
     private int prevRegionCount;
     private int frameId;
 
@@ -147,8 +168,14 @@ public class RenderPipeline {
 
         final int DEBUG_RENDER_LEVEL = 0;//0: no debug, 1: region debug, 2: section debug
         final boolean WRITE_DEPTH = false;
-        //new NvidiumAPI("nvidium").setRegionTransformId(0, 0, 2, 0);
-        //new NvidiumAPI("nvidium").setTransformation(0, new Matrix4f().identity().scale(1f,1,1));
+
+        /*
+        for (int i = 0; i <3*3*3;i++) {
+            new NvidiumAPI("nvidium").setRegionTransformId(1, i%3, (i/3)%3, ((i/3)/3)%3);
+        }
+        new NvidiumAPI("nvidium").setTransformation(1, new Matrix4f().identity().scale(1,1  ,1));
+        new NvidiumAPI("nvidium").setOrigin(1, 0,0,0);
+           */
 
         Vector3i blockPos = new Vector3i(((int)Math.floor(px)), ((int)Math.floor(py)), ((int)Math.floor(pz)));
         Vector3i chunkPos = new Vector3i(blockPos.x>>4,blockPos.y>>4,blockPos.z>>4);
@@ -190,7 +217,7 @@ public class RenderPipeline {
                     if (regionVisibilityTracker.get(i)) {//Going from visible to non visible
                         //Clear the visibility bits
                         if (Nvidium.config.enable_temporal_coherence) {
-                            glClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, (long) i << 8, 255, GL_RED_INTEGER, GL_UNSIGNED_BYTE, new int[]{0});
+                            nglClearNamedBufferSubData(sectionVisibility.getId(), GL_R8UI, (long) i << 8, 255, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 0);
                         }
                     }
                     regionVisibilityTracker.clear(i);
@@ -249,6 +276,8 @@ public class RenderPipeline {
             MemoryUtil.memPutLong(addr, sectionManager.terrainAreana.buffer.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, this.transformationArray.getDeviceAddress());
+            addr += 8;
+            MemoryUtil.memPutLong(addr, this.originOffsetArray.getDeviceAddress());
             addr += 8;
             MemoryUtil.memPutLong(addr, statisticsBuffer == null?0:statisticsBuffer.getDeviceAddress());//Logging buffer
             addr += 8;
@@ -469,6 +498,7 @@ public class RenderPipeline {
         translucencyTerrainRasterizer.delete();
         regionSectionSorter.delete();
         this.transformationArray.delete();
+        this.originOffsetArray.delete();
 
         if (statisticsBuffer != null) {
             statisticsBuffer.delete();

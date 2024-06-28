@@ -23,9 +23,9 @@ public class TranslucentTerrainRasterizer extends Phase {
     private final int lightSampler = glGenSamplers();
 
     private final Shader shader = Shader.make()
-            .addSource(TASK, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/task.glsl")))
-            .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "terrain/translucent/frag.frag")))
+            .addSource(TASK, ShaderLoader.parse(Identifier.of("nvidium", "terrain/translucent/task.glsl")))
+            .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "terrain/translucent/mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "terrain/translucent/frag.frag")))
             .compile();
 
     public TranslucentTerrainRasterizer() {
@@ -46,7 +46,7 @@ public class TranslucentTerrainRasterizer extends Phase {
     public void raster(int regionCount, long commandAddr) {
         shader.bind();
 
-        int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(new Identifier("minecraft", "textures/atlas/blocks.png")).getGlId();
+        int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(Identifier.of("minecraft", "textures/atlas/blocks.png")).getGlId();
         int lightId = ((LightMapAccessor)MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager()).getTexture().getGlId();
 
         //GL45C.glBindTextureUnit(0, blockId);

@@ -21,7 +21,9 @@ public class NvidiumAPI {
     public void hideSection(int x, int y, int z) {
         if (Nvidium.IS_ENABLED) {
             var renderer = ((INvidiumWorldRendererGetter) SodiumWorldRenderer.instance()).getRenderer();
-            renderer.getSectionManager().setHideBit(x, y, z, true);
+            if (renderer != null) {
+                renderer.getSectionManager().setHideBit(x, y, z, true);
+            }
         }
     }
 
@@ -34,7 +36,9 @@ public class NvidiumAPI {
     public void showSection(int x, int y, int z) {
         if (Nvidium.IS_ENABLED) {
             var renderer = ((INvidiumWorldRendererGetter) SodiumWorldRenderer.instance()).getRenderer();
-            renderer.getSectionManager().setHideBit(x, y, z, false);
+            if (renderer != null) {
+                renderer.getSectionManager().setHideBit(x, y, z, false);
+            }
         }
     }
 
@@ -48,19 +52,39 @@ public class NvidiumAPI {
     public void setRegionTransformId(int id, int x, int y, int z) {
         if (Nvidium.IS_ENABLED) {
             var renderer = ((INvidiumWorldRendererGetter) SodiumWorldRenderer.instance()).getRenderer();
-            renderer.getSectionManager().getRegionManager().setRegionTransformId(x, y, z, id);
+            if (renderer != null) {
+                renderer.getSectionManager().getRegionManager().setRegionTransformId(x, y, z, id);
+            }
         }
     }
 
     /***
-     * Sets the affine transform for the supplied id
+     * Sets the transform for the supplied id
      * @param id The id to set the transform of
      * @param transform The transform to set it too
      */
     public void setTransformation(int id, Matrix4fc transform) {
         if (Nvidium.IS_ENABLED) {
             var renderer = ((INvidiumWorldRendererGetter) SodiumWorldRenderer.instance()).getRenderer();
-            renderer.setTransformation(id, transform);
+            if (renderer != null) {
+                renderer.setTransformation(id, transform);
+            }
+        }
+    }
+
+    /***
+     * Sets the origin point of the transformation id, this is in chunk coordinates.
+     * @param id The id to set the origin of
+     * @param x Chunk coord x
+     * @param y Chunk coord y
+     * @param z Chunk coord z
+     */
+    public void setOrigin(int id, int x, int y, int z) {
+        if (Nvidium.IS_ENABLED) {
+            var renderer = ((INvidiumWorldRendererGetter) SodiumWorldRenderer.instance()).getRenderer();
+            if (renderer != null) {
+                renderer.setOrigin(id, x, y, z);
+            }
         }
     }
 

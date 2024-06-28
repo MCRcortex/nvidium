@@ -42,13 +42,14 @@ void main() {
     chunk.y <<= 32-9;
     chunk.y >>= 32-9;
     chunk -= chunkPosition.xyz;
+    transformationId = unpackRegionTransformId(regionData[sectionId>>8]);
+    chunk -= unpackOriginOffsetId(transformationId);
 
     origin = vec3(chunk<<4);
     baseOffset = (uint)header.w;
 
     populateTasks(chunk, uvec4(sectionData[sectionId].renderRanges));
 
-    transformationId = unpackRegionTransformId(regionData[sectionId>>8]);
 
     #ifdef STATISTICS_QUADS
     atomicAdd(statistics_buffer+2, quadCount);

@@ -38,32 +38,39 @@ void populateTasks(ivec3 relChunkPos, uvec4 ranges) {
 
     uint fr = (ranges.w>>16)&0xFFFF;
 
-    if (relChunkPos.x <= 0) {
-        putBinData(idx, lastIndex, fr, fr + (ranges.x&0xFFFF));
+    uint delta = (ranges.x&0xFFFF);
+    if (relChunkPos.x <= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += ranges.x&0xFFFF;
 
-    if (relChunkPos.y <= 0) {
-        putBinData(idx, lastIndex, fr, fr + ((ranges.x>>16)&0xFFFF));
+    delta = ((ranges.x>>16)&0xFFFF);
+    if (relChunkPos.y <= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += (ranges.x>>16)&0xFFFF;
 
-    if (relChunkPos.z <= 0) {
-        putBinData(idx, lastIndex, fr, fr + (ranges.y&0xFFFF));
+    delta = ranges.y&0xFFFF;
+    if (relChunkPos.z <= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += ranges.y&0xFFFF;
 
-    if (relChunkPos.x >= 0) {
-        putBinData(idx, lastIndex, fr, fr + ((ranges.y>>16)&0xFFFF));
+    delta = (ranges.y>>16)&0xFFFF;
+    if (relChunkPos.x >= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += (ranges.y>>16)&0xFFFF;
 
-    if (relChunkPos.y >= 0) {
-        putBinData(idx, lastIndex, fr, fr + (ranges.z&0xFFFF));
+    delta = ranges.z&0xFFFF;
+    if (relChunkPos.y >= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += ranges.z&0xFFFF;
-    if (relChunkPos.z >= 0) {
-        putBinData(idx, lastIndex, fr, fr + ((ranges.z>>16)&0xFFFF));
+
+    delta = (ranges.z>>16)&0xFFFF;
+    if (relChunkPos.z >= 0 && delta > 0) {
+        putBinData(idx, lastIndex, fr, fr + delta);
     }
     fr += (ranges.z>>16)&0xFFFF;
 
