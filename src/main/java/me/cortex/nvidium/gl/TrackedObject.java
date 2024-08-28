@@ -3,6 +3,7 @@ package me.cortex.nvidium.gl;
 import me.cortex.nvidium.Nvidium;
 
 import java.lang.ref.Cleaner;
+import java.lang.ref.Cleaner.Cleanable;
 
 public abstract class TrackedObject {
     private final Ref ref;

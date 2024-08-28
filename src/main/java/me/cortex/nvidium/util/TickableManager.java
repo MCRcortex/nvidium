@@ -1,6 +1,7 @@
 package me.cortex.nvidium.util;
 
 import java.lang.ref.WeakReference;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;

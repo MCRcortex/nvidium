@@ -1,8 +1,9 @@
 package me.cortex.nvidium.api0;
 
 import me.cortex.nvidium.Nvidium;
+import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
-import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import org.joml.Matrix4fc;
 import org.joml.Matrix4x3fc;
 

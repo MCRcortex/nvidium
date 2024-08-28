@@ -3,11 +3,11 @@ package me.cortex.nvidium.config;
 import com.google.common.collect.ImmutableList;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.sodiumCompat.NvidiumOptionFlags;
-import me.jellysquid.mods.sodium.client.gui.options.*;
-import me.jellysquid.mods.sodium.client.gui.options.control.ControlValueFormatter;
-import me.jellysquid.mods.sodium.client.gui.options.control.CyclingControl;
-import me.jellysquid.mods.sodium.client.gui.options.control.SliderControl;
-import me.jellysquid.mods.sodium.client.gui.options.control.TickBoxControl;
+import net.caffeinemc.mods.sodium.client.gui.options.*;
+import net.caffeinemc.mods.sodium.client.gui.options.control.ControlValueFormatter;
+import net.caffeinemc.mods.sodium.client.gui.options.control.CyclingControl;
+import net.caffeinemc.mods.sodium.client.gui.options.control.SliderControl;
+import net.caffeinemc.mods.sodium.client.gui.options.control.TickBoxControl;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.region_keep_distance.tooltip"))
                         .setControl(option -> new SliderControl(option, 32, 256, 1, x->Text.literal(x==32?"Vanilla":(x==256?"Keep All":x+" chunks"))))
                         .setImpact(OptionImpact.VARIES)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.region_keep_distance = value, opts -> opts.region_keep_distance)
                         .setFlags()
                         .build()
@@ -56,7 +56,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.enable_temporal_coherence.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setImpact(OptionImpact.MEDIUM)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.enable_temporal_coherence = value, opts -> opts.enable_temporal_coherence)
                         .setFlags()
                         .build()
@@ -65,7 +65,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.async_bfs.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setImpact(OptionImpact.HIGH)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.async_bfs = value, opts -> opts.async_bfs)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
@@ -74,7 +74,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.automatic_memory_limit.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setImpact(OptionImpact.VARIES)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setBinding((opts, value) -> opts.automatic_memory = value, opts -> opts.automatic_memory)
                         .setFlags()
                         .build())
@@ -83,7 +83,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.max_gpu_memory.tooltip"))
                         .setControl(option -> new SliderControl(option, 2048, 32768, 512, ControlValueFormatter.translateVariable("nvidium.options.mb")))
                         .setImpact(OptionImpact.VARIES)
-                        .setEnabled(Nvidium.IS_ENABLED && !Nvidium.config.automatic_memory)
+                        .setEnabled(() -> Nvidium.IS_ENABLED && !Nvidium.config.automatic_memory)
                         .setBinding((opts, value) -> opts.max_geometry_memory = value, opts -> opts.max_geometry_memory)
                         .setFlags(Nvidium.SUPPORTS_PERSISTENT_SPARSE_ADDRESSABLE_BUFFER?new OptionFlag[0]:new OptionFlag[]{OptionFlag.REQUIRES_RENDERER_RELOAD})
                         .build()
@@ -92,7 +92,7 @@ public class ConfigGuiBuilder {
                         .setTooltip(Text.translatable("nvidium.options.render_fog.tooltip"))
                         .setControl(TickBoxControl::new)
                         .setBinding((opts, value) -> opts.render_fog = value, opts -> opts.render_fog)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setImpact(OptionImpact.MEDIUM)
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
                         .build()
@@ -111,7 +111,7 @@ public class ConfigGuiBuilder {
                                 )
                         )
                         .setBinding((opts, value) -> opts.translucency_sorting_level = value, opts -> opts.translucency_sorting_level)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setImpact(OptionImpact.MEDIUM)
                         //Technically, only need to reload when going from NONE->SECTIONS
                         .setFlags(OptionFlag.REQUIRES_RENDERER_RELOAD)
@@ -133,7 +133,7 @@ public class ConfigGuiBuilder {
                                 )
                         )
                         .setBinding((opts, value) -> opts.statistics_level = value, opts -> opts.statistics_level)
-                        .setEnabled(Nvidium.IS_ENABLED)
+                        .setEnabled(() -> Nvidium.IS_ENABLED)
                         .setImpact(OptionImpact.LOW)
                         .setFlags(NvidiumOptionFlags.REQUIRES_SHADER_RELOAD)
                         .build()

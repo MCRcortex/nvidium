@@ -2,7 +2,7 @@ package me.cortex.nvidium.renderers;
 
 import me.cortex.nvidium.gl.shader.Shader;
 import me.cortex.nvidium.sodiumCompat.ShaderLoader;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
+import net.caffeinemc.mods.sodium.client.gl.shader.ShaderParser;
 import net.minecraft.util.Identifier;
 
 import static me.cortex.nvidium.gl.shader.ShaderType.FRAGMENT;

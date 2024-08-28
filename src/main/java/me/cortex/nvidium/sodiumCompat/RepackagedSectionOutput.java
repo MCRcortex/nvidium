@@ -1,6 +1,6 @@
 package me.cortex.nvidium.sodiumCompat;
 
-import me.jellysquid.mods.sodium.client.util.NativeBuffer;
+import net.caffeinemc.mods.sodium.client.util.NativeBuffer;
 import org.joml.Vector3i;
 
 //Computed on the build thread instead of the render thread saving alot of 1% lows
