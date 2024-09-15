@@ -1,4 +1,4 @@
-# nvidium
+# Nvidium
 
 [![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
 
