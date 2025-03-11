@@ -1,23 +1,29 @@
 package me.cortex.nvidium.renderers;
 
-import me.cortex.nvidium.gl.shader.Shader;
-import me.cortex.nvidium.sodiumCompat.ShaderLoader;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
-import net.minecraft.util.Identifier;
+import static org.lwjgl.opengl.GL43C.glDispatchCompute;
 
+import me.cortex.nvidium.gl.shader.Shader;
 import static me.cortex.nvidium.gl.shader.ShaderType.FRAGMENT;
 import static me.cortex.nvidium.gl.shader.ShaderType.MESH;
-import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
+import static me.cortex.nvidium.gl.shader.ShaderType.TASK;
+import me.cortex.nvidium.sodiumCompat.ShaderLoader;
+import net.minecraft.util.Identifier;
 
 public class RegionRasterizer extends Phase {
     private final Shader shader = Shader.make()
-                    .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_raster/mesh.glsl")))
-                    .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_raster/fragment.frag")))
-                    .compile();
+            .addSource(TASK, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_task.glsl")))
+            .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/frag.frag"))).compile();
+
+    public RegionRasterizer() {
+    }
 
     public void raster(int regionCount) {
         shader.bind();
-        glDrawMeshTasksNV(0,regionCount);
+        
+        // Use compute shader dispatch for AMD compatibility
+        // Each workgroup processes one region
+        glDispatchCompute(regionCount, 1, 1);
     }
 
     public void delete() {

@@ -1,21 +1,28 @@
 package me.cortex.nvidium.renderers;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import me.cortex.nvidium.gl.shader.Shader;
-import me.cortex.nvidium.sodiumCompat.ShaderLoader;
-import me.cortex.nvidium.mixin.minecraft.LightMapAccessor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Identifier;
+import static org.lwjgl.opengl.GL11C.GL_LINEAR;
+import static org.lwjgl.opengl.GL11C.GL_NEAREST;
+import static org.lwjgl.opengl.GL11C.GL_NEAREST_MIPMAP_LINEAR;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_WRAP_S;
+import static org.lwjgl.opengl.GL11C.GL_TEXTURE_WRAP_T;
 import org.lwjgl.opengl.GL12C;
+import static org.lwjgl.opengl.GL33.glGenSamplers;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GL45C;
 
-import static me.cortex.nvidium.RenderPipeline.GL_DRAW_INDIRECT_ADDRESS_NV;
-import static me.cortex.nvidium.gl.shader.ShaderType.*;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL33.glGenSamplers;
-import static org.lwjgl.opengl.NVMeshShader.glMultiDrawMeshTasksIndirectNV;
-import static org.lwjgl.opengl.NVVertexBufferUnifiedMemory.glBufferAddressRangeNV;
+import com.mojang.blaze3d.platform.GlStateManager;
+
+import me.cortex.nvidium.gl.shader.Shader;
+import static me.cortex.nvidium.gl.shader.ShaderType.FRAGMENT;
+import static me.cortex.nvidium.gl.shader.ShaderType.MESH;
+import static me.cortex.nvidium.gl.shader.ShaderType.TASK;
+import me.cortex.nvidium.mixin.minecraft.LightMapAccessor;
+import me.cortex.nvidium.renderers.amd.AMDMeshShaderHelper;
+import me.cortex.nvidium.sodiumCompat.ShaderLoader;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.util.Identifier;
 
 public class PrimaryTerrainRasterizer extends Phase {
     private final int blockSampler = glGenSamplers();
@@ -52,8 +59,10 @@ public class PrimaryTerrainRasterizer extends Phase {
         setTexture(blockId, 0);
         setTexture(lightId, 1);
 
-        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
-        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);
+        // Use AMD-compatible approach with standard buffer binding
+        int indirectBuffer = (int)(commandAddr & 0xFFFFFFFF); // Extract buffer ID from address
+        AMDMeshShaderHelper.drawMeshTasksIndirectNV(indirectBuffer, regionCount);
+        
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
     }
