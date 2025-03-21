@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "id": "nvidium",
   "version": "${version}",
+  "custom": {
+    "commit": "${commit}",
+    "buildtime": "${buildtime}"
+  },
   "name": "Nvidium",
   "description": "Replacement rendering engine for sodium",
   "authors": [
@@ -17,7 +21,7 @@
   ],
   "depends": {
     "fabricloader": ">=0.15",
-    "minecraft": ">=1.20.6",
-    "sodium": ["=0.5.8"]
+    "minecraft": ">=1.21",
+    "sodium": ["=0.5.9", "=0.5.11"]
   }
 }

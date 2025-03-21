@@ -21,15 +21,10 @@ public class Nvidium {
 
     static {
         ModContainer mod = (ModContainer) FabricLoader.getInstance().getModContainer("nvidium").orElseThrow(NullPointerException::new);
-        MOD_VERSION = mod.getMetadata().getVersion().getFriendlyString();
+        var version = mod.getMetadata().getVersion().getFriendlyString();
+        var commit = mod.getMetadata().getCustomValue("commit").getAsString();
+        MOD_VERSION = version+"-"+commit;
     }
-    //TODO: basicly have the terrain be a virtual geometry buffer
-    // once it gets too full, start culling via a callback task system
-    // which executes a task on the gpu and calls back once its done
-    // use this to then do a rasterizing check on the terrain and remove
-    // the oldest regions and sections
-
-    //TODO: ADD LODS
 
     public static void checkSystemIsCapable() {
         var cap = GL.getCapabilities();
@@ -54,14 +49,5 @@ public class Nvidium {
             LOGGER.info("Enabling Nvidium");
         }
         IS_ENABLED = IS_COMPATIBLE;
-    }
-
-
-    public static void setupGLDebugCallback() {
-
-    }
-
-    public static void preWindowInit() {
-
     }
 }

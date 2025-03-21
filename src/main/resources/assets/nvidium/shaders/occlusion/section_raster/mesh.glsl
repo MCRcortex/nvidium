@@ -21,6 +21,7 @@ taskNV in Task {
     uint32_t _visOutBase;//Base output visibility index
     uint32_t _offset;
     mat4 regionTransform;
+    ivec3 chunkShift;
 };
 
 const uint PILUTA[] = {0, 3, 6, 0, 1, 7, 4, 5};
@@ -71,7 +72,7 @@ void main() {
     chunk.y <<= 32-9;
     chunk.y >>= 32-9;
 
-    ivec3 relativeChunkPos = (chunk - chunkPosition.xyz);
+    ivec3 relativeChunkPos = (chunk + chunkShift);
     vec3 corner = vec3(relativeChunkPos<<4);
     vec3 cornerCopy = corner;
 

@@ -9,6 +9,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexEn
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
 import net.caffeinemc.mods.sodium.api.util.ColorABGR;
 import net.caffeinemc.mods.sodium.api.util.ColorU8;
+import net.minecraft.util.math.MathHelper;
 import org.lwjgl.system.MemoryUtil;
 
 public class NvidiumCompactChunkVertex implements ChunkVertexType {
@@ -50,22 +51,33 @@ public class NvidiumCompactChunkVertex implements ChunkVertexType {
     @Override
     public ChunkVertexEncoder getEncoder() {
         return (ptr, material, vertex, sectionIndex) -> {
+            int light = compactLight(vertex.light);
+
             MemoryUtil.memPutInt(ptr + 0, (encodePosition(vertex.x) << 0) | (encodePosition(vertex.y) << 16));
-            MemoryUtil.memPutInt(ptr + 4, (encodePosition(vertex.z) << 0) | (encodeDrawParameters(material, sectionIndex) << 16));
-            MemoryUtil.memPutInt(ptr + 8, (encodeColor(vertex.color) << 0) | (encodeLight(vertex.light) << 24));
+            MemoryUtil.memPutInt(ptr + 4, (encodePosition(vertex.z) << 0) | (encodeDrawParameters(material) << 16) | ((light&0xFF)<<24));
+            MemoryUtil.memPutInt(ptr + 8, (encodeColor(vertex.color) << 0) | (((light>>8)&0xFF) << 24));
             MemoryUtil.memPutInt(ptr + 12, encodeTexture(vertex.u, vertex.v));
 
             return ptr + STRIDE;
         };
     }
 
+
+    private static int compactLight(int light) {
+        int sky = MathHelper.clamp((light >>> 16) & 0xFF, 8, 248);
+        int block = MathHelper.clamp((light >>>  0) & 0xFF, 8, 248);
+
+        return (block << 0) | (sky << 8);
+    }
+
     private static int encodePosition(float v) {
         return (int) ((MODEL_ORIGIN + v) * MODEL_SCALE_INV);
     }
 
-    private static int encodeDrawParameters(Material material, int sectionIndex) {
-        return (((sectionIndex & 0xFF) << 8) | ((material.bits() & 0xFF) << 0));
+    private static int encodeDrawParameters(Material material) {
+        return ((material.bits() & 0xFF) << 0);
     }
+
 
     private static int encodeColor(int color) {
         var brightness = ColorU8.byteToNormalizedFloat(ColorABGR.unpackAlpha(color));
@@ -77,12 +89,6 @@ public class NvidiumCompactChunkVertex implements ChunkVertexType {
         return ColorABGR.pack(r, g, b, 0x00);
     }
 
-    private static int encodeLight(int light) {
-        int block = (light >> 4) & 0xF;
-        int sky = (light >> 20) & 0xF;
-
-        return ((block << 0) | (sky << 4));
-    }
 
     private static int encodeTexture(float u, float v) {
         return ((Math.round(u * TEXTURE_MAX_VALUE) & 0xFFFF) << 0) |

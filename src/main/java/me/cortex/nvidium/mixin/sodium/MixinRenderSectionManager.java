@@ -173,11 +173,17 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     private void instantReschedule(int x, int y, int z, boolean important, CallbackInfo ci, RenderSection section, ChunkUpdateType pendingUpdate) {
         if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
             var queue = rebuildLists.get(pendingUpdate);
-            //TODO:FIXME: this might result in the section being enqueued multiple times, if this gets executed, and the async search sees it at the exactly wrong moment
             if (isSectionVisibleBfs(section) && queue.size() < pendingUpdate.getMaximumQueueSize()) {
                 ((IRenderSectionExtension)section).isSubmittedRebuild(true);
                 rebuildLists.get(pendingUpdate).add(section);
             }
+        }
+    }
+
+    @Inject(method = "getVisibleChunkCount", at = @At("HEAD"), cancellable = true)
+    private void injectVisibilityCount(CallbackInfoReturnable<Integer> cir) {
+        if (Nvidium.IS_ENABLED && Nvidium.config.async_bfs) {
+            cir.setReturnValue(this.renderer.getAsyncBfsVisibilityCount());
         }
     }
 }

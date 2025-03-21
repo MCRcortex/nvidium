@@ -11,8 +11,8 @@ import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 
 public class RegionRasterizer extends Phase {
     private final Shader shader = Shader.make()
-                    .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "occlusion/region_raster/mesh.glsl")))
-                    .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "occlusion/region_raster/fragment.frag")))
+                    .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_raster/mesh.glsl")))
+                    .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/region_raster/fragment.frag")))
                     .compile();
 
     public void raster(int regionCount) {

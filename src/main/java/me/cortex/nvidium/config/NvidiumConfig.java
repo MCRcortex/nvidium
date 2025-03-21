@@ -23,6 +23,7 @@ public class NvidiumConfig {
 
     public int region_keep_distance = 32;
 
+    public boolean render_fog = true;
     public TranslucencySortingLevel translucency_sorting_level = TranslucencySortingLevel.QUADS;
 
     public StatisticsLoggingLevel statistics_level = StatisticsLoggingLevel.NONE;

@@ -21,8 +21,6 @@ public class MixinChunkBuilderMeshingTask {
             if (result != null) {
                 ((IRepackagedResult) result).set(SodiumResultCompatibility.repackage(result));
             }
-
-            //TODO: here, delete the old sodium data to save on memory
         }
     }
 }

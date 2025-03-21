@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static java.lang.Thread.MAX_PRIORITY;
 
@@ -44,6 +43,8 @@ public class AsyncOcclusionTracker {
     private final float renderDistance;
     private volatile long iterationTimeMillis;
     private volatile boolean shouldUseOcclusionCulling = true;
+
+    private volatile int chunkVisibilityCount = 0;
 
     public AsyncOcclusionTracker(int renderDistance, Long2ReferenceMap<RenderSection> sections, World world, Map<ChunkUpdateType, ArrayDeque<RenderSection>> outputRebuildQueue) {
         this.occlusionCuller = new OcclusionCuller(sections, world);
@@ -69,6 +70,7 @@ public class AsyncOcclusionTracker {
             List<RenderSection> chunkUpdates = new ArrayList<>();
             List<RenderSection> blockEntitySections = new ArrayList<>();
             Set<Sprite> animatedSpriteSet = animateVisibleSpritesOnly?new HashSet<>():null;
+            int[] visibleGeometryCounter = new int[1];
             final OcclusionCuller.Visitor visitor = (section, visible) -> {
                 if (section.getPendingUpdate() != null && section.getBuildCancellationToken() == null) {
                     if ((!((IRenderSectionExtension)section).isSubmittedRebuild()) && !((IRenderSectionExtension)section).isSeen()) {//If it is in submission queue or seen dont enqueue
@@ -80,6 +82,11 @@ public class AsyncOcclusionTracker {
                 if (!visible) {
                     return;
                 }
+
+                if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_GEOMETRY))!=0) {
+                    visibleGeometryCounter[0]++;
+                }
+
                 if ((section.getFlags()&(1<<RenderSectionFlags.HAS_BLOCK_ENTITIES))!=0 &&
                         section.getPosition().isWithinDistance(viewport.getChunkCoord(),33)) {//32 rd max chunk distance
                     blockEntitySections.add(section);
@@ -115,6 +122,7 @@ public class AsyncOcclusionTracker {
                     }
                 }
             }
+            this.chunkVisibilityCount = visibleGeometryCounter[0];
             blockEntitySectionsRef.set(blockEntitySections);
             visibleAnimatedSpritesRef.set(animatedSpriteSet==null?null:animatedSpriteSet.toArray(new Sprite[0]));
             iterationTimeMillis = System.currentTimeMillis() - startTime;
@@ -221,5 +229,9 @@ public class AsyncOcclusionTracker {
             ret[type.ordinal()] = this.outputRebuildQueue.get(type).size();
         }
         return ret;
+    }
+
+    public int getLastVisibilityCount() {
+        return this.chunkVisibilityCount;
     }
 }

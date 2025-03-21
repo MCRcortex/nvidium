@@ -118,7 +118,7 @@ public class RegionManager {
         long size = (long)(maxY-minY)<<62 | (long)(maxX-minX)<<59 | (long)(maxZ-minZ)<<56;
         long count = (long)(lastIdx)<<48;
         long x = ((((long) region.rx <<3)+minX)&((1<<24)-1))<<24;
-        long y = ((((long) region.ry <<2)+minY)&((1<<24)-1))<<0;//TODO:FIXME! y height does _not_ need to be 24 bits big
+        long y = ((((long) region.ry <<2)+minY)&((1<<24)-1))<<0;//Can shrink y from needing to be 24 bits large if bits are needed for other data
         long z = ((((long) region.rz <<3)+minZ)&((1<<24)-1))<<(64-24);
         long transformationId = (((long)region.transformationId)<<(64-24-MAX_TRANSFORMATION_SIZE_BITS));
         MemoryUtil.memPutLong(upload, size|count|x|y);
@@ -162,9 +162,6 @@ public class RegionManager {
         region.pos2id[sectionPos] = -1;
         region.id2pos[sectionId] = -1;
         region.verifyIntegrity();
-
-        //TODO: need to act like a heap and move the last index to the removed index slot so that
-        // we have a contiguous allocation
 
         int endId = --region.count;
         //If the endId is not the sectionId we need to move whatever was at the end to the new position
@@ -272,7 +269,6 @@ public class RegionManager {
         if (region == null) {
             return false;
         } else {
-            //FIXME: should make it use the region data so that the frustum bounds check is more accurate
             return frustum.isBoxVisible((region.rx<<7)+(1<<6),(region.ry<<6)+(1<<5), (region.rz<<7)+(1<<6), 1<<6, 1<<5, 1<<6);
         }
     }

@@ -7,6 +7,7 @@
 #extension GL_NV_gpu_shader5 : require
 #extension GL_NV_bindless_texture : require
 
+#extension GL_KHR_shader_subgroup_arithmetic: require
 #extension GL_KHR_shader_subgroup_basic : require
 #extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_vote : require
@@ -20,16 +21,11 @@
 layout(local_size_x = 16) in;
 layout(triangles, max_vertices=64, max_primitives=32) out;
 
+#ifdef RENDER_FOG
 layout(location=1) out Interpolants {
-    f16vec2 uv;
-    f16vec3 tint;
-    f16vec3 addin;
+    float fogLerp;
 } OUT[];
-
-layout(location=5) perprimitiveNV out PerPrimData {
-    int8_t lodBias;
-    uint8_t alphaCutoff;
-} per_prim_out[];
+#endif
 
 taskNV in Task {
     vec3 origin;
@@ -44,59 +40,6 @@ taskNV in Task {
     uvec4 binVb;
 };
 
-layout(binding = 1) uniform sampler2D tex_light;
-
-vec4 sampleLight(uvec2 uv) {
-    return vec4(texelFetch(tex_light, ivec2(uv), 0).rgb, 1);
-}
-
-
-void emitQuadIndicies() {
-    uint primBase = gl_LocalInvocationID.x * 6;
-    uint vertexBase = gl_LocalInvocationID.x<<2;
-    gl_PrimitiveIndicesNV[primBase+0] = vertexBase+0;
-    gl_PrimitiveIndicesNV[primBase+1] = vertexBase+1;
-    gl_PrimitiveIndicesNV[primBase+2] = vertexBase+2;
-    gl_PrimitiveIndicesNV[primBase+3] = vertexBase+2;
-    gl_PrimitiveIndicesNV[primBase+4] = vertexBase+3;
-    gl_PrimitiveIndicesNV[primBase+5] = vertexBase+0;
-}
-
-mat4 transformMat;
-Vertex emitVertex(uint vertexBaseId, uint innerId) {
-    Vertex V = terrainData[vertexBaseId + innerId];
-    uint outId = (gl_LocalInvocationID.x<<2)+innerId;
-
-    vec3 pos = decodeVertexPosition(V)+origin;
-    gl_MeshVerticesNV[outId].gl_Position = MVP*(transformMat * vec4(pos,1.0));
-
-    //TODO: make this shared state between all the vertices?
-    float mippingBias = decodeVertexMippingBias(V);
-    float alphaCutoff = decodeVertexAlphaCutoff(V);
-
-    OUT[outId].uv = f16vec2(decodeVertexUV(V));
-
-    vec4 tint = decodeVertexColour(V);
-    tint *= sampleLight(decodeLightUV(V));
-    tint *= tint.w;
-
-    vec3 tintO;
-    vec3 addiO;
-    computeFog(isCylindricalFog, pos+subchunkOffset.xyz, tint, fogColour, fogStart, fogEnd, tintO, addiO);
-    OUT[outId].tint = f16vec3(tintO);
-    OUT[outId].addin = f16vec3(addiO);
-
-    return V;
-}
-
-void emitPerPrimativeData(Vertex V) {
-    int8_t lodBias = int8_t(clamp(decodeVertexMippingBias(V) * 16, -128, 127));
-    uint8_t alphaCutoff = uint8_t(decodeVertexAlphaCutoff(V) * 255);
-    per_prim_out[gl_LocalInvocationID.x<<1].lodBias = lodBias;
-    per_prim_out[(gl_LocalInvocationID.x<<1)|1].lodBias = lodBias;
-    per_prim_out[gl_LocalInvocationID.x<<1].alphaCutoff = alphaCutoff;
-    per_prim_out[(gl_LocalInvocationID.x<<1)|1].alphaCutoff = alphaCutoff;
-}
 
 //Do a binary search via global invocation index to determine the base offset
 // Note, all threads in the work group are probably going to take the same path
@@ -125,24 +68,138 @@ uint getOffset() {
     }
 }
 
+mat4 transformMat;
+
+vec4 transformVertex(Vertex V) {
+    vec3 pos = decodeVertexPosition(V)+origin;
+    return MVP*(transformMat * vec4(pos,1.0));
+}
+
+Vertex V0;
+vec4 pV0;
+Vertex V1;
+vec4 pV1;
+Vertex V2;
+vec4 pV2;
+Vertex V3;
+vec4 pV3;
+
+
+
+void putVertex(uint id, Vertex V) {
+    #ifdef RENDER_FOG
+    vec3 pos = decodeVertexPosition(V)+origin;
+    vec3 exactPos = pos+subchunkOffset.xyz;
+    OUT[id].fogLerp = clamp(computeFogLerp(exactPos, isCylindricalFog, fogStart, fogEnd) * fogColour.a, 0, 1);
+    #endif
+}
+
+
+//TODO: make it so that its 32 threads but still 16 quads, each thread processes 2 verticies
+// it computes the min of 0,2 with subgroups, then locally it decieds if its triangle needs to be discarded
+// should significantly increase the warp efficency
 void main() {
+    if (gl_LocalInvocationIndex == 0) {
+        gl_PrimitiveCountNV = 0;//Set the prim count to 0
+    }
+
     uint id = getOffset();
 
     //If its over, dont render
     if (id == uint(-1)) {
         return;
     }
-
     transformMat = transformationArray[transformationId];
 
-    emitQuadIndicies();
-    emitPerPrimativeData(emitVertex(id<<2, 0));
-    emitVertex(id<<2, 1);
-    emitVertex(id<<2, 2);
-    emitVertex(id<<2, 3);
+    //Load the data
+    V0 = terrainData[(id<<2)+0];
+    V1 = terrainData[(id<<2)+1];
+    V2 = terrainData[(id<<2)+2];
+    V3 = terrainData[(id<<2)+3];
 
-    if (gl_LocalInvocationID.x == 0) {
-        //Remaining quads in workgroup
-        gl_PrimitiveCountNV = min(uint(int(quadCount)-int(gl_WorkGroupID.x<<4))<<1, 32);//2 primatives per quad
+    //Transform the vertices
+    pV0 = transformVertex(V0);
+    pV1 = transformVertex(V1);
+    pV2 = transformVertex(V2);
+    pV3 = transformVertex(V3);
+
+    bool t0draw;
+    bool t1draw;
+
+    //Compute the bounding pixels of the 2 triangles in the quad. note, vertex 0 and 2 are the common verticies
+    {
+        vec2 ssmin = ((pV0.xy/pV0.w)+1)*screenSize;
+        vec2 ssmax = ssmin;
+
+        vec2 point = ((pV2.xy/pV2.w)+1)*screenSize;
+        ssmin = min(ssmin, point);
+        ssmax = max(ssmax, point);
+
+        point = ((pV1.xy/pV1.w)+1)*screenSize;
+        vec2 t0min = min(ssmin, point);
+        vec2 t0max = max(ssmax, point);
+
+        point = ((pV3.xy/pV3.w)+1)*screenSize;
+        vec2 t1min = min(ssmin, point);
+        vec2 t1max = max(ssmax, point);
+
+        //Possibly cull the triangles if they dont cover the center of a pixel on the screen (degen)
+        t0draw = all(notEqual(round(t0min),round(t0max)));
+        t1draw = all(notEqual(round(t1min),round(t1max)));
+    }
+
+    //Abort if there are no triangles to dispatch
+    if (!(t0draw || t1draw)) {
+        return;
+    }
+
+    //barrier();
+    uint triCnt = uint(t0draw)+uint(t1draw);
+    //Do a subgroup prefix sum to compute emission indies and verticies, aswell as a max to compute the total count
+    uint triIndex = subgroupExclusiveAdd(triCnt);
+    uint vertBase = subgroupExclusiveAdd((t0draw==t1draw)?4:3);//if both tris are needed, its 4 verticies else its only 3
+    uint totalTris = subgroupMax(triIndex+triCnt);
+
+
+    uint indexIndex = triIndex*3;//3 indicies to a tri
+    uint vertIndex = vertBase;
+
+    //We have triangles to emit!
+    // emit the constant vertices (0,2) that are needed for both triangles
+    putVertex(vertIndex, V0); gl_MeshVerticesNV[vertIndex++].gl_Position = pV0;
+    putVertex(vertIndex, V2); gl_MeshVerticesNV[vertIndex++].gl_Position = pV2;
+
+
+    uint lodBias = hasMipping(V0)?0:1;
+    uint alphaCutoff = rawVertexAlphaCutoff(V0);
+    int primData = int((lodBias<<2)|alphaCutoff|(id<<4));
+
+    if (t0draw) {
+        putVertex(vertIndex, V1); gl_MeshVerticesNV[vertIndex].gl_Position = pV1;
+        // 0 1 2
+        gl_PrimitiveIndicesNV[indexIndex++] = vertBase+0;
+        gl_PrimitiveIndicesNV[indexIndex++] = vertIndex;
+        gl_PrimitiveIndicesNV[indexIndex++] = vertBase+1;
+        vertIndex++;
+
+        //gl_MeshPrimitivesNV[triIndex++].gl_PrimitiveID = int(id<<1);
+        gl_MeshPrimitivesNV[triIndex++].gl_PrimitiveID = primData|(0<<3);
+    }
+
+    if (t1draw) {
+        putVertex(vertIndex, V3); gl_MeshVerticesNV[vertIndex].gl_Position = pV3;
+        // 2 3 0
+        gl_PrimitiveIndicesNV[indexIndex++] = vertBase+1;
+        gl_PrimitiveIndicesNV[indexIndex++] = vertIndex;
+        gl_PrimitiveIndicesNV[indexIndex++] = vertBase+0;
+        vertIndex++;
+
+        //gl_MeshPrimitivesNV[triIndex++].gl_PrimitiveID = int((id<<1)+1);
+        gl_MeshPrimitivesNV[triIndex++].gl_PrimitiveID = primData|(1<<3);
+    }
+
+
+    if (subgroupElect()) {
+        gl_PrimitiveCountNV = totalTris;
     }
 }

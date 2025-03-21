@@ -34,15 +34,18 @@ taskNV in Task {
 };
 
 layout(location=1) out Interpolants {
-    f16vec3 tint;
-    f16vec3 addin;
-    f16vec2 uv;
+#ifdef RENDER_FOG
+    float16_t fogLerp;
+#endif
+    vec2 uv;
+    vec3 v_colour;
 } OUT[];
 
 layout(binding = 1) uniform sampler2D tex_light;
 
-vec4 sampleLight(uvec2 uv) {
-    return vec4(texelFetch(tex_light, ivec2(uv), 0).rgb, 1);
+vec4 sampleLight(vec2 uv) {
+    //Its divided by 16 to match sodium/vanilla (it can never be 1 which is funny)
+    return vec4(texture(tex_light, uv).rgb, 1);
 }
 
 void emitQuadIndicies() {
@@ -61,22 +64,25 @@ void emitVertex(uint vertexBaseId, uint innerId) {
     uint outId = (gl_LocalInvocationID.x<<2)+innerId;
     vec3 pos = decodeVertexPosition(V)+originAndBaseData.xyz;
     gl_MeshVerticesNV[outId].gl_Position = MVP*vec4(pos,1.0);
-    OUT[outId].uv = f16vec2(decodeVertexUV(V));
+
+
+    vec3 exactPos = pos+subchunkOffset.xyz;
+
+    #ifdef RENDER_FOG
+    float fogLerp = clamp(computeFogLerp(exactPos, isCylindricalFog, fogStart, fogEnd) * fogColour.a, 0, 1);
+    OUT[outId].fogLerp = float16_t(fogLerp);
+    #endif
+    OUT[outId].uv = decodeVertexUV(V);
 
     vec4 tint = decodeVertexColour(V);
     tint *= sampleLight(decodeLightUV(V));
     tint *= tint.w;
-
-    vec3 tintO;
-    vec3 addiO;
-    vec3 exactPos = pos+subchunkOffset.xyz;
-    computeFog(isCylindricalFog, exactPos, tint, fogColour, fogStart, fogEnd, tintO, addiO);
-    OUT[outId].tint = f16vec3(tintO);
-    OUT[outId].addin = f16vec3(addiO);
+    OUT[outId].v_colour = tint.rgb;
 
     #ifdef TRANSLUCENCY_SORTING_QUADS
     depthPos += exactPos;
     #endif
+
 }
 
 #ifdef TRANSLUCENCY_SORTING_QUADS
@@ -171,18 +177,15 @@ void main() {
     memoryBarrierShared();
 
     performTranslucencySort();
-    int meta = 2;
     #else
     emitVertex(id, 0);
     emitVertex(id, 1);
     emitVertex(id, 2);
     emitVertex(id, 3);
-
-    int meta = int(gl_GlobalInvocationID.x);
     #endif
 
-    gl_MeshPrimitivesNV[(gl_LocalInvocationID.x<<1)].gl_PrimitiveID = meta;
-    gl_MeshPrimitivesNV[(gl_LocalInvocationID.x<<1)|1].gl_PrimitiveID = meta;
+    gl_MeshPrimitivesNV[(gl_LocalInvocationID.x<<1)].gl_PrimitiveID = int((id>>2)<<4)|(0<<3);
+    gl_MeshPrimitivesNV[(gl_LocalInvocationID.x<<1)|1].gl_PrimitiveID = int((id>>2)<<4)|(1<<3);
 
     if (gl_LocalInvocationID.x == 0) {
         //Remaining quads in workgroup

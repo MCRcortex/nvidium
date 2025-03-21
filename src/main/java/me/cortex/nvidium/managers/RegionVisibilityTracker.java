@@ -17,8 +17,8 @@ import static org.lwjgl.opengl.NVMeshShader.glDrawMeshTasksNV;
 
 public class RegionVisibilityTracker {
     private final Shader shader = Shader.make()
-            .addSource(MESH, ShaderLoader.parse(new Identifier("nvidium", "occlusion/queries/region/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(new Identifier("nvidium", "occlusion/queries/region/fragment.frag")))
+            .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/queries/region/mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "occlusion/queries/region/fragment.frag")))
             .compile();
 
     private final DownloadTaskStream downStream;

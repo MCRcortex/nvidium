@@ -6,10 +6,6 @@ import it.unimi.dsi.fastutil.longs.LongRBTreeSet;
 
 import java.util.Random;
 
-//FIXME: NOTE: if there is a free block of size > 2^30 EVERYTHING BREAKS, need to either increase size
-// or automatically split and manage multiple blocks which is very painful
-//OR instead of addr, defer to a long[] and use indicies
-
 //TODO: replace the LongAVLTreeSet with a custom implementation that doesnt cause allocations when searching
 // and see if something like a RBTree is any better
 public class SegmentedManager {
@@ -35,7 +31,7 @@ public class SegmentedManager {
 
     }*/
 
-    public long alloc(int size) {//TODO: add alignment support
+    public long alloc(int size) {
         if (size == 0) throw new IllegalArgumentException();
         //This is stupid, iterator is not inclusive
         var iter = FREE.iterator(((long) size << ADDR_BITS)-1);
@@ -87,7 +83,6 @@ public class SegmentedManager {
             iter.nextLong();//Need to reset the iter into its state
         }//If there is no previous it means were at the start of the buffer, we might need to merge with block 0 if we are not block 0
         else if (!FREE.isEmpty()) {// if free is not empty it means we must merge with block of free starting at 0
-            //if (addr != 0)//FIXME: this is very dodgy solution, if addr == 0 it means its impossible for there to be a previous element
             if (FREE.remove(addr<<ADDR_BITS)) {//Attempt to remove block 0, this is very dodgy as it assumes block zero is 0 addr n size
                 slot = addr + size;//slot at address 0 and size of 0 block + new block
             }

@@ -42,13 +42,19 @@ public class UploadingBufferStream {
     private long caddr = -1;
     private long offset = 0;
     public long upload(Buffer buffer, long destOffset, long size) {
-        if (size > Integer.MAX_VALUE) {
+        if (size > Integer.MAX_VALUE || size == 0 || size < 0) {
             throw new IllegalArgumentException();
+        }
+        if (destOffset < 0) {
+            throw new IllegalStateException();
+        }
+        if (destOffset+size > buffer.getSize()) {
+            throw new IllegalStateException();
         }
 
         long addr;
         if (this.caddr == -1 || !this.allocationArena.expand(this.caddr, (int) size)) {
-            this.caddr = this.allocationArena.alloc((int) size);//TODO: replace with allocFromLargest
+            this.caddr = this.allocationArena.alloc((int) size);
             //If the upload stream is full, flush it and empty it
             if (this.caddr == SIZE_LIMIT) {
                 this.commit();

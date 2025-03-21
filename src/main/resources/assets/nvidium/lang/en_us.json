@@ -22,5 +22,7 @@
   "nvidium.options.statistics_level.sections" : "Sections",
   "nvidium.options.statistics_level.quads" : "Quads",
   "nvidium.options.async_bfs.name" : "Enable async bfs",
-  "nvidium.options.async_bfs.tooltip" : "Enables asynchronous bfs chunk section loading, greatly reduces the frame time when moving, more noticeable with higher render distances"
+  "nvidium.options.async_bfs.tooltip" : "Enables asynchronous bfs chunk section loading, greatly reduces the frame time when moving, more noticeable with higher render distances",
+  "nvidium.options.render_fog.name": "Render Fog",
+  "nvidium.options.render_fog.tooltip": "Should fog be rendered"
 }

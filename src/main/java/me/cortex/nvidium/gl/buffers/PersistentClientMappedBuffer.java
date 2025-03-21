@@ -16,7 +16,7 @@ public class PersistentClientMappedBuffer extends GlObject implements IClientMap
     public PersistentClientMappedBuffer(long size) {
         super(glCreateBuffers());
         this.size = size;
-        glNamedBufferStorage(id, size, GL_MAP_PERSISTENT_BIT| (GL_CLIENT_STORAGE_BIT|GL_MAP_WRITE_BIT));//TODO: Make the other flags dynamic
+        glNamedBufferStorage(id, size, GL_MAP_PERSISTENT_BIT| (GL_CLIENT_STORAGE_BIT|GL_MAP_WRITE_BIT));
         addr = nglMapNamedBufferRange(id, 0, size, GL_MAP_PERSISTENT_BIT|(GL_MAP_UNSYNCHRONIZED_BIT|GL_MAP_FLUSH_EXPLICIT_BIT|GL_MAP_WRITE_BIT));
     }
 
@@ -29,12 +29,16 @@ public class PersistentClientMappedBuffer extends GlObject implements IClientMap
     public void delete() {
         super.free0();
         glUnmapNamedBuffer(id);
-        glMakeNamedBufferNonResidentNV(id);
         glDeleteBuffers(id);
     }
 
     @Override
     public void free() {
         this.delete();
+    }
+
+    @Override
+    public long getSize() {
+        return size;
     }
 }

@@ -101,4 +101,9 @@ public class PersistentSparseAddressableBuffer extends GlObject implements IDevi
     public void free() {
         this.delete();
     }
+
+    @Override
+    public long getSize() {
+        return size;
+    }
 }

@@ -1,7 +1,17 @@
 plugins {
-    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'fabric-loom' version '1.7-SNAPSHOT'
     id 'maven-publish'
 }
+
+def gitCommitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+def buildtime = System.currentTimeSeconds()
 
 version = project.mod_version
 group = project.maven_group
@@ -20,11 +30,13 @@ loom {
     }
 }
 
+
 processResources {
-    inputs.property "version", project.version
+    inputs.properties("version": project.version, "commit": gitCommitHash, "buildtime":buildtime)
+
     archivesBaseName = "nvidium"
     filesMatching("fabric.mod.json") {
-        expand "version": project.version
+        expand "commit": gitCommitHash, "version": project.version, "buildtime": buildtime
     }
 }
 
@@ -56,7 +68,7 @@ dependencies {
     modImplementation("net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.40+73761d2e3b")
     modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
 
-    modImplementation "maven.modrinth:sodium:mc1.20.6-0.5.8"
+    modImplementation "maven.modrinth:sodium:mc1.21-0.5.11"
 
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
