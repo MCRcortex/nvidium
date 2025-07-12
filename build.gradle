@@ -1,23 +1,27 @@
 plugins {
     id 'fabric-loom' version '1.10-SNAPSHOT'
     id 'maven-publish'
+    id 'java'
+    id 'base'
 }
 
-def gitCommitHash = { ->
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', '--short', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
+def gitCommitHash = providers.exec {
+    commandLine 'git', 'rev-parse', '--short', 'HEAD'
+}.standardOutput.asText.map { it.trim() }
+
 def buildtime = System.currentTimeSeconds()
 
 version = project.mod_version
 group = project.maven_group
 
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+base {
+    archivesName = "nvidium"
+}
 
 apply plugin: "fabric-loom"
 
@@ -32,11 +36,12 @@ loom {
 
 
 processResources {
-    inputs.properties("version": project.version, "commit": gitCommitHash, "buildtime":buildtime)
+    def ProjectVersion = project.version
 
-    archivesBaseName = "nvidium"
+    inputs.properties("version": ProjectVersion, "commit": gitCommitHash.get(), "buildtime": buildtime)
+
     filesMatching("fabric.mod.json") {
-        expand "commit": gitCommitHash, "version": project.version, "buildtime": buildtime
+        expand "commit": gitCommitHash.get(), "version": ProjectVersion, "buildtime": buildtime
     }
 }
 
