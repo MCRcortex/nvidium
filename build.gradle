@@ -5,11 +5,22 @@ plugins {
     id 'base'
 }
 
-def gitCommitHash = providers.exec {
-    commandLine 'git', 'rev-parse', '--short', 'HEAD'
-}.standardOutput.asText.map { it.trim() }
-
-def buildtime = System.currentTimeSeconds()
+def gitCommitHash = { ->
+    try {
+        ExecOutput result = providers.exec {
+            commandLine = ['git', 'rev-parse', '--short', 'HEAD']
+            ignoreExitValue = true
+        }
+        if (result.getResult().get().getExitValue() != 0) {
+            return "<UnknownCommit>"
+        } else {
+            return result.standardOutput.asText.get().strip()
+        }
+    } catch (Exception e) {
+        e.printStackTrace()
+        return "<UnknownCommit>"
+    }
+}
 
 version = project.mod_version
 group = project.maven_group
@@ -37,12 +48,15 @@ loom {
 
 processResources {
     def ProjectVersion = project.version
-
-    inputs.properties("version": ProjectVersion, "commit": gitCommitHash.get(), "buildtime": buildtime)
-
-    filesMatching("fabric.mod.json") {
-        expand "commit": gitCommitHash.get(), "version": ProjectVersion, "buildtime": buildtime
+    def buildTimeProvider = project.provider { 
+        System.currentTimeSeconds()
     }
+ 
+    inputs.properties("version": ProjectVersion, "commit": gitCommitHash(), "buildtime": buildTimeProvider)
+    
+    filesMatching("fabric.mod.json") {
+        expand "commit": gitCommitHash(), "version": ProjectVersion, "buildtime": buildTimeProvider.get()
+    }    
 }
 
 repositories {
@@ -88,4 +102,3 @@ dependencies {
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
     modCompileOnly "maven.modrinth:iris:1.9.0+1.21.6-fabric"
 }
-
