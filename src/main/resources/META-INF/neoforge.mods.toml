@@ -1,0 +1,34 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "LGPL-3.0-only"
+
+
+[[mods]]
+modId = "nvidium"
+version = "${version}"
+displayName = "Nvidium (NeoForge Port)"
+authors = "Cortex (Original), 1Influence (Port)"
+description = '''
+Unofficial NeoForge port of Nvidium.
+'''
+
+[[dependencies.nvidium]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.0.167,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.nvidium]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.nvidium]]
+modId = "sodium"
+type = "required"
+versionRange = "[0.6.0,)"
+ordering = "AFTER"
+side = "CLIENT"

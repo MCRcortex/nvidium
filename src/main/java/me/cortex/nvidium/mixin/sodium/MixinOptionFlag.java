@@ -1,7 +1,16 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.sodiumCompat.NvidiumOptionFlags;
-import me.jellysquid.mods.sodium.client.gui.options.OptionFlag;
+
+import net.caffeinemc.mods.sodium.client.gui.options.OptionFlag;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

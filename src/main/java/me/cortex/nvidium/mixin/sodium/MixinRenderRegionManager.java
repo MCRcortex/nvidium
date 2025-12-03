@@ -1,35 +1,45 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.mixin.sodium;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererSetter;
-import me.jellysquid.mods.sodium.client.gl.device.CommandList;
-import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
-import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegion;
-import me.jellysquid.mods.sodium.client.render.chunk.region.RenderRegionManager;
+import net.caffeinemc.mods.sodium.client.gl.device.CommandList;
+import net.caffeinemc.mods.sodium.client.render.chunk.compile.BuilderTaskOutput;
+import net.caffeinemc.mods.sodium.client.render.chunk.compile.ChunkBuildOutput;
+import net.caffeinemc.mods.sodium.client.render.chunk.region.RenderRegionManager;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
 
 @Mixin(value = RenderRegionManager.class, remap = false)
 public abstract class MixinRenderRegionManager implements INvidiumWorldRendererSetter {
 
-
-    @Shadow protected abstract void uploadMeshes(CommandList commandList, RenderRegion region, Collection<ChunkBuildOutput> results);
-
-    @Unique private NvidiumWorldRenderer renderer;
+    @Unique
+    private NvidiumWorldRenderer renderer;
 
 
-    @Redirect(method = "uploadMeshes(Lme/jellysquid/mods/sodium/client/gl/device/CommandList;Ljava/util/Collection;)V", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/render/chunk/region/RenderRegionManager;uploadMeshes(Lme/jellysquid/mods/sodium/client/gl/device/CommandList;Lme/jellysquid/mods/sodium/client/render/chunk/region/RenderRegion;Ljava/util/Collection;)V"))
-    private void redirectUpload(RenderRegionManager instance, CommandList cmdList, RenderRegion pass, Collection<ChunkBuildOutput> uploadQueue) {
-        if (Nvidium.IS_ENABLED) {
-            uploadQueue.forEach(renderer::uploadBuildResult);
-        } else {
-            uploadMeshes(cmdList, pass, uploadQueue);
+    @Inject(method = "uploadResults", at = @At("HEAD"), cancellable = true, remap = false)
+    private void onUploadResults(CommandList commandList, Collection<BuilderTaskOutput> results, CallbackInfo ci) {
+        if (Nvidium.IS_ENABLED && renderer != null) {
+            for (BuilderTaskOutput result : results) {
+
+                if (result instanceof ChunkBuildOutput buildOutput) {
+                    renderer.uploadBuildResult(buildOutput);
+                }
+            }
+            ci.cancel();
         }
     }
 

@@ -1,16 +1,20 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.sodiumCompat;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.irisshaders.iris.api.v0.IrisApi;
+import net.neoforged.fml.ModList;
 
 public class IrisCheck {
-    public static final boolean IRIS_LOADED = FabricLoader.getInstance().isModLoaded("iris");
+    public static final boolean IRIS_LOADED = ModList.get().isLoaded("iris");
 
-    private static boolean checkIrisShaders() {
-        return IrisApi.getInstance().isShaderPackInUse();
-    }
 
     public static boolean checkIrisShouldDisable() {
-        return !(IRIS_LOADED && checkIrisShaders());
+        return IRIS_LOADED;
     }
 }

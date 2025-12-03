@@ -1,8 +1,16 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.api0;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
-import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import org.joml.Matrix4fc;
 import org.joml.Matrix4x3fc;
 

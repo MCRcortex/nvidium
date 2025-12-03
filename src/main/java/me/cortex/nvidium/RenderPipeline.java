@@ -1,3 +1,11 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -15,10 +23,10 @@ import me.cortex.nvidium.renderers.*;
 import me.cortex.nvidium.util.DownloadTaskStream;
 import me.cortex.nvidium.util.TickableManager;
 import me.cortex.nvidium.util.UploadingBufferStream;
-import me.jellysquid.mods.sodium.client.render.chunk.ChunkRenderMatrices;
-import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.math.BlockPos;
+
+import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
+import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.client.Minecraft;
 import org.joml.*;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.system.MemoryUtil;
@@ -180,8 +188,8 @@ public class RenderPipeline {
         //Clear the first gl error, not our fault
         //glGetError();
 
-        int screenWidth = MinecraftClient.getInstance().getWindow().getFramebufferWidth();
-        int screenHeight = MinecraftClient.getInstance().getWindow().getFramebufferHeight();
+        int screenWidth = Minecraft.getInstance().getWindow().getScreenWidth();
+        int screenHeight = Minecraft.getInstance().getWindow().getScreenHeight();
 
         int visibleRegions = 0;
 
@@ -294,7 +302,7 @@ public class RenderPipeline {
             addr += 4;
             MemoryUtil.memPutFloat(addr, RenderSystem.getShaderFogEnd());//FogEnd
             addr += 4;
-            MemoryUtil.memPutInt(addr, RenderSystem.getShaderFogShape().getId());//IsSphericalFog
+            MemoryUtil.memPutInt(addr, RenderSystem.getShaderFogShape().ordinal());//IsSphericalFog
             addr += 4;
             MemoryUtil.memPutShort(addr, (short) visibleRegions);
             addr += 2;
@@ -454,7 +462,12 @@ public class RenderPipeline {
         {
             glEnable(GL_DEPTH_TEST);
             RenderSystem.enableBlend();
-            RenderSystem.blendFuncSeparate(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SrcFactor.ONE, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+            RenderSystem.blendFuncSeparate(
+                    GlStateManager.SourceFactor.SRC_ALPHA,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE,
+                    GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+            );
             translucencyTerrainRasterizer.raster(prevRegionCount, translucencyCommandBuffer.getDeviceAddress());
             RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();

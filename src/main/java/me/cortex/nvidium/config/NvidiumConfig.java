@@ -1,10 +1,18 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.config;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import me.cortex.nvidium.Nvidium;
-import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.Minecraft;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -28,7 +36,6 @@ public class NvidiumConfig {
 
     public StatisticsLoggingLevel statistics_level = StatisticsLoggingLevel.NONE;
 
-
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .setPrettyPrinting()
@@ -36,6 +43,7 @@ public class NvidiumConfig {
             .create();
 
     private NvidiumConfig() {}
+
     public static NvidiumConfig loadOrCreate() {
         var path = getConfigPath();
         if (Files.exists(path)) {
@@ -58,8 +66,9 @@ public class NvidiumConfig {
     }
 
     private static Path getConfigPath() {
-        return FabricLoader.getInstance()
-                .getConfigDir()
+
+        return Minecraft.getInstance().gameDirectory.toPath()
+                .resolve("config")
                 .resolve("nvidium-config.json");
     }
 }
