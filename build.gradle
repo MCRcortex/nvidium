@@ -1,78 +1,111 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge build system.
+ * Licensed under LGPL-3.0-only
+ */
+
+
+
 plugins {
-    id 'fabric-loom' version '1.7-SNAPSHOT'
+    id 'java-library'
     id 'maven-publish'
+
+    id 'net.neoforged.moddev' version '1.0.17'
 }
+
+tasks.named('wrapper', Wrapper) {
+    distributionType = Wrapper.DistributionType.BIN
+}
+
+version = project.mod_version
+group = project.mod_group_id
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+
+    maven { url "https://maven.irisshaders.net/"}
+}
+
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+
+neoForge {
+    version = project.neoforge_version
+
+
+    runs {
+        client {
+            client()
+
+            jvmArguments.addAll("-Xmx8G", "-XX:+UseZGC")
+        }
+        server {
+            server()
+        }
+    }
+
+    mods {
+
+        "${project.mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
 
 def gitCommitHash = { ->
     def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', '--short', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
-def buildtime = System.currentTimeSeconds()
-
-version = project.mod_version
-group = project.maven_group
-
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
-
-apply plugin: "fabric-loom"
-
-loom {
-    mixin.defaultRefmapName = "nvidium.refmap.json"
-    runs {
-        it.configureEach {
-            vmArgs("-Xmx8G", "-XX:+UseZGC")
+    try {
+        exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+            standardOutput = stdout
         }
+        return stdout.toString().trim()
+    } catch (Exception e) {
+        return "unknown"
     }
 }
 
 
 processResources {
-    inputs.properties("version": project.version, "commit": gitCommitHash, "buildtime":buildtime)
+    def buildProps = [
+            "version": project.version,
+            "commit": gitCommitHash(),
+            "minecraft_version": project.minecraft_version,
+            "mod_id": project.mod_id
+    ]
 
-    archivesBaseName = "nvidium"
-    filesMatching("fabric.mod.json") {
-        expand "commit": gitCommitHash, "version": project.version, "buildtime": buildtime
-    }
-}
 
-repositories {
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = "Modrinth"
-                url = "https://api.modrinth.com/maven"
-            }
-        }
-        filter {
-            includeGroup "maven.modrinth"
-        }
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand buildProps
     }
+    inputs.properties(buildProps)
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    // Fabric API
-    modImplementation(fabricApi.module("fabric-api-base", project.fabric_version))
-    modImplementation(fabricApi.module("fabric-block-view-api-v2", project.fabric_version))
-    modImplementation(fabricApi.module("fabric-rendering-fluids-v1", project.fabric_version))
 
-    modImplementation("net.fabricmc.fabric-api:fabric-rendering-data-attachment-v1:0.3.40+73761d2e3b")
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
+    // --- Sodium ---
 
-    modImplementation "maven.modrinth:sodium:mc1.21-0.5.11"
+    implementation "maven.modrinth:sodium:mc1.21.1-0.6.13-neoforge"
 
-    //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
-    //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
-    //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
-    modCompileOnly "maven.modrinth:iris:1.7.0+1.20.6"
+    // --- Iris (Optional) ---
+    compileOnly "maven.modrinth:iris:${project.iris_version}"
+
+
 }
 
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

@@ -1,10 +1,22 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge build system.
+ * Licensed under LGPL-3.0-only
+ */
+
 pluginManagement {
     repositories {
-        maven {
-            name = 'Fabric'
-            url = 'https://maven.fabricmc.net/'
-        }
-        mavenCentral()
         gradlePluginPortal()
+        mavenCentral()
+        maven { url = 'https://maven.neoforged.net/releases' }
+
     }
 }
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'nvidium'

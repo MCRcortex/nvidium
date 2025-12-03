@@ -1,20 +1,33 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.sodiumCompat;
 
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderConstants;
-import me.jellysquid.mods.sodium.client.gl.shader.ShaderParser;
-import net.minecraft.util.Identifier;
+import net.caffeinemc.mods.sodium.client.gl.shader.ShaderConstants;
+import net.caffeinemc.mods.sodium.client.gl.shader.ShaderParser;
+
+
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.function.Consumer;
 
 public class ShaderLoader {
-    public static String parse(Identifier path) {
+
+
+    public static String parse(ResourceLocation path) {
         return parse(path, shaderConstants -> {});
     }
 
-    public static String parse(Identifier path, Consumer<ShaderConstants.Builder> constantBuilder) {
+
+    public static String parse(ResourceLocation path, Consumer<ShaderConstants.Builder> constantBuilder) {
         var builder = ShaderConstants.builder();
         if (Nvidium.IS_DEBUG) {
             builder.add("DEBUG");

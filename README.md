@@ -1,6 +1,8 @@
-# Nvidium
+This is an unofficial fork of the Nvidium mod, porting it to NeoForge. The original mod's author is cortex.
+# Nvidium [Neoforge]
 
-[![Modrinth](https://img.shields.io/modrinth/dt/nvidium?logo=modrinth)](https://modrinth.com/mod/nvidium)
+
+
 
 Nvidium is an alternate rendering backing for sodium, it uses cutting edge nvidia features to render huge amounts of
 terrain geometry at very playable framerates.

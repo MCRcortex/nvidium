@@ -1,11 +1,19 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.renderers;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import me.cortex.nvidium.gl.shader.Shader;
 import me.cortex.nvidium.sodiumCompat.ShaderLoader;
 import me.cortex.nvidium.mixin.minecraft.LightMapAccessor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL12C;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GL45C;
@@ -21,12 +29,12 @@ public class PrimaryTerrainRasterizer extends Phase {
     private final int blockSampler = glGenSamplers();
     private final int lightSampler = glGenSamplers();
     private final Shader shader = Shader.make()
-            .addSource(TASK, ShaderLoader.parse(Identifier.of("nvidium", "terrain/task.glsl")))
-            .addSource(MESH, ShaderLoader.parse(Identifier.of("nvidium", "terrain/mesh.glsl")))
-            .addSource(FRAGMENT, ShaderLoader.parse(Identifier.of("nvidium", "terrain/frag.frag"))).compile();
+            .addSource(TASK, ShaderLoader.parse(ResourceLocation.fromNamespaceAndPath("nvidium", "terrain/task.glsl")))
+            .addSource(MESH, ShaderLoader.parse(ResourceLocation.fromNamespaceAndPath("nvidium", "terrain/mesh.glsl")))
+            .addSource(FRAGMENT, ShaderLoader.parse(ResourceLocation.fromNamespaceAndPath("nvidium", "terrain/frag.frag"))).compile();
 
     public PrimaryTerrainRasterizer() {
-        GL45C.glSamplerParameteri(blockSampler,     GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+        GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MIN_LOD, 0);
         GL45C.glSamplerParameteri(blockSampler, GL45C.GL_TEXTURE_MAX_LOD, 4);
@@ -44,16 +52,19 @@ public class PrimaryTerrainRasterizer extends Phase {
     public void raster(int regionCount, long commandAddr) {
         shader.bind();
 
-        int blockId = MinecraftClient.getInstance().getTextureManager().getTexture(Identifier.of("minecraft", "textures/atlas/blocks.png")).getGlId();
-        int lightId = ((LightMapAccessor)MinecraftClient.getInstance().gameRenderer.getLightmapTextureManager()).getTexture().getGlId();
+        Minecraft minecraft = Minecraft.getInstance();
+
+        int blockId = minecraft.getTextureManager().getTexture(ResourceLocation.parse("textures/atlas/blocks.png")).getId();
+
+        int lightId = ((LightMapAccessor) minecraft.gameRenderer.lightTexture()).getTexture().getId();
 
         GL45C.glBindSampler(0, blockSampler);
         GL45C.glBindSampler(1, lightSampler);
         setTexture(blockId, 0);
         setTexture(lightId, 1);
 
-        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount*8L);//Bind the command buffer
-        glMultiDrawMeshTasksIndirectNV( 0, regionCount, 0);
+        glBufferAddressRangeNV(GL_DRAW_INDIRECT_ADDRESS_NV, 0, commandAddr, regionCount * 8L);
+        glMultiDrawMeshTasksIndirectNV(0, regionCount, 0);
         GL45C.glBindSampler(0, 0);
         GL45C.glBindSampler(1, 0);
     }

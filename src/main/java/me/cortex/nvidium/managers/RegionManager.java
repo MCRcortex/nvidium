@@ -1,3 +1,11 @@
+/*
+ * Nvidium - High performance rendering engine for Minecraft
+ * Copyright (C) 2023 cortex
+ *
+ * Modified by 1Influence (2025) - Ported to NeoForge.
+ * Licensed under LGPL-3.0-only
+ */
+
 package me.cortex.nvidium.managers;
 
 
@@ -7,8 +15,9 @@ import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.gl.buffers.IDeviceMappedBuffer;
 import me.cortex.nvidium.util.IdProvider;
 import me.cortex.nvidium.util.UploadingBufferStream;
-import me.jellysquid.mods.sodium.client.render.viewport.Viewport;
-import net.minecraft.util.math.ChunkSectionPos;
+
+import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
+import net.minecraft.core.SectionPos;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.ArrayDeque;
@@ -214,7 +223,7 @@ public class RegionManager {
     }
 
     public int allocateSection(int sectionX, int sectionY, int sectionZ) {
-        long regionKey = ChunkSectionPos.asLong(sectionX>>3, sectionY>>2, sectionZ>>3);
+        long regionKey = SectionPos.asLong(sectionX >> 3, sectionY >> 2, sectionZ >> 3);
         int regionId = this.regionMap.computeIfAbsent(regionKey, k -> this.idProvider.provide());
 
         //The region doesnt exist so we must create a new one
@@ -318,7 +327,7 @@ public class RegionManager {
         if (id < 0 || id >= MAX_TRANSFORMATION_COUNT) {
             throw new IllegalArgumentException("Transformation id out of bounds");
         }
-        long regionKey = ChunkSectionPos.asLong(x, y, z);
+        long regionKey = SectionPos.asLong(x, y, z);
         int oldId = this.regionTransformationIdMapping.put(regionKey, id);
         if (oldId != id) {
             //The region has a new id so need to set and propagate the data
@@ -358,7 +367,7 @@ public class RegionManager {
             Arrays.fill(this.id2pos, -1);
 
             MemoryUtil.memSet(sectionData, 0, 256 * SectionManager.SECTION_SIZE);
-            this.key = ChunkSectionPos.asLong(rx, ry, rz);
+            this.key = SectionPos.asLong(rx, ry, rz);
             this.id = id;
 
             this.rx = rx;
