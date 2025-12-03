@@ -14,7 +14,6 @@ https://modrinth.com/mod/nvidium
 
 
 
-Nvidium is an alternate rendering backing for sodium, it uses cutting edge nvidia features to render huge amounts of
-terrain geometry at very playable framerates.
+Nothing from the mod was cut or changed in terms of logic. Everything remains as before, but now on the previously unsupported Neoforge.
 
-### Requires sodium and an nvidia gtx 1600 series or newer to run (turing+ architecture)
+### The mod still only supports Nvidia graphics cards, and still only from the 16xx series and above.
