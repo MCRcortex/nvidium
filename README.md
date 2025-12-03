@@ -1,5 +1,15 @@
 This is an unofficial fork of the Nvidium mod, porting it to NeoForge. The original mod's author is cortex.
-# Nvidium [Neoforge]
+Links to the author:
+
+https://modrinth.com/user/cortex
+
+https://github.com/MCRcortex
+
+Link to the original mod:
+
+https://modrinth.com/mod/nvidium
+
+# Nvidium [Neoforge] UNOFFICIAL
 
 
 
