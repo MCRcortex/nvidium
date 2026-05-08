@@ -126,7 +126,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     }
 
     @Inject(method = "getDebugStrings", at = @At("HEAD"), cancellable = true)
-    private void redirectDebug(CallbackInfoReturnable<Collection<String>> cir) {
+    private void redirectDebug(boolean showAdvanced, CallbackInfoReturnable<Collection<String>> cir) {
         if (Nvidium.IS_ENABLED) {
             var debugStrings = new ArrayList<String>();
             renderer.addDebugInfo(debugStrings);
