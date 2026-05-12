@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.14-SNAPSHOT'
+    id 'fabric-loom' version '1.16-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -93,12 +93,10 @@ dependencies {
 
     modImplementation(fabricApi.module("fabric-resource-loader-v0", project.fabric_version))
 
-    modImplementation "net.caffeinemc:sodium-fabric:0.8.7+mc1.21.11"
-    modImplementation "net.caffeinemc:sodium-fabric-api:0.8.7+mc1.21.11"
+    modImplementation "net.caffeinemc:sodium-fabric:0.8.12-beta.2+mc1.21.11"
 
     //modImplementation "maven.modrinth:c2me-fabric:0.2.0+alpha.10.49+1.19.4"
     //modImplementation "maven.modrinth:chunks-fade-in:v1.0.3-1.19.4"
     //modImplementation "maven.modrinth:immersiveportals:v2.7.3-mc1.19.4"
     modCompileOnly "maven.modrinth:iris:1.10.4+1.21.11-fabric"
 }
-
