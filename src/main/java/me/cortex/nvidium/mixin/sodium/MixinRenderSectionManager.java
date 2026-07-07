@@ -40,7 +40,6 @@ import java.util.Collection;
 public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
     @Shadow @Final private RenderRegionManager regions;
     @Unique private NvidiumWorldRenderer renderer;
-    @Unique private Viewport viewport;
 
     @Unique
     private static void updateNvidiumIsEnabled() {
@@ -88,32 +87,6 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
             }
         }
         section.delete();
-    }
-
-    @Inject(method = "prepareRenderTrees", at = @At("HEAD"))
-    private void trackViewport(Camera camera, Viewport viewport, FogParameters fogParameters, boolean spectator, CallbackInfo ci) {
-        this.viewport = viewport;
-    }
-
-    @Inject(method = "renderLayer", at = @At("HEAD"), cancellable = true)
-    public void renderLayer(ChunkRenderMatrices matrices, TerrainRenderPass pass, double x, double y, double z, FogParameters fogParameters, GpuSampler terrainSampler, CallbackInfo ci) {
-        if (Nvidium.IS_ENABLED) {
-            ci.cancel();
-            if (pass == DefaultTerrainRenderPasses.CUTOUT) // Early exit, cutout will be rendered with SOLID
-                return;
-
-            RenderTarget target = pass.getTarget();
-            GlStateManager._viewport(0, 0, target.getColorTexture().getWidth(0), target.getColorTexture().getHeight(0));
-            GlStateManager._glBindFramebuffer(GlConst.GL_FRAMEBUFFER, ((GlTexture) target.getColorTexture()).getFbo(((GlDevice) ((GpuDeviceAccessor) RenderSystem.getDevice()).sodium$getBackend()).directStateAccess(), target.getDepthTexture()));
-            ((GlCommandEncoderAccessor) ((CommandEncoderAccessor) RenderSystem.getDevice().createCommandEncoder()).sodium$getBackend()).sodium$applyPipelineState(pass.getPipeline());
-            ((GlCommandEncoderAccessor) ((CommandEncoderAccessor) RenderSystem.getDevice().createCommandEncoder()).sodium$getBackend()).sodium$setLastProgram(null);
-
-            if (pass == DefaultTerrainRenderPasses.SOLID) {
-                renderer.renderFrame(pass, viewport, fogParameters, matrices, x, y, z, terrainSampler);
-            } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
-                renderer.renderTranslucent(pass, terrainSampler);
-            }
-        }
     }
 
     @Inject(method = "getDebugStrings", at = @At("HEAD"), cancellable = true)
