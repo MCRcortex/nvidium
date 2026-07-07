@@ -53,7 +53,7 @@ void applyFog(inout vec4 colour) {
 
 #ifdef USE_NV_FRAGMENT_SHADER_BARYCENTRIC
     //Reverse the transformation and compute the original position
-    vec4 clip = (MVPInv * vec4((gl_FragCoord.xy/screenSize)-1, gl_FragCoord.z*2-1, 1));
+    vec4 clip = (MVPInv * vec4((gl_FragCoord.xy/screenSize)-1, gl_FragCoord.z, 1));
     vec3 pos = clip.xyz/clip.w;
     vec2 v_FragDistance = getFragDistance(pos);
 #endif
