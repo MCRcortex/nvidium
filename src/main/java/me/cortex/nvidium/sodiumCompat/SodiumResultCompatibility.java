@@ -16,8 +16,7 @@ import org.lwjgl.system.MemoryUtil;
 
 public class SodiumResultCompatibility {
 
-    public static RepackagedSectionOutput repackage(ChunkBuildOutput result) {
-        int formatSize = Nvidium.config.use_sodium_vertex_format ? ChunkMeshFormats.COMPACT.getVertexFormat().getStride() : NvidiumCompactChunkVertex.STRIDE;
+    public static RepackagedSectionOutput repackage(ChunkBuildOutput result, int formatSize) {
         int geometryBytes = result.meshes.values().stream().mapToInt(a->a.getVertexData().getLength()).sum();
         var output = new NativeBuffer(geometryBytes);
         var offsets = new short[8];
