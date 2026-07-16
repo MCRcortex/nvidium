@@ -30,6 +30,6 @@
   "depends": {
     "fabricloader": ">=0.18.4",
     "minecraft": ["26.1", "26.1.1", "26.1.2"],
-    "sodium": ["0.9.1-beta.4"]
+    "sodium": ["0.9.1"]
   }
 }
