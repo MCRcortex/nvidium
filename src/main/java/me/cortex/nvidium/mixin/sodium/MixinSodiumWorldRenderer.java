@@ -69,10 +69,10 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
                 GlStateManager._enableDepthTest();
                 GlStateManager._depthFunc(GL33C.GL_GEQUAL); // reverse-Z
                 GlStateManager._colorMask(0, 15);
+                GlStateManager._depthMask(true);
 
                 if (pass == DefaultTerrainRenderPasses.SOLID) {
                     GlStateManager._disableBlend(0);
-                    GlStateManager._depthMask(true);
 
                     this.getRenderer().renderFrame(pass, viewport, fogParameters, matrices, x, y, z, terrainSampler);
                 } else if (pass == DefaultTerrainRenderPasses.TRANSLUCENT) {
@@ -83,11 +83,9 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
                             GL33C.GL_ONE,
                             GL33C.GL_ONE_MINUS_SRC_ALPHA
                     );
-                    GlStateManager._depthMask(false);
 
                     this.getRenderer().renderTranslucent(pass, terrainSampler);
                 }
-                GlStateManager._depthMask(true);
                 GlStateManager._disableBlend(0);
             }
         }

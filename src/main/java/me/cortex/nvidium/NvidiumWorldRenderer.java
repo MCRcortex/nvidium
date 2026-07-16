@@ -97,8 +97,7 @@ public class NvidiumWorldRenderer {
         if (buildOutput instanceof ChunkBuildOutput chunkBuildOutput) {
             this.sectionManager.uploadChunkBuildResult(chunkBuildOutput);
         }
-        if (buildOutput instanceof ChunkSortOutput chunkSortOutput &&
-                !chunkSortOutput.containsNewIndexData() &&
+        if (buildOutput instanceof ChunkSortOutput chunkSortOutput && chunkSortOutput.containsNewIndexData() &&
                 Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.SODIUM) {
             this.sectionManager.uploadChunkSort(chunkSortOutput);
         }
