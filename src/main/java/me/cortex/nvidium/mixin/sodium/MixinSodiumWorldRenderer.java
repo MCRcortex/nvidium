@@ -6,6 +6,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuSampler;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
+import me.cortex.nvidium.mixin.minecraft.CommandEncoderAccessor;
+import me.cortex.nvidium.mixin.minecraft.GlCommandEncoderAccessor;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
@@ -64,6 +66,12 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
                             pass.getTarget().getDepthTextureView(),
                             OptionalDouble.empty()
                     )) {
+                // Invalidate lastProgram to prevent B3D caching bad program
+                ((GlCommandEncoderAccessor)
+                        ((CommandEncoderAccessor) RenderSystem.getDevice().createCommandEncoder())
+                                .nvidium$getCommandEncoderBackend())
+                        .nvidium$setLastProgram(null);
+
                 GlStateManager._disableScissorTest();
                 GlStateManager._enableCull();
                 GlStateManager._enableDepthTest();
@@ -85,8 +93,8 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
                     );
 
                     this.getRenderer().renderTranslucent(pass, terrainSampler);
+                    GlStateManager._disableBlend(0);
                 }
-                GlStateManager._disableBlend(0);
             }
         }
     }
