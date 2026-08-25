@@ -35,6 +35,7 @@ public class SectionManager {
     private final Long2IntOpenHashMap section2id = new Long2IntOpenHashMap();
     private final Long2IntOpenHashMap section2terrain = new Long2IntOpenHashMap();
     private final Long2IntOpenHashMap section2index = new Long2IntOpenHashMap();
+    private final Long2IntOpenHashMap section2idxDataCount = new Long2IntOpenHashMap();
 
     private final int quadVertexSize;
     public final UploadingBufferStream uploadStream;
@@ -108,6 +109,7 @@ public class SectionManager {
             indexDataAddress = this.section2index.get(sectionKey);
             if (indexDataAddress != -1 && !this.terrainAreana.canReuse(indexDataAddress, idxBufferLength)) {
                 this.section2index.remove(sectionKey);
+                this.section2idxDataCount.remove(sectionKey);
                 this.terrainAreana.free(indexDataAddress);
                 indexDataAddress = -1;
             }
@@ -117,6 +119,7 @@ public class SectionManager {
             }
 
             this.section2index.put(sectionKey, indexDataAddress);
+            this.section2idxDataCount.put(sectionKey, indexBuffer.getLength() / 24);
 
             long upload = terrainAreana.upload(uploadStream, indexDataAddress);
             uploadIndexBuffer(idxBuffer, quadCountData, upload);
@@ -146,6 +149,7 @@ public class SectionManager {
         }
 
         // We need to store quadCount per ModelFacing to pad translucency sorting data
+        int translucentQuadCount = 0;
         var translucentData = result.meshes.get(DefaultTerrainRenderPasses.TRANSLUCENT);
         if (translucentData != null) {
             int[] quadOffsets = new int[8];
@@ -158,6 +162,7 @@ public class SectionManager {
                 }
             }
             translucencyQuadCounts.put(sectionKey, quadOffsets);
+            translucentQuadCount = quadOffsets[7];
         }
 
         int terrainAddress;
@@ -224,15 +229,26 @@ public class SectionManager {
         // Reinject or free index data
         if (Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.SODIUM) {
             if (result.containsNewIndexData()) {
-                int trIdx = this.section2index.get(sectionKey);
-                // Don't forget to scale and don't scale -1 (no data)
-                MemoryUtil.memPutInt(metadata, trIdx * (trIdx != -1 ? quadVertexSize : 1));
-            } else {
                 MemoryUtil.memPutInt(metadata, -1);
 
                 int idxIndex = this.section2index.remove(sectionKey);
                 if (idxIndex != -1) {
                     this.terrainAreana.free(idxIndex);
+                }
+            } else {
+                int trIdx = this.section2index.get(sectionKey);
+
+                if (this.section2idxDataCount.get(sectionKey) != translucentQuadCount) {
+                    // Count don't match so discard translucent index data and free
+                    MemoryUtil.memPutInt(metadata, -1);
+                    int idxIndex = this.section2index.remove(sectionKey);
+                    if (idxIndex != -1) {
+                        this.terrainAreana.free(idxIndex);
+                    }
+                } else {
+                    // Not 100% sure if the old data is still good for our new chunkbuild but if count is good at least we shouldn't crash
+                    // Don't forget to scale and don't scale -1 (no data)
+                    MemoryUtil.memPutInt(metadata, (trIdx != -1 ? trIdx * quadVertexSize : -1));
                 }
             }
         }
@@ -272,6 +288,7 @@ public class SectionManager {
             if (terrainIndex != -1) {
                 this.terrainAreana.free(terrainIndex);
             }
+            this.section2idxDataCount.remove(sectionKey);
             int indexIdx = this.section2index.remove(sectionKey);
             if (indexIdx != -1) {
                 this.terrainAreana.free(indexIdx);
