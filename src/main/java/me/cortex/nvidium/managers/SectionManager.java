@@ -226,7 +226,6 @@ public class SectionManager {
             metadata += 4;
         }
         // Put translucent quad count separately as int to prevent overflow, will do trick for now
-        System.out.println(output.offsets()[7]);
         MemoryUtil.memPutInt(metadata, output.offsets()[7]);
         metadata += 4;
 
