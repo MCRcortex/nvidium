@@ -24,6 +24,7 @@ struct Section {
     //Header.z -> 0-3=offsety 4-7=sizey 8-15=chunk y
     //Header.w -> quad offset
     ivec4 renderRanges;
+    int   tranlucentQuadCount;
     int   translucencyDataIdx;
 };
 

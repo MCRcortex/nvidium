@@ -19,7 +19,7 @@ public class SodiumResultCompatibility {
     public static RepackagedSectionOutput repackage(ChunkBuildOutput result, int formatSize) {
         int geometryBytes = result.meshes.values().stream().mapToInt(a->a.getVertexData().getLength()).sum();
         var output = new NativeBuffer(geometryBytes);
-        var offsets = new short[8];
+        var offsets = new int[8];
         var min = new Vector3i(2000);
         var max = new Vector3i(-2000);
         packageSectionGeometry(formatSize, output, offsets, result, min, max);
@@ -91,7 +91,7 @@ public class SodiumResultCompatibility {
     }
 
     //Everything is /6*4 cause its in indices and we want verticies
-    private static void packageSectionGeometry(int formatSize, NativeBuffer output, short[] outOffsets, ChunkBuildOutput result, Vector3i min, Vector3i max) {
+    private static void packageSectionGeometry(int formatSize, NativeBuffer output, int[] outOffsets, ChunkBuildOutput result, Vector3i min, Vector3i max) {
         int offset = 0;
         long outPtr = MemoryUtil.memAddress(output.getDirectBuffer());
 
@@ -214,7 +214,7 @@ public class SodiumResultCompatibility {
             offset += quadCount;
         }
 
-        outOffsets[7] = (short) offset;
+        outOffsets[7] = offset;
 
         var solid  = result.meshes.get(DefaultTerrainRenderPasses.SOLID);
         var cutout = result.meshes.get(DefaultTerrainRenderPasses.CUTOUT);
