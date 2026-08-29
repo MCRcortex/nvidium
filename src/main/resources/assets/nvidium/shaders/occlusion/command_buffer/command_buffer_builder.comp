@@ -20,7 +20,7 @@ uint getReflectedTranslucentSectionId(uint sectionId) {
 }
 
 bool hasTranslucentData(uint sectionId) {
-    return ((sectionData[sectionId].renderRanges.w>>16)&0xFFFF) > 0;
+    return sectionData[sectionId].tranlucentQuadCount > 0;
 }
 
 void main() {

@@ -133,7 +133,7 @@ public class SectionManager {
         }
 
         long metadata = regionManager.setSectionData(sectionIdx);
-        metadata += 32; // Go to translucency data offset
+        metadata += 32 + 4; // Go to translucency data offset
         MemoryUtil.memPutInt(metadata, indexDataAddress * quadVertexSize); // Scale address since we have ints instead of ChunkVertexFormat
     }
 
@@ -221,10 +221,14 @@ public class SectionManager {
 
         //Write the geometry offsets, packed into ints
         for (int i = 0; i < 4; i++) {
-            int geo = Short.toUnsignedInt(output.offsets()[i*2])|(Short.toUnsignedInt(output.offsets()[i*2+1])<<16);
+            int geo = (output.offsets()[i*2]&0xffff)|(output.offsets()[i*2+1]&0xffff)<<16;
             MemoryUtil.memPutInt(metadata, geo);
             metadata += 4;
         }
+        // Put translucent quad count separately as int to prevent overflow, will do trick for now
+        System.out.println(output.offsets()[7]);
+        MemoryUtil.memPutInt(metadata, output.offsets()[7]);
+        metadata += 4;
 
         // Reinject or free index data
         if (Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.SODIUM) {
