@@ -1,0 +1,11 @@
+{
+  "nvidium.options.pages.nvidium" : "Nvidium",
+  "nvidium.options.region_keep_distance.name" : "Distância de keep das regiões",
+  "nvidium.options.region_keep_distance.tooltip" : "Até onde manter o terreno na GPU depois do Sodium descarregar o chunk.\nVanilla: solta a malha perto do render distance.\nN chunks: mantém o que já exploraste até N chunks.\nKeep All: mantém até a VRAM encher.\nCom persistência em disco, sair e voltar recarrega a malha da pasta do mundo.",
+  "nvidium.options.enable_disk_persistence.name" : "Persistência em disco",
+  "nvidium.options.enable_disk_persistence.tooltip" : "Grava as malhas do Nvidium na pasta do mundo e recarrega depois do quit.\nFica em <save>/nvidium-persistent/. Apaga essa pasta para limpar o cache.",
+  "nvidium.options.enable_lod.name" : "Terreno LOD",
+  "nvidium.options.enable_lod.tooltip" : "Depois da distância de início, só se desenha LOD grosso.\nA malha completa fica limitada a esse raio para não ficar por cima do LOD.",
+  "nvidium.options.lod_start_chunks.name" : "Distância de início do LOD",
+  "nvidium.options.lod_start_chunks.tooltip" : "Raio da malha de qualidade cheia, em chunks.\nDentro: só malha Sodium/Nvidium completa.\nFora: só LOD (sem malha full por cima).\nSobe o valor para detalhe mais longe; desce para o LOD começar mais cedo.",
+}

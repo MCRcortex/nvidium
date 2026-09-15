@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "nvidium",
+  "version": "${version}",
+  "custom": {
+    "commit": "${commit}",
+    "buildtime": "${buildtime}"
+  },
+  "name": "Nvidium",
+  "description": "Replacement rendering engine for sodium",
+  "authors": [
+    "Cortex"
+  ],
+  "contributors": [
+    "drouarb"
+  ],
+  "contact": {},
+  "license": "LGPL-3.0",
+  "icon": "assets/nvidium/nvidium.png",
+  "environment": "client",
+  "entrypoints": {
+    "sodium:config_api_user": [
+      "me.cortex.nvidium.config.ConfigGuiBuilder"
+    ]
+  },
+  "accessWidener" : "nvidium.accesswidener",
+  "mixins": [
+    "nvidium.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": ["26.2"],
+    "sodium": ["0.9.1", "0.9.2"]
+  }
+}
