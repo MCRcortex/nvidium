@@ -1,6 +1,7 @@
 package me.cortex.nvidium.mixin.minecraft;
 
 import me.cortex.nvidium.Nvidium;
+import me.cortex.nvidium.config.NvidiumConfig;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,8 +15,8 @@ public class MixinFogRenderer {
             ordinal = 2
     )
     private float modifyFogRD(float viewDistance) {
-        if (Nvidium.IS_ENABLED && Nvidium.config.region_keep_distance != 32) {
-            return Math.max(viewDistance, Nvidium.config.region_keep_distance * 16);
+        if (Nvidium.IS_ENABLED && Nvidium.config.gpuKeepChunks() > NvidiumConfig.VANILLA_KEEP_DISTANCE) {
+            return Math.max(viewDistance, Nvidium.config.gpuKeepChunks() * 16);
         }
         return viewDistance;
     }

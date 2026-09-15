@@ -18,7 +18,36 @@ public class NvidiumConfig {
     public int max_geometry_memory = 2048;
     public boolean automatic_memory = true;
 
-    public int region_keep_distance = 32;
+    // 32 = ~vanilla RD ring. 257 = keep explored GPU mesh until VRAM eviction.
+    public static final int VANILLA_KEEP_DISTANCE = 32;
+    public static final int KEEP_ALL_DISTANCE = 257;
+
+    public int region_keep_distance = KEEP_ALL_DISTANCE;
+
+    public boolean keepUntilVramLimit() {
+        return this.region_keep_distance >= KEEP_ALL_DISTANCE;
+    }
+
+    public int gpuKeepChunks() {
+        return this.region_keep_distance;
+    }
+
+    public Boolean enable_disk_persistence = Boolean.TRUE;
+
+    public boolean diskPersistence() {
+        return this.enable_disk_persistence == null || this.enable_disk_persistence;
+    }
+
+    public Boolean enable_lod = Boolean.TRUE;
+    public Integer lod_start_chunks = 32;
+
+    public boolean lodEnabled() {
+        return this.enable_lod == null || this.enable_lod;
+    }
+
+    public int lodStartChunks() {
+        return this.lod_start_chunks == null ? 32 : Math.max(8, this.lod_start_chunks);
+    }
 
     public boolean render_fog = true;
     public boolean use_sodium_vertex_format = false;
@@ -33,7 +62,7 @@ public class NvidiumConfig {
     private static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .setPrettyPrinting()
-            .excludeFieldsWithModifiers(Modifier.PRIVATE)
+            .excludeFieldsWithModifiers(Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
             .create();
 
     private NvidiumConfig() {}

@@ -5,6 +5,7 @@ import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.NvidiumWorldRenderer;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
+import me.cortex.nvidium.persist.PersistentMesh;
 import me.cortex.nvidium.sodiumCompat.INvidiumWorldRendererGetter;
 import me.cortex.nvidium.sodiumCompat.IRepackagedResult;
 import me.cortex.nvidium.util.BufferArena;
@@ -23,6 +24,7 @@ import org.joml.Vector4i;
 import org.lwjgl.system.MemoryUtil;
 
 import java.nio.IntBuffer;
+import java.util.function.LongConsumer;
 
 import static me.cortex.nvidium.Nvidium.LOGGER;
 
@@ -46,6 +48,7 @@ public class SectionManager {
     private final RenderDevice device;
 
     private final LongSet hiddenSectionKeys = new LongOpenHashSet();
+    private LongConsumer regionRemovedCallback;
 
     public SectionManager(RenderDevice device, long fallbackMemorySize, UploadingBufferStream uploadStream, int quadVertexSize, NvidiumWorldRenderer worldRenderer) {
         int maxRegions = 50_000;
@@ -284,6 +287,10 @@ public class SectionManager {
         deleteSection(SectionPos.asLong(section.getChunkX(), section.getChunkY(), section.getChunkZ()));
     }
 
+    public void evictSection(long sectionKey) {
+        deleteSection(sectionKey);
+    }
+
     private void deleteSection(long sectionKey) {
         int sectionIdx = this.section2id.remove(sectionKey);
         if (sectionIdx != -1) {
@@ -315,6 +322,44 @@ public class SectionManager {
         return regionManager;
     }
 
+    public int getGpuSectionCount() {
+        return this.section2id.size();
+    }
+
+    public boolean hasSection(long sectionKey) {
+        return this.section2id.containsKey(sectionKey);
+    }
+
+    public void setRegionRemovedCallback(LongConsumer callback) {
+        this.regionRemovedCallback = callback;
+    }
+
+    public boolean uploadPersistedMesh(PersistentMesh mesh) {
+        if (mesh == null || mesh.quads <= 0 || mesh.geometry == null || mesh.geometry.length == 0) {
+            return false;
+        }
+        if (this.section2id.containsKey(mesh.sectionKey)) {
+            return false;
+        }
+
+        int terrainAddress = this.terrainAreana.allocQuads(mesh.quads);
+        if (terrainAddress == SegmentedManager.SIZE_LIMIT) {
+            return false;
+        }
+        this.section2terrain.put(mesh.sectionKey, terrainAddress);
+
+        long geometryUpload = this.terrainAreana.upload(this.uploadStream, terrainAddress);
+        mesh.copyGeometryTo(geometryUpload);
+
+        int sectionIdx = this.section2id.computeIfAbsent(
+                mesh.sectionKey,
+                key -> this.regionManager.allocateSection(SectionPos.x(key), SectionPos.y(key), SectionPos.z(key))
+        );
+
+        writeSectionMetadata(mesh.sectionKey, sectionIdx, terrainAddress, mesh.min(), mesh.size(), mesh.offsets);
+        return true;
+    }
+
     public void removeRegionById(int regionId) {
         if (!this.regionManager.regionExists(regionId)) return;
         long rk = this.regionManager.regionIdToKey(regionId);
@@ -328,6 +373,29 @@ public class SectionManager {
                 }
             }
         }
+        if (this.regionRemovedCallback != null) {
+            this.regionRemovedCallback.accept(rk);
+        }
+    }
+
+    private void writeSectionMetadata(long sectionKey, int sectionIdx, int terrainAddress, Vector3i min, Vector3i size, int[] offsets) {
+        long metadata = this.regionManager.setSectionData(sectionIdx);
+        boolean hideSectionBitSet = this.hiddenSectionKeys.contains(sectionKey);
+        int px = SectionPos.x(sectionKey)<<8 | size.x<<4 | min.x;
+        int py = (SectionPos.y(sectionKey)&0x1FF)<<8 | size.y<<4 | min.y | (hideSectionBitSet?1<<17:0) | ((this.regionManager.getSectionRefId(sectionIdx))<<18);
+        int pz = SectionPos.z(sectionKey)<<8 | size.z<<4 | min.z;
+        int pw = terrainAddress;
+        new Vector4i(px, py, pz, pw).getToAddress(metadata);
+        metadata += 4*4;
+
+        for (int i = 0; i < 4; i++) {
+            int geo = (offsets[i*2]&0xffff)|(offsets[i*2+1]&0xffff)<<16;
+            MemoryUtil.memPutInt(metadata, geo);
+            metadata += 4;
+        }
+        MemoryUtil.memPutInt(metadata, offsets.length > 7 ? offsets[7] : 0);
+        metadata += 4;
+        MemoryUtil.memPutInt(metadata, -1);
     }
 }
 

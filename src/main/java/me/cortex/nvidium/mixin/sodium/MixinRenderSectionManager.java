@@ -8,7 +8,6 @@ import net.caffeinemc.mods.sodium.client.render.chunk.region.RenderRegionManager
 import net.caffeinemc.mods.sodium.client.render.chunk.translucent_sorting.SortBehavior;
 import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkVertexType;
 import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,7 +37,7 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
         if (Nvidium.IS_ENABLED) {
             if (renderer != null)
                 throw new IllegalStateException("Cannot have multiple world renderers");
-            renderer = new NvidiumWorldRenderer();
+            renderer = new NvidiumWorldRenderer(level);
             ((INvidiumWorldRendererSetter)regions).setWorldRenderer(renderer);
         }
     }
@@ -62,17 +61,6 @@ public class MixinRenderSectionManager implements INvidiumWorldRendererGetter {
             renderer.delete();
             renderer = null;
         }
-    }
-
-    @Redirect(method = "onSectionRemoved", at = @At(value = "INVOKE", target = "Lnet/caffeinemc/mods/sodium/client/render/chunk/RenderSection;delete()V"))
-    private void deleteSection(RenderSection section) {
-        if (Nvidium.IS_ENABLED) {
-            if (Nvidium.config.region_keep_distance == 32 ||
-                    Nvidium.config.region_keep_distance <= Minecraft.getInstance().options.getEffectiveRenderDistance()) {
-                renderer.deleteSection(section);
-            }
-        }
-        section.delete();
     }
 
     @Inject(method = "getDebugStrings", at = @At("HEAD"), cancellable = true)

@@ -245,9 +245,8 @@ public class RenderPipeline {
             IntSortedSet regions = new IntAVLTreeSet();
             for (int i = 0; i < rm.maxRegionIndex(); i++) {
                 if (!rm.regionExists(i)) continue;
-                if ((Nvidium.config.region_keep_distance != 257 && Nvidium.config.region_keep_distance != 32 &&
-                        Nvidium.config.region_keep_distance > Minecraft.getInstance().options.getEffectiveRenderDistance())
-                        && !rm.withinSquare(Nvidium.config.region_keep_distance+4, i, chunkPos.x, chunkPos.y, chunkPos.z)) {
+                if (!Nvidium.config.keepUntilVramLimit()
+                        && !rm.withinSquare(Nvidium.config.gpuKeepChunks() + 4, i, chunkPos.x, chunkPos.y, chunkPos.z)) {
                     removeRegion(i);
                     continue;
                 }
