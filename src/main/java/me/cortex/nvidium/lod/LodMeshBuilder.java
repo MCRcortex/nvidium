@@ -19,21 +19,26 @@ public final class LodMeshBuilder {
     private LodMeshBuilder() {}
 
     public static PersistentMesh build(VoxelSection lod0, int lod) {
+        return build(lod0, lod, new VoxelSection[6]);
+    }
+
+    public static PersistentMesh build(VoxelSection lod0, int lod, VoxelSection[] faceNeighbors) {
         VoxelSection src = lod <= 0 ? lod0 : lod0.mip(lod);
         int grid = VoxelSection.SIZE >> Math.max(lod, 0);
         if (grid < 1) {
             grid = 1;
         }
         int voxelSize = VoxelSection.SIZE / grid;
+        VoxelSection[] neighbors = faceNeighbors != null ? faceNeighbors : new VoxelSection[6];
 
         List<int[]>[] faces = new List[ModelQuadFacing.COUNT];
         for (int i = 0; i < faces.length; i++) {
             faces[i] = new ArrayList<>();
         }
 
-        meshAxis(src, grid, voxelSize, 0, faces);
-        meshAxis(src, grid, voxelSize, 1, faces);
-        meshAxis(src, grid, voxelSize, 2, faces);
+        meshAxis(src, neighbors, grid, voxelSize, 0, faces);
+        meshAxis(src, neighbors, grid, voxelSize, 1, faces);
+        meshAxis(src, neighbors, grid, voxelSize, 2, faces);
 
         int totalQuads = 0;
         int[] offsets = new int[8];
@@ -63,21 +68,17 @@ public final class LodMeshBuilder {
         nativeGeom.get(geometry);
         MemoryUtil.memFree(nativeGeom);
 
-        Vector3i size = new Vector3i(
-                Math.max(0, Math.min(15, max.x - min.x - 1)),
-                Math.max(0, Math.min(15, max.y - min.y - 1)),
-                Math.max(0, Math.min(15, max.z - min.z - 1))
-        );
-        min.x = Math.max(0, Math.min(15, min.x));
-        min.y = Math.max(0, Math.min(15, min.y));
-        min.z = Math.max(0, Math.min(15, min.z));
+        Vector3i size = new Vector3i(15, 15, 15);
+        min.x = 0;
+        min.y = 0;
+        min.z = 0;
         return new PersistentMesh(lod0.sectionKey, totalQuads, offsets,
                 (byte) min.x, (byte) min.y, (byte) min.z,
                 (byte) size.x, (byte) size.y, (byte) size.z,
                 geometry, (byte) Math.max(lod, 0));
     }
 
-    private static void meshAxis(VoxelSection src, int grid, int voxelSize, int axis, List<int[]>[] faces) {
+    private static void meshAxis(VoxelSection src, VoxelSection[] neighbors, int grid, int voxelSize, int axis, List<int[]>[] faces) {
         int uAxis = (axis + 1) % 3;
         int vAxis = (axis + 2) % 3;
         boolean[][] mask = new boolean[grid][grid];
@@ -92,20 +93,56 @@ public final class LodMeshBuilder {
                         int[] p = map(axis, uAxis, vAxis, slice, u, v);
                         int voxel = src.voxels[VoxelSection.index(p[0], p[1], p[2])];
                         boolean solid = VoxelSection.occupied(voxel);
-                        boolean exposed = true;
-                        int ns = slice + (side == 0 ? 1 : -1);
-                        if (ns >= 0 && ns < grid) {
-                            int[] n = map(axis, uAxis, vAxis, ns, u, v);
-                            exposed = !VoxelSection.occupied(src.voxels[VoxelSection.index(n[0], n[1], n[2])]);
-                        }
+                        boolean exposed = isExposed(src, neighbors, grid, p[0], p[1], p[2], axis, side);
                         mask[u][v] = solid && exposed;
                         colors[u][v] = voxel;
-                        lights[u][v] = src.light[VoxelSection.index(p[0], p[1], p[2])];
+                        lights[u][v] = faceLight(src, grid, p[0], p[1], p[2], axis, side);
                     }
                 }
                 greedy(mask, colors, lights, grid, slice, side, axis, voxelSize, faces[facing]);
             }
         }
+    }
+
+    private static boolean isExposed(VoxelSection src, VoxelSection[] neighbors, int grid, int x, int y, int z, int axis, int side) {
+        int nx = x;
+        int ny = y;
+        int nz = z;
+        int delta = side == 0 ? 1 : -1;
+        if (axis == 0) {
+            nx += delta;
+        } else if (axis == 1) {
+            ny += delta;
+        } else {
+            nz += delta;
+        }
+        if (nx >= 0 && ny >= 0 && nz >= 0 && nx < grid && ny < grid && nz < grid) {
+            return !VoxelSection.occupied(src.voxels[VoxelSection.index(nx, ny, nz)]);
+        }
+        int face = axis * 2 + (side == 0 ? 0 : 1);
+        VoxelSection neighbor = neighbors.length > face ? neighbors[face] : null;
+        if (neighbor == null) {
+            return true;
+        }
+        int lx = nx;
+        int ly = ny;
+        int lz = nz;
+        if (lx < 0) {
+            lx = grid - 1;
+        } else if (lx >= grid) {
+            lx = 0;
+        }
+        if (ly < 0) {
+            ly = grid - 1;
+        } else if (ly >= grid) {
+            ly = 0;
+        }
+        if (lz < 0) {
+            lz = grid - 1;
+        } else if (lz >= grid) {
+            lz = 0;
+        }
+        return !VoxelSection.occupied(neighbor.voxels[VoxelSection.index(lx, ly, lz)]);
     }
 
     private static void greedy(boolean[][] mask, int[][] colors, byte[][] lights, int grid,
@@ -189,6 +226,7 @@ public final class LodMeshBuilder {
     }
 
     private static float[][] corners(int axis, int side, float x0, float y0, float z0, float x1, float y1, float z1) {
+        // CCW when viewed from outside so Nvidium back-face cull keeps the walls.
         if (axis == 0) {
             if (side == 0) {
                 return new float[][]{{x0, y0, z0}, {x0, y1, z0}, {x0, y1, z1}, {x0, y0, z1}};
@@ -197,14 +235,14 @@ public final class LodMeshBuilder {
         }
         if (axis == 1) {
             if (side == 0) {
-                return new float[][]{{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}};
+                return new float[][]{{x0, y0, z1}, {x1, y0, z1}, {x1, y0, z0}, {x0, y0, z0}};
             }
-            return new float[][]{{x0, y0, z1}, {x1, y0, z1}, {x1, y0, z0}, {x0, y0, z0}};
+            return new float[][]{{x0, y0, z0}, {x1, y0, z0}, {x1, y0, z1}, {x0, y0, z1}};
         }
         if (side == 0) {
-            return new float[][]{{x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}, {x1, y0, z0}};
+            return new float[][]{{x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z0}};
         }
-        return new float[][]{{x1, y0, z0}, {x1, y1, z0}, {x0, y1, z0}, {x0, y0, z0}};
+        return new float[][]{{x0, y0, z0}, {x0, y1, z0}, {x1, y1, z0}, {x1, y0, z0}};
     }
 
     private static int[] map(int axis, int uAxis, int vAxis, int slice, int u, int v) {
@@ -213,6 +251,24 @@ public final class LodMeshBuilder {
         p[uAxis] = u;
         p[vAxis] = v;
         return p;
+    }
+
+    private static byte faceLight(VoxelSection src, int grid, int x, int y, int z, int axis, int side) {
+        int nx = x;
+        int ny = y;
+        int nz = z;
+        int delta = side == 0 ? 1 : -1;
+        if (axis == 0) {
+            nx += delta;
+        } else if (axis == 1) {
+            ny += delta;
+        } else {
+            nz += delta;
+        }
+        if (nx < 0 || ny < 0 || nz < 0 || nx >= grid || ny >= grid || nz >= grid) {
+            return src.light[VoxelSection.index(x, y, z)];
+        }
+        return src.light[VoxelSection.index(nx, ny, nz)];
     }
 
     private static int facingOf(int axis, int side) {

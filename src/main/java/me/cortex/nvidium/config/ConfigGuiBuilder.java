@@ -94,7 +94,7 @@ public class ConfigGuiBuilder implements ConfigEntryPoint {
                         .setImpact(OptionImpact.MEDIUM)
                         .setEnabledProvider(c -> Nvidium.IS_ENABLED && store.getData().lodEnabled())
                         .setBinding(v -> store.getData().lod_start_chunks = v, () -> store.getData().lodStartChunks())
-                        .setRange(16, 256, 8)
+                        .setRange(8, 256, 8)
                         .setDefaultValue(32)
                         .setValueFormatter(x -> Component.literal(x + " chunks"))
                         .setStorageHandler(this.saveConfig)

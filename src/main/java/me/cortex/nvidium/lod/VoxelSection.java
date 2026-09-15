@@ -7,6 +7,7 @@ public final class VoxelSection {
     public final long sectionKey;
     public final int[] voxels;
     public final byte[] light;
+    private transient VoxelSection[] mipCache;
 
     public VoxelSection(long sectionKey, int[] voxels, byte[] light) {
         this.sectionKey = sectionKey;
@@ -31,6 +32,12 @@ public final class VoxelSection {
         if (lod <= 0) {
             return this;
         }
+        if (this.mipCache == null) {
+            this.mipCache = new VoxelSection[5];
+        }
+        if (this.mipCache[lod] != null) {
+            return this.mipCache[lod];
+        }
         int step = 1 << lod;
         int dst = SIZE / step;
         int[] out = new int[VOLUME];
@@ -43,7 +50,9 @@ public final class VoxelSection {
                 }
             }
         }
-        return new VoxelSection(this.sectionKey, out, outLight);
+        VoxelSection mipped = new VoxelSection(this.sectionKey, out, outLight);
+        this.mipCache[lod] = mipped;
+        return mipped;
     }
 
     public static boolean occupied(int voxel) {
@@ -67,6 +76,8 @@ public final class VoxelSection {
                 for (int x = 0; x < step; x++) {
                     int i = index(ox + x, oy + y, oz + z);
                     int v = this.voxels[i];
+                    lightAcc += Byte.toUnsignedInt(this.light[i]);
+                    lightN++;
                     if (v == 0) {
                         continue;
                     }
@@ -89,18 +100,17 @@ public final class VoxelSection {
                             bestColor = rgb;
                         }
                     }
-                    lightAcc += Byte.toUnsignedInt(this.light[i]);
-                    lightN++;
                 }
             }
         }
+        byte avgLight = (byte) (lightN == 0 ? 0xFF : (lightAcc / lightN));
         if (bestCount == 0) {
             out[di] = 0;
-            outLight[di] = 0;
+            outLight[di] = avgLight;
             return;
         }
         out[di] = bestColor | 0x01000000;
-        outLight[di] = (byte) (lightN == 0 ? 0xFF : (lightAcc / lightN));
+        outLight[di] = avgLight;
     }
 }
 

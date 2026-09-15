@@ -5,7 +5,7 @@
   "nvidium.options.enable_disk_persistence.name" : "Persistência em disco",
   "nvidium.options.enable_disk_persistence.tooltip" : "Grava as malhas do Nvidium na pasta do mundo e recarrega depois do quit.\nFica em <save>/nvidium-persistent/. Apaga essa pasta para limpar o cache.",
   "nvidium.options.enable_lod.name" : "Terreno LOD",
-  "nvidium.options.enable_lod.tooltip" : "Depois da distância inicial, o terreno persistido vira cubos mais grosseiros (voxels) para poupar VRAM.\nPerto continua Sodium/Nvidium a qualidade cheia.\nStreaming do servidor e geração tipo Chunky vêm depois.",
+  "nvidium.options.enable_lod.tooltip" : "Depois da distância de início, só se desenha LOD grosso.\nA malha completa fica limitada a esse raio para não ficar por cima do LOD.",
   "nvidium.options.lod_start_chunks.name" : "Distância de início do LOD",
-  "nvidium.options.lod_start_chunks.tooltip" : "Até estes chunks usa a malha completa persistida.\nMais longe sobe LOD 1–4 com a distância.",
+  "nvidium.options.lod_start_chunks.tooltip" : "Raio da malha de qualidade cheia, em chunks.\nDentro: só malha Sodium/Nvidium completa.\nFora: só LOD (sem malha full por cima).\nSobe o valor para detalhe mais longe; desce para o LOD começar mais cedo.",
 }

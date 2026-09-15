@@ -28,7 +28,7 @@ import java.util.zip.Inflater;
 
 public final class VoxelStore {
     private static final int MAGIC = 0x4E56584C; // NVXL
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     private static final int CACHE_LIMIT = 1024;
 
     private final Path root;

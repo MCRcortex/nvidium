@@ -3,6 +3,7 @@ package me.cortex.nvidium.persist;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import me.cortex.nvidium.Nvidium;
+import me.cortex.nvidium.lod.LodLevels;
 import me.cortex.nvidium.lod.LodSystem;
 import me.cortex.nvidium.managers.SectionManager;
 import net.minecraft.core.SectionPos;
@@ -47,11 +48,13 @@ public final class PersistentMeshLoader {
         this.camCY = SectionPos.blockToSectionCoord((int) Math.floor(camY));
         this.camCZ = SectionPos.blockToSectionCoord((int) Math.floor(camZ));
         drainUploads(usedMb, maxMb);
-        if (this.lodSystem != null && (this.tick % 10) == 0) {
-            int upgraded = this.lodSystem.upgradeStale(this.camCX, this.camCY, this.camCZ, 8);
-            if (upgraded > 0) {
+        if (this.lodSystem != null && (this.tick % 5) == 0) {
+            var regions = this.lodSystem.reconcileStale(this.camCX, this.camCZ, 48);
+            if (!regions.isEmpty()) {
                 synchronized (this.requestedRegions) {
-                    this.requestedRegions.clear();
+                    for (long regionKey : regions) {
+                        this.requestedRegions.remove(regionKey);
+                    }
                 }
             }
         }
@@ -98,7 +101,11 @@ public final class PersistentMeshLoader {
             }
             this.uploadQueueSize.decrementAndGet();
             if (this.sectionManager.hasSection(mesh.sectionKey)) {
-                continue;
+                if (this.lodSystem == null || this.lodSystem.lodOf(mesh.sectionKey) == mesh.lod) {
+                    continue;
+                }
+                this.sectionManager.evictSection(mesh.sectionKey);
+                this.lodSystem.onEvicted(mesh.sectionKey);
             }
             if (this.sectionManager.uploadPersistedMesh(mesh)) {
                 this.loadedFromDisk.incrementAndGet();
@@ -167,6 +174,9 @@ public final class PersistentMeshLoader {
             if (!this.sectionManager.hasSection(key)) {
                 return false;
             }
+            if (this.lodSystem != null && this.lodSystem.lodOf(key) != LodLevels.forSection(key, this.camCX, this.camCZ)) {
+                return false;
+            }
         }
         return true;
     }
@@ -199,7 +209,7 @@ public final class PersistentMeshLoader {
                     }
                     PersistentMesh chosen = mesh;
                     if (this.lodSystem != null) {
-                        chosen = this.lodSystem.pickMesh(mesh.sectionKey, mesh, this.camCX, this.camCY, this.camCZ);
+                        chosen = this.lodSystem.pickMesh(mesh.sectionKey, mesh, this.camCX, this.camCZ);
                     }
                     if (chosen == null) {
                         continue;

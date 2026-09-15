@@ -42,19 +42,42 @@ public final class LodSystem {
         }
     }
 
-    public PersistentMesh pickMesh(long sectionKey, PersistentMesh fullMesh, int camCX, int camCY, int camCZ) {
-        int needed = LodLevels.choose(LodLevels.chebyshev(
-                SectionPos.x(sectionKey), SectionPos.y(sectionKey), SectionPos.z(sectionKey),
-                camCX, camCY, camCZ));
+    public PersistentMesh pickMesh(long sectionKey, PersistentMesh fullMesh, int camCX, int camCZ) {
+        int needed = LodLevels.forSection(sectionKey, camCX, camCZ);
         if (needed == 0) {
             return fullMesh;
         }
         VoxelSection voxels = this.store.get(sectionKey);
         if (voxels == null) {
-            return fullMesh;
+            return null;
         }
-        PersistentMesh lodMesh = LodMeshBuilder.build(voxels, needed);
-        return lodMesh != null ? lodMesh : fullMesh;
+        return LodMeshBuilder.build(voxels, needed, faceNeighbors(sectionKey, needed));
+    }
+
+    private VoxelSection[] faceNeighbors(long sectionKey, int lod) {
+        int x = SectionPos.x(sectionKey);
+        int y = SectionPos.y(sectionKey);
+        int z = SectionPos.z(sectionKey);
+        return new VoxelSection[]{
+                mipped(SectionPos.asLong(x + 1, y, z), lod),
+                mipped(SectionPos.asLong(x - 1, y, z), lod),
+                mipped(SectionPos.asLong(x, y + 1, z), lod),
+                mipped(SectionPos.asLong(x, y - 1, z), lod),
+                mipped(SectionPos.asLong(x, y, z + 1), lod),
+                mipped(SectionPos.asLong(x, y, z - 1), lod)
+        };
+    }
+
+    private VoxelSection mipped(long sectionKey, int lod) {
+        VoxelSection section = this.store.get(sectionKey);
+        if (section == null) {
+            return null;
+        }
+        return section.mip(lod);
+    }
+
+    public byte lodOf(long sectionKey) {
+        return this.gpuLod.get(sectionKey);
     }
 
     public void onUploaded(long sectionKey, byte lod) {
@@ -74,25 +97,28 @@ public final class LodSystem {
         }
     }
 
-    public int upgradeStale(int camCX, int camCY, int camCZ, int budget) {
+    public LongArrayList reconcileStale(int camCX, int camCZ, int budget) {
         LongArrayList stale = new LongArrayList();
         var iterator = this.gpuLod.long2ByteEntrySet().fastIterator();
         while (iterator.hasNext() && stale.size() < budget) {
             var entry = iterator.next();
             long key = entry.getLongKey();
             byte have = entry.getByteValue();
-            int needed = LodLevels.choose(LodLevels.chebyshev(
-                    SectionPos.x(key), SectionPos.y(key), SectionPos.z(key),
-                    camCX, camCY, camCZ));
-            if (needed < have) {
+            int needed = LodLevels.forSection(key, camCX, camCZ);
+            if (have != needed) {
                 stale.add(key);
             }
         }
+        LongArrayList regions = new LongArrayList();
         for (long key : stale) {
             this.sections.evictSection(key);
             onEvicted(key);
+            long regionKey = PersistentMesh.regionKey(key);
+            if (!regions.contains(regionKey)) {
+                regions.add(regionKey);
+            }
         }
-        return stale.size();
+        return regions;
     }
 
     public void forgetRegion(long regionKey) {
@@ -109,7 +135,8 @@ public final class LodSystem {
     }
 
     public String debugLine() {
-        return "LOD gpu: L0=" + this.onGpu[0] + " L1=" + this.onGpu[1] + " L2=" + this.onGpu[2]
+        return "LOD start " + LodLevels.fullMeshChunks() + "c | gpu L0=" + this.onGpu[0]
+                + " L1=" + this.onGpu[1] + " L2=" + this.onGpu[2]
                 + " L3=" + this.onGpu[3] + " L4=" + this.onGpu[4] + ", voxels=" + this.store.storedCount();
     }
 

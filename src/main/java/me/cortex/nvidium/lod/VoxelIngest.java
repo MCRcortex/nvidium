@@ -5,6 +5,8 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.LightLayer;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
@@ -40,25 +42,37 @@ public final class VoxelIngest {
                 for (int x = 0; x < 16; x++) {
                     BlockState state = section.getBlockState(x, y, z);
                     int i = VoxelSection.index(x, y, z);
+                    pos.set(baseX + x, baseY + y, baseZ + z);
+
+                    int block = blockLight == null ? 0 : Math.min(15, blockLight.getLightValue(pos));
+                    int sky = skyLight == null ? 15 : Math.min(15, skyLight.getLightValue(pos));
+                    for (Direction dir : Direction.values()) {
+                        pos.set(baseX + x + dir.getStepX(), baseY + y + dir.getStepY(), baseZ + z + dir.getStepZ());
+                        if (blockLight != null) {
+                            block = Math.max(block, Math.min(15, blockLight.getLightValue(pos)));
+                        }
+                        if (skyLight != null) {
+                            sky = Math.max(sky, Math.min(15, skyLight.getLightValue(pos)));
+                        }
+                    }
+                    pos.set(baseX + x, baseY + y, baseZ + z);
+                    light[i] = (byte) (block | (sky << 4));
+
                     if (state.isAir() || !fillsCube(state)) {
                         continue;
                     }
-                    pos.set(baseX + x, baseY + y, baseZ + z);
                     MapColor mapColor = state.getMapColor(level, pos);
+                    if (mapColor == MapColor.NONE) {
+                        continue;
+                    }
                     int argb = mapColor.calculateARGBColor(MapColor.Brightness.NORMAL);
                     int r = (argb >>> 16) & 0xFF;
                     int g = (argb >>> 8) & 0xFF;
                     int b = argb & 0xFF;
-                    if (r == 0 && g == 0 && b == 0) {
-                        r = 20;
-                        g = 20;
-                        b = 20;
+                    if (r + g + b < 24) {
+                        continue;
                     }
                     voxels[i] = (r << 16) | (g << 8) | b | 0x01000000;
-
-                    int block = blockLight == null ? 0 : Math.min(15, blockLight.getLightValue(pos));
-                    int sky = skyLight == null ? 15 : Math.min(15, skyLight.getLightValue(pos));
-                    light[i] = (byte) (block | (sky << 4));
                 }
             }
         }
@@ -73,6 +87,9 @@ public final class VoxelIngest {
     }
 
     private static boolean fillsCube(BlockState state) {
-        return state.canOcclude() || state.liquid() || state.isSolid() || state.isSolidRender();
+        if (state.liquid() || state.isSolidRender()) {
+            return true;
+        }
+        return state.getBlock() instanceof LeavesBlock;
     }
 }

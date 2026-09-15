@@ -4,6 +4,7 @@ import com.mojang.blaze3d.textures.GpuSampler;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.managers.SectionManager;
+import me.cortex.nvidium.lod.LodLevels;
 import me.cortex.nvidium.lod.LodSprites;
 import me.cortex.nvidium.lod.LodSystem;
 import me.cortex.nvidium.persist.PersistentMesh;
@@ -163,12 +164,29 @@ public class NvidiumWorldRenderer {
 
     public void uploadBuildResult(BuilderTaskOutput buildOutput) {
         if (buildOutput instanceof ChunkBuildOutput chunkBuildOutput) {
-            this.sectionManager.uploadChunkBuildResult(chunkBuildOutput);
             persistBuildResult(chunkBuildOutput);
+            long sectionKey = SectionPos.asLong(
+                    chunkBuildOutput.section.getChunkX(),
+                    chunkBuildOutput.section.getChunkY(),
+                    chunkBuildOutput.section.getChunkZ());
+            if (useFullMeshOnGpu(sectionKey)) {
+                this.sectionManager.uploadChunkBuildResult(chunkBuildOutput);
+                if (this.lodSystem != null) {
+                    this.lodSystem.onUploaded(sectionKey, (byte) 0);
+                }
+            } else {
+                demoteFullMeshInLodRing(sectionKey);
+            }
         }
         if (buildOutput instanceof ChunkSortOutput chunkSortOutput && chunkSortOutput.containsNewIndexData() &&
                 Nvidium.config.translucency_sorting_level == TranslucencySortingLevel.SODIUM) {
-            this.sectionManager.uploadChunkSort(chunkSortOutput);
+            long sectionKey = SectionPos.asLong(
+                    chunkSortOutput.section.getChunkX(),
+                    chunkSortOutput.section.getChunkY(),
+                    chunkSortOutput.section.getChunkZ());
+            if (useFullMeshOnGpu(sectionKey)) {
+                this.sectionManager.uploadChunkSort(chunkSortOutput);
+            }
         }
     }
 
@@ -251,11 +269,45 @@ public class NvidiumWorldRenderer {
             Nvidium.LOGGER.error("Failed to snapshot section {} for disk cache", sectionKey, e);
         }
         if (this.lodSystem != null) {
-            this.lodSystem.onUploaded(sectionKey, (byte) 0);
             var level = Minecraft.getInstance().level;
             if (level != null) {
                 this.lodSystem.ingest(level, result.section.getChunkX(), result.section.getChunkY(), result.section.getChunkZ());
             }
         }
+    }
+
+    private boolean useFullMeshOnGpu(long sectionKey) {
+        if (this.lodSystem == null || !Nvidium.config.lodEnabled()) {
+            return true;
+        }
+        int[] cam = cameraChunkXZ();
+        if (cam == null) {
+            return true;
+        }
+        return LodLevels.forSection(sectionKey, cam[0], cam[1]) == 0;
+    }
+
+    private void demoteFullMeshInLodRing(long sectionKey) {
+        boolean evicted = false;
+        if (this.lodSystem != null && this.sectionManager.hasSection(sectionKey) && this.lodSystem.lodOf(sectionKey) <= 0) {
+            this.sectionManager.evictSection(sectionKey);
+            this.lodSystem.onEvicted(sectionKey);
+            evicted = true;
+        }
+        if (this.persistentLoader != null && (evicted || !this.sectionManager.hasSection(sectionKey))) {
+            this.persistentLoader.allowReload(PersistentMesh.regionKey(sectionKey));
+        }
+    }
+
+    private static int[] cameraChunkXZ() {
+        var mc = Minecraft.getInstance();
+        if (mc.gameRenderer == null) {
+            return null;
+        }
+        var pos = mc.gameRenderer.mainCamera().position();
+        return new int[]{
+                SectionPos.blockToSectionCoord((int) Math.floor(pos.x)),
+                SectionPos.blockToSectionCoord((int) Math.floor(pos.z))
+        };
     }
 }
