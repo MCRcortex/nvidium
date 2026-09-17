@@ -3,7 +3,8 @@
   "package": "me.cortex.nvidium.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
-    "minecraft.CommandEncoderAccessor",
+    "minecraft.FrontendCommandEncoderAccessor",
+    "minecraft.FrontendRenderPassAccessor",
     "minecraft.GlCommandEncoderAccessor",
     "minecraft.MixinCamera",
     "minecraft.MixinFogRenderer",

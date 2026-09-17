@@ -24,14 +24,6 @@ bool hasMipping(Vertex v) {
     return ((v.y>>16)&1)!=0;
 }
 
-float decodeVertexAlphaCutoff(Vertex v) {
-    return (float[](0.0f, 0.1f,0.5f))[((v.y>>16)&int16_t(3))];
-}
-
-uint rawVertexAlphaCutoff(Vertex v) {
-    return uint((v.y>>17)&int16_t(3));
-}
-
 vec2 decodeLightUV(Vertex v) {
     uvec2 light = uvec2(v.y>>24, v.z>>24) & uvec2(0xFFu);
     return vec2(light)/256.0;

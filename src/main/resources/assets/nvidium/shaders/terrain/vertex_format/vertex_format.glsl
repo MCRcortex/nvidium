@@ -1,18 +1,18 @@
 #define COLOR_SCALE        1.0 / 255.0
 
 #ifdef USE_SODIUM_VERTEX_FORMAT
-#moj_import <nvidium:terrain/vertex_format/sodium_vertex_format.glsl>
+#import <nvidium:terrain/vertex_format/sodium_vertex_format.glsl>
 #else
-#moj_import <nvidium:terrain/vertex_format/nvidium_vertex_format.glsl>
+#import <nvidium:terrain/vertex_format/nvidium_vertex_format.glsl>
 #endif
-
-float getVertexAlphaCutoff(uint v) {
-    return (float[](0.0f,0.0001f,0.5f,1.0f))[v];
-}
 
 vec4 sampleLight(vec2 uv) {
     //Its divided by 16 to match sodium/vanilla (it can never be 1 which is funny)
+#ifdef OIT_ALPHA_ONLY
+    return vec4(1.0);
+#else
     return vec4(texture(tex_light, uv).rgb, 1);
+#endif
 }
 
 vec3 computeMultiplier(Vertex V) {

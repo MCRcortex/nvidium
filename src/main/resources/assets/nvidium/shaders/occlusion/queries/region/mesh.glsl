@@ -8,7 +8,7 @@
 #extension GL_NV_shader_buffer_load : require
 
 
-#moj_import <nvidium:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 #define ADD_SIZE (0.1f/16)
 

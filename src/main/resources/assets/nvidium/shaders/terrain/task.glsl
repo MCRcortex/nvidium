@@ -11,7 +11,7 @@
 #extension GL_KHR_shader_subgroup_ballot : require
 #extension GL_KHR_shader_subgroup_vote : require
 
-#moj_import <nvidium:occlusion/scene.glsl>
+#import <nvidium:occlusion/scene.glsl>
 
 
 //This is 1 since each task shader workgroup -> multiple meshlets. its not each globalInvocation (afaik)
@@ -21,7 +21,7 @@ bool shouldRenderVisible(uint sectionId) {
     return (sectionVisibility[sectionId]&uint8_t(1)) != uint8_t(0);
 }
 
-#moj_import <nvidium:terrain/task_common2.glsl>
+#import <nvidium:terrain/task_common2.glsl>
 
 void main() {
     uint sectionId = sectionIndices[gl_WorkGroupID.x].x + (gl_WorkGroupID.x & 0xFFFFFF00);

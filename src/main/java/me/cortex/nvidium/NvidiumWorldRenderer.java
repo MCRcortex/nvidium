@@ -1,6 +1,7 @@
 package me.cortex.nvidium;
 
-import com.mojang.blaze3d.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.frontend.FrontendRenderPass;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
 import me.cortex.nvidium.gl.RenderDevice;
 import me.cortex.nvidium.managers.SectionManager;
@@ -18,6 +19,7 @@ import net.caffeinemc.mods.sodium.client.render.chunk.vertex.format.ChunkMeshFor
 import net.caffeinemc.mods.sodium.client.render.viewport.Viewport;
 import net.caffeinemc.mods.sodium.client.util.FogParameters;
 import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.oit.OitStage;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4fc;
@@ -85,8 +87,8 @@ public class NvidiumWorldRenderer {
         }
     }
 
-    public void renderTranslucent(TerrainRenderPass pass, GpuSampler terrainSampler) {
-        this.renderPipeline.renderTranslucent(pass, terrainSampler);
+    public void renderTranslucent(TerrainRenderPass pass, FrontendRenderPass renderPass, GpuSampler terrainSampler, OitStage stage) {
+        this.renderPipeline.renderTranslucent(pass, renderPass, terrainSampler, stage);
     }
 
     public void deleteSection(RenderSection section) {

@@ -3,8 +3,8 @@
 #define SORTING_NETWORK_SIZE 256
 layout(local_size_x = (SORTING_NETWORK_SIZE>>1), local_size_y = 1 , local_size_z = 1) in;
 
-#moj_import <nvidium:occlusion/scene.glsl>
-#moj_import <nvidium:sorting/sorting_network.glsl>
+#import <nvidium:occlusion/scene.glsl>
+#import <nvidium:sorting/sorting_network.glsl>
 
 
 

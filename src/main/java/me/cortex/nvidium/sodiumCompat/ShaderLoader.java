@@ -1,21 +1,11 @@
 package me.cortex.nvidium.sodiumCompat;
 
-import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
-import net.minecraft.client.Minecraft;
+import me.cortex.nvidium.util.GlslPreprocessor;
 import net.minecraft.client.renderer.ShaderDefines;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
-import org.apache.commons.io.IOUtils;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Optional;
 
 public class ShaderLoader {
     public static String parse(Identifier path) {
@@ -58,44 +48,7 @@ public class ShaderLoader {
 
         builder.define("TEXTURE_MAX_SCALE", String.valueOf(NvidiumCompactChunkVertex.TEXTURE_MAX_VALUE));
 
-        GlslPreprocessor preprocessor = new GlslPreprocessor() {
-            @Override
-            public @Nullable String applyImport(boolean isRelative, @NonNull String path) {
-                return ShaderLoader.resolve(Identifier.parse(path));
-            }
-        };
-
-        String source = ShaderLoader.resolve(path);
-        source = String.join("", preprocessor.process(source));
-        source = GlslPreprocessor.injectDefines(source, builder.build());
-
-        return source;
-    }
-
-    public static String resolve(Identifier id) {
-        ResourceManager rm = Minecraft.getInstance().getResourceManager();
-
-        Optional<Resource> res = rm.getResource(id.withPrefix("shaders/"));
-        if (res.isEmpty()) {
-            throw new IllegalStateException("Failed to find shader " + id.getPath());
-        }
-
-        try {
-            Reader reader = res.get().openAsReader();
-            String source = "#error shader didn't load";
-            try {
-                source = IOUtils.toString(reader);
-            } catch (IOException e) {
-                System.out.println("Nvidium shader reader error");
-            }
-
-            if (reader != null) {
-                reader.close();
-            }
-
-            return source;
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to open resource reader, wtf is going on");
-        }
+        GlslPreprocessor preprocessor = new GlslPreprocessor(builder.build());
+        return preprocessor.process(path);
     }
 }
