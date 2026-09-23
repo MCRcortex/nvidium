@@ -28,9 +28,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Optional;
-import java.util.OptionalDouble;
-
 @Mixin(value = SodiumWorldRenderer.class, remap = false)
 public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererGetter {
     @Shadow
@@ -69,6 +66,7 @@ public abstract class MixinSodiumWorldRenderer implements INvidiumWorldRendererG
             GlStateManager._enableCull();
             GlStateManager._enableDepthTest();
             GlStateManager._depthFunc(GL33C.GL_GEQUAL); // reverse-Z
+            GlStateManager._colorMask(0, 15);
             GlStateManager._depthMask(true);
 
             if (pass == DefaultTerrainRenderPasses.SOLID) {
