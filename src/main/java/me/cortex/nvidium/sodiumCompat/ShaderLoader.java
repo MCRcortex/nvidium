@@ -1,5 +1,6 @@
 package me.cortex.nvidium.sodiumCompat;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import me.cortex.nvidium.Nvidium;
 import me.cortex.nvidium.config.StatisticsLoggingLevel;
 import me.cortex.nvidium.config.TranslucencySortingLevel;
@@ -44,6 +45,10 @@ public class ShaderLoader {
         }
         if (Nvidium.config.use_nv_fragment_shader_barycentric) {
             builder.define("USE_NV_FRAGMENT_SHADER_BARYCENTRIC");
+        }
+
+        if (RenderSystem.getDevice().getDeviceInfo().isZZeroToOne()) {
+            builder.define("RENDERPEARL_DEPTH_IS_ZERO_TO_ONE");
         }
 
         builder.define("TEXTURE_MAX_SCALE", String.valueOf(NvidiumCompactChunkVertex.TEXTURE_MAX_VALUE));
